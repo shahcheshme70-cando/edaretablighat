@@ -571,7 +571,28 @@ const MOVES=[
  {t:'ورود به عرصهٔ جدید',way:'aud',d:'حرف به قشر یا محله‌ای می‌رسد که امروز بی‌پوشش است.',what:'بخش بزرگی از مردم را هیچ نیرویی پوشش نمی‌دهد. این حرکت یعنی جهاد تبیین به آن قشر، صنف یا محله برسد؛ و بهتر از همه، با کنشگرانی از خود همان قشر، نه با رفت‌وآمد نیروهای بیرونی.',when:'قشرها و محله‌هایی که در صفحهٔ «مخاطبان بی‌پوشش» علامت زده‌اید.',ex:'کسبهٔ معتمد هر راستهٔ بازار، راوی روایت درست برای همکاران و مشتریانشان می‌شوند.',prog:'یک برنامهٔ فرهنگی در بازار برگزار می‌شود.',tah:'در هر راسته یک کاسب معتمد، کنشگر همان راسته می‌شود و با بقیه در ارتباط می‌ماند.',f:'به کدام قشر، صنف یا محله می‌رسید؟',from:'امروز چه وضعی دارد؟',to:'چه کسی آنجا کنشگر می‌شود و چه می‌کند؟',ph:['اصناف بازار','پیام تبیین به آن‌ها نمی‌رسد','کسبهٔ معتمد هر راسته، راوی روایت درست می‌شوند'],s:d=>`جهاد تبیین به ${d.f} می‌رسد: ${d.to}.`}];
 const MV=Object.fromEntries(MOVES.map(m=>[m.t,m]));
 const STAGES=[['ماه اول','شروع کوچک','با یک گروه کوچک شروع کنید تا روش محک بخورد.',['هفتهٔ اول','هفتهٔ دوم','هفتهٔ سوم','هفتهٔ چهارم'],'مثلاً ۱۵ معلم پیشگام دوره را گذرانده‌اند و هر کدام یک کلاس را بر عهده گرفته‌اند.'],['ماه دوم و سوم','گسترش','آنچه جواب داد، گسترش پیدا می‌کند.',['ماه دوم','ماه سوم'],'مثلاً ۶۰ معلم فعال‌اند و هر مدرسه یک مربی دارد.'],['ماه چهارم تا ششم','ماندگاری','تحول باید بدون پیگیری روزانهٔ شما سر پا بماند.',['ماه چهارم','ماه پنجم','ماه ششم'],'مثلاً ۱۰۰ معلم بی‌پیگیری روزانهٔ اداره کار می‌کنند و خودشان معلم تازه دعوت می‌کنند.']];
-const COSTS=[['train','آموزش و دوره','مثلاً ۶۰'],['content','محتوا، چاپ و تجهیزات','مثلاً ۲۰'],['host','رفت‌وآمد، مکان و پذیرایی','مثلاً ۱۵'],['gift','هدیه و تشویق','مثلاً ۱۰'],['other','سایر','']];
+/* ریز هزینه به تفکیک نوع حرکت؛ هر حرکت خرج‌های خودش را دارد (میلیون تومان، شش ماه) */
+const COST_ITEMS = {
+  train: 'آموزش و دوره', content: 'محتوا، چاپ و تجهیزات', host: 'رفت‌وآمد، مکان و پذیرایی', gift: 'هدیه و تشویق', other: 'سایر',
+  retrain: 'دورهٔ توانمندسازی برای نقش تازه', rcontent: 'بستهٔ محتوا و ابزار نقش تازه', mentor: 'مربی و همراهی تا جا افتادن نقش', meet: 'نشست‌های دوره‌ای و پذیرایی',
+  lead: 'آموزش راهبران و مسئولان هسته‌ها', place: 'آماده‌سازی و تجهیز مکان', runc: 'هزینهٔ برنامه‌های هسته‌ها', kit: 'بستهٔ کار و محتوای آماده',
+  jmeet: 'نشست‌های آشنایی و هماهنگی دو نیرو', joint: 'نخستین کار مشترک (رویداد، اردو یا پروژه)', coord: 'رفت‌وآمد و هماهنگی', jcontent: 'محتوای مشترک',
+  find: 'شناسایی و دعوت افراد مستعد', atrain: 'دورهٔ کنشگری', acoach: 'مربی‌گری و همراهی', atools: 'ابزار کار (محتوا، تجهیزات رسانه‌ای)',
+  reach: 'شناسایی، دیدار و جلب اعتماد', brief: 'آموزش و توجیه', scontent: 'محتوای ویژهٔ همین صنف یا گروه', honor: 'هدیه و تقدیر',
+  field: 'شناخت میدان و نیاز همان قشر یا محله', local: 'یافتن و آموزش کنشگران محلی', lcontent: 'محتوای متناسب با همان مخاطب', event: 'برنامه و حضور در محل'
+};
+const COST_BY_MOVE = {
+  'تغییر نقش': [['retrain', '۴۰'], ['rcontent', '۲۰'], ['mentor', '۱۵'], ['meet', '۱۰'], ['gift', '۱۰'], ['other', '']],
+  'فعال‌سازی ظرفیت': [['lead', '۳۰'], ['place', '۲۰'], ['kit', '۱۵'], ['runc', '۲۵'], ['gift', '۱۰'], ['other', '']],
+  'ایجاد اتصال': [['jmeet', '۱۵'], ['joint', '۳۰'], ['jcontent', '۱۰'], ['coord', '۱۰'], ['other', '']],
+  'فعال‌سازی مخاطب': [['find', '۱۰'], ['atrain', '۴۰'], ['acoach', '۱۵'], ['atools', '۲۰'], ['gift', '۱۰'], ['other', '']],
+  'افزودن نیروی جدید': [['reach', '۱۵'], ['brief', '۳۰'], ['scontent', '۲۰'], ['host', '۱۰'], ['honor', '۱۵'], ['other', '']],
+  'ورود به عرصهٔ جدید': [['field', '۱۰'], ['local', '۳۰'], ['lcontent', '۲۵'], ['event', '۲۰'], ['host', '۱۰'], ['other', '']]
+};
+const COST_DEFAULT = [['train', '۶۰'], ['content', '۲۰'], ['host', '۱۵'], ['gift', '۱۰'], ['other', '']];
+const costItems = type => (COST_BY_MOVE[type] || COST_DEFAULT).map(([k, ph]) => [k, COST_ITEMS[k], ph]);
+/* ردیف‌های این حرکت، به‌علاوهٔ هر ردیف پرشده‌ای که از نوع قبلی طرح مانده (تا چیزی پنهان نماند) */
+const planCostItems = p => { const base = costItems(p.type), seen = new Set(base.map(x => x[0])), c = p.costs || {}; return base.concat(Object.keys(COST_ITEMS).filter(k => !seen.has(k) && num(c[k]) > 0).map(k => [k, COST_ITEMS[k] + ' (از نوع قبلی طرح)', ''])); };
 const QUARTERS=['زمستان ۱۴۰۵','بهار ۱۴۰۶','تابستان ۱۴۰۶','پاییز ۱۴۰۶','زمستان ۱۴۰۶','بهار ۱۴۰۷','تابستان ۱۴۰۷','پاییز ۱۴۰۷'];
 const FUND=['اعتبار خود شهرستان','کمک اداره‌کل یا ستاد','مشارکت مردمی و خیرین','ترکیبی از این‌ها'];
 const RES=[['money','اعتبار مالی'],['people','نیروی انسانی'],['place','فضا و مکان'],['content','محتوا'],['training','آموزش']];
@@ -625,7 +646,7 @@ function gap(){const pop=num(S.data.pop);let a=0,aT=0,m=0;forces().forEach(f=>{a
  const needA=pop*.1,needM=pop,ta=Math.min(num(S.data.ta),100),tm=Math.min(num(S.data.tm),100),aI=a-aT,aNew=Math.max(needA-a,0);
  return{pop,a,aT,aI,aNew,m:mm,needA,needM,gapA:Math.max(needA-aT,0),gapM:Math.max(needM-mm,0),aShare:needA?aT/needA*100:0,iShare:needA?aI/needA*100:0,mShare:needM?mm/needM*100:0,tgtA:pop*ta/100,tgtM:pop*tm/100,ta,tm}}
 function planSplit(p){const d=planDelta(p),f=findForce(p.force),room=f&&MV[p.type]&&MV[p.type].way==='inv'?Math.max(tA(f)-num(p.baseA),0):0,inv=Math.min(d.dA,room);return{inv,fresh:d.dA-inv}}
-const planCost=p=>p.costMode==='کل'?num(p.cost):COSTS.reduce((a,[k])=>a+num((p.costs||{})[k]),0);
+const planCost=p=>p.costMode==='کل'?num(p.cost):planCostItems(p).reduce((a,[k])=>a+num((p.costs||{})[k]),0);
 const planQ=(p,i)=>{const q=QUARTERS.indexOf(p.q);return q>=0?q:Math.min(i,QUARTERS.length-1)};
 const perHead=(cost,n)=>n>0&&cost>0?cost/n:0;
 const money=v=>v>=1000?FA(v/1000,1)+' میلیارد تومان':v>=1?FA(v,v<10?1:0)+' میلیون تومان':FA(Math.round(v*1000))+' هزار تومان';
@@ -811,8 +832,8 @@ function planSteps(i){const p=()=>P(i),pre=`p${i}.`,tag=S.data.plans.length>1?` 
    <div data-live="impact">${LIVE.impact()}</div></div>`}},
  {id:'cost@'+i,part:3,pi:i,t:'هزینه',done:()=>planCost(p())>0&&has(p().fund),render:()=>{const tot=p().costMode==='کل';if(!MV[p().type])return NOMOVE('بخش ۴: طرح تحول');return `
   ${EB('بخش ۴: طرح تحول')}<h1>این طرح چقدر خرج دارد؟</h1>
-  <p class="lead">هزینهٔ شش ماه را به میلیون تومان و تقریبی بنویسید. ردیف‌هایی را که خرج ندارند خالی بگذارید؛ جمع خودش حساب می‌شود. وقت نیروهای اداره را حساب نکنید.</p>
-  <div class="card stack">${tot?inp(bp+'cost',{label:'کل هزینه (میلیون تومان)',n:true,big:true,req:true,ph:'مثلاً ۸۰'}):`<div class="costs">${COSTS.map(([k,l,ph])=>`<label for="${fid(bp+'costs.'+k)}">${l}</label>${inp(bp+'costs.'+k,{n:true,ph:ph||'۰',al:l})}`).join('')}</div>`}
+  <p class="lead">ردیف‌ها مخصوص حرکت «${esc(p().type)}» است. هزینهٔ شش ماه را به میلیون تومان و تقریبی بنویسید. ردیف‌هایی را که خرج ندارند خالی بگذارید؛ جمع خودش حساب می‌شود. وقت نیروهای اداره را حساب نکنید.</p>
+  <div class="card stack">${tot?inp(bp+'cost',{label:'کل هزینه (میلیون تومان)',n:true,big:true,req:true,ph:'مثلاً ۸۰'}):`<div class="costs">${planCostItems(p()).map(([k,l,ph])=>`<label for="${fid(bp+'costs.'+k)}">${l}</label>${inp(bp+'costs.'+k,{n:true,ph:ph?'مثلاً '+ph:'۰',al:l})}`).join('')}</div>`}
    <button type="button" class="link" data-seg="${bp}costMode" data-v="کل" style="justify-self:start">${tot?'ریز هزینه‌ها را می‌نویسم':'ریز هزینه‌ها را نمی‌دانم؛ فقط مبلغ کل را می‌نویسم'}</button>
    ${seg(bp+'fund',FUND,{label:'از کجا تأمین می‌شود؟'})}
    ${inp(bp+'costFor',{label:'بیشتر هزینه صرف چه می‌شود؟',opt:true,ph:'مثلاً دوره‌ی آموزشی دو روزه و بستهٔ محتوا'})}
@@ -950,7 +971,7 @@ function bomHTML(){const g=gap(),fs=forces(),U=S.user,ps=S.data.plans;
      <div class="bline"><small>ج) خلاصهٔ طرح در یک جمله</small>${val(sentence(p))}</div>`)}
     ${sec('۳','سهم از شکاف و هزینه','','ba@'+i,`${tbl(['','افزایش','سهم از شکاف','هزینهٔ هر نفر'],[`<tr><th class="rh">کنشگر تبیینی</th><td class="n">${FA(d.dA)}</td><td class="n">${FA(im.ofGapA,1)}٪</td><td class="n">${c&&d.dA?money(perHead(c,d.dA)):''}</td></tr>`,`<tr><th class="rh">مخاطب</th><td class="n">${FA(d.dM)}</td><td class="n">${FA(im.ofGapM,1)}٪</td><td class="n">${c&&d.dM?money(perHead(c,d.dM)):''}</td></tr>`])}
      <div class="bgap"><span class="w1">${FA(sp.inv)} دعوت از کنشگران فعلی</span><span class="w2">${FA(sp.fresh)} کنشگر تازه</span>${im.ofTgtA?`<span class="w4">${FA(im.ofTgtA,1)}٪ از راه تا هدف دو ساله</span>`:''}</div>
-     <div class="bline" data-go="cost@${i}"><small>هزینهٔ شش ماه</small>${c?`<span class="pen">${money(c)}${p.fund?'، '+esc(p.fund):''}</span>${p.costMode!=='کل'?`<div class="pen sm">${COSTS.filter(([k])=>num((p.costs||{})[k])).map(([k,l])=>`${l}: ${FA(num(p.costs[k]))}`).join(' · ')} (میلیون تومان)</div>`:''}`:'<span class="blank"></span>'}</div>`)}
+     <div class="bline" data-go="cost@${i}"><small>هزینهٔ شش ماه</small>${c?`<span class="pen">${money(c)}${p.fund?'، '+esc(p.fund):''}</span>${p.costMode!=='کل'?`<div class="pen sm">${planCostItems(p).filter(([k])=>num((p.costs||{})[k])).map(([k,l])=>`${l}: ${FA(num(p.costs[k]))}`).join(' · ')} (میلیون تومان)</div>`:''}`:'<span class="blank"></span>'}</div>`)}
     ${sec('۴','تحول یا برنامه؟','','test@'+i,`${[['stays','اگر پیگیری اداره تمام شود، تغییر سر پا می‌ماند؟'],['role','نقش یا جایگاه یک گروه از آدم‌ها عوض می‌شود؟'],['grows','خودش کنشگر تازه می‌سازد؟']].map(([k,q])=>`<div class="byn"><span>${q}</span>${cb(t[k]==='بله','بله')}${cb(t[k]==='هنوز نه','هنوز نه')}</div>`).join('')}
      <div class="bverdict ${v==='تحول'?'ok':v?'no':''}">${v==='تحول'?'نتیجه: این طرح تحول است.':v==='برنامه'?'نتیجه: این طرح هنوز برنامه است و باید اصلاح شود.':'نتیجه: —'}${p.keep?` · تصمیم پس از سنجش: <b>${esc(p.keep)}</b>`:''}</div>`)}
    </div></div>`);

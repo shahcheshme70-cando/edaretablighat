@@ -64,3 +64,15 @@ test('بوم خالی خطا نمی‌دهد', () => {
   assert.equal(s.gap.pop, 0);
   assert.equal(M.summarize(null).plansCount, 0);
 });
+
+test('ریز هزینه به نوع حرکت بسته است و ردیف‌های پرشدهٔ نوع قبلی گم نمی‌شود', () => {
+  const M = require('../public/shared/metrics');
+  const a = M.costItems('ایجاد اتصال').map(x => x[0]);
+  const b = M.costItems('افزودن نیروی جدید').map(x => x[0]);
+  assert.notDeepStrictEqual(a, b);
+  assert.ok(a.includes('joint') && b.includes('reach'));
+  // طرحی که نوعش عوض شده: ردیف قبلی هنوز دیده و جمع می‌شود
+  const p = { type: 'ایجاد اتصال', costs: { joint: '30', train: '10' } };
+  assert.strictEqual(M.planCost(p), 40);
+  assert.ok(M.planCostItems(p).some(x => x[0] === 'train'));
+});

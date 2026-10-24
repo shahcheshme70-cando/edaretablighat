@@ -23,7 +23,29 @@
     'فعال‌سازی مخاطب': 'new', 'افزودن نیروی جدید': 'new', 'ورود به عرصهٔ جدید': 'aud'
   };
   const WAY_LABEL = { inv: 'دعوت از کنشگران فعلی', new: 'آوردن کنشگر تازه', aud: 'روشن کردن جاهای تاریک' };
-  const COST_KEYS = ['train', 'content', 'host', 'gift', 'other'];
+
+  /* ریز هزینه به تفکیک نوع حرکت؛ هر حرکت خرج‌های خودش را دارد (میلیون تومان، شش ماه) */
+  const COST_ITEMS = {
+    train: 'آموزش و دوره', content: 'محتوا، چاپ و تجهیزات', host: 'رفت‌وآمد، مکان و پذیرایی', gift: 'هدیه و تشویق', other: 'سایر',
+    retrain: 'دورهٔ توانمندسازی برای نقش تازه', rcontent: 'بستهٔ محتوا و ابزار نقش تازه', mentor: 'مربی و همراهی تا جا افتادن نقش', meet: 'نشست‌های دوره‌ای و پذیرایی',
+    lead: 'آموزش راهبران و مسئولان هسته‌ها', place: 'آماده‌سازی و تجهیز مکان', runc: 'هزینهٔ برنامه‌های هسته‌ها', kit: 'بستهٔ کار و محتوای آماده',
+    jmeet: 'نشست‌های آشنایی و هماهنگی دو نیرو', joint: 'نخستین کار مشترک (رویداد، اردو یا پروژه)', coord: 'رفت‌وآمد و هماهنگی', jcontent: 'محتوای مشترک',
+    find: 'شناسایی و دعوت افراد مستعد', atrain: 'دورهٔ کنشگری', acoach: 'مربی‌گری و همراهی', atools: 'ابزار کار (محتوا، تجهیزات رسانه‌ای)',
+    reach: 'شناسایی، دیدار و جلب اعتماد', brief: 'آموزش و توجیه', scontent: 'محتوای ویژهٔ همین صنف یا گروه', honor: 'هدیه و تقدیر',
+    field: 'شناخت میدان و نیاز همان قشر یا محله', local: 'یافتن و آموزش کنشگران محلی', lcontent: 'محتوای متناسب با همان مخاطب', event: 'برنامه و حضور در محل'
+  };
+  const COST_BY_MOVE = {
+    'تغییر نقش': [['retrain', '۴۰'], ['rcontent', '۲۰'], ['mentor', '۱۵'], ['meet', '۱۰'], ['gift', '۱۰'], ['other', '']],
+    'فعال‌سازی ظرفیت': [['lead', '۳۰'], ['place', '۲۰'], ['kit', '۱۵'], ['runc', '۲۵'], ['gift', '۱۰'], ['other', '']],
+    'ایجاد اتصال': [['jmeet', '۱۵'], ['joint', '۳۰'], ['jcontent', '۱۰'], ['coord', '۱۰'], ['other', '']],
+    'فعال‌سازی مخاطب': [['find', '۱۰'], ['atrain', '۴۰'], ['acoach', '۱۵'], ['atools', '۲۰'], ['gift', '۱۰'], ['other', '']],
+    'افزودن نیروی جدید': [['reach', '۱۵'], ['brief', '۳۰'], ['scontent', '۲۰'], ['host', '۱۰'], ['honor', '۱۵'], ['other', '']],
+    'ورود به عرصهٔ جدید': [['field', '۱۰'], ['local', '۳۰'], ['lcontent', '۲۵'], ['event', '۲۰'], ['host', '۱۰'], ['other', '']]
+  };
+  const COST_DEFAULT = [['train', '۶۰'], ['content', '۲۰'], ['host', '۱۵'], ['gift', '۱۰'], ['other', '']];
+  const costItems = type => (COST_BY_MOVE[type] || COST_DEFAULT).map(([k, ph]) => [k, COST_ITEMS[k], ph]);
+  /* ردیف‌های این حرکت، به‌علاوهٔ هر ردیف پرشده‌ای که از نوع قبلی طرح مانده (تا چیزی پنهان نماند) */
+  const planCostItems = p => { const base = costItems(p.type), seen = new Set(base.map(x => x[0])), c = p.costs || {}; return base.concat(Object.keys(COST_ITEMS).filter(k => !seen.has(k) && num(c[k]) > 0).map(k => [k, COST_ITEMS[k] + ' (از نوع قبلی طرح)', ''])); };
   const QUARTERS = ['زمستان ۱۴۰۵', 'بهار ۱۴۰۶', 'تابستان ۱۴۰۶', 'پاییز ۱۴۰۶', 'زمستان ۱۴۰۶', 'بهار ۱۴۰۷', 'تابستان ۱۴۰۷', 'پاییز ۱۴۰۷'];
 
   const toEn = s => String(s == null ? '' : s)
@@ -73,7 +95,7 @@
     };
   }
   const planDelta = p => ({ dA: Math.max(num(p.afterA) - num(p.baseA), 0), dM: Math.max(num(p.afterM) - num(p.baseM), 0) });
-  const planCost = p => p.costMode === 'کل' ? num(p.cost) : COST_KEYS.reduce((s, k) => s + num((p.costs || {})[k]), 0);
+  const planCost = p => p.costMode === 'کل' ? num(p.cost) : planCostItems(p).reduce((s, [k]) => s + num((p.costs || {})[k]), 0);
   function planSplit(d, p) {
     const dd = planDelta(p), f = findForce(d, p.force);
     const room = f && MOVE_WAY[p.type] === 'inv' ? Math.max(tA(f) - num(p.baseA), 0) : 0;
@@ -137,7 +159,8 @@
         i, title: p.title || '', type: p.type || '', way: MOVE_WAY[p.type] || '', force: p.force || '', to: p.to || '',
         verdict: verdict(p), keep: p.keep || '', quarter: QUARTERS[planQ(p, i)],
         dA: dd.dA, dM: dd.dM, invited: sp.inv, fresh: sp.fresh,
-        ofGapA: im.ofGapA, ofTgtA: im.ofTgtA, cost: c, costPerActor: dd.dA && c ? c / dd.dA : 0
+        ofGapA: im.ofGapA, ofTgtA: im.ofTgtA, cost: c, costPerActor: dd.dA && c ? c / dd.dA : 0,
+        costItems: p.costMode === 'کل' ? null : Object.fromEntries(planCostItems(p).filter(([k]) => num((p.costs || {})[k]) > 0).map(([k, l]) => [l, num(p.costs[k])]))
       };
     });
     const ok = planRows.filter(p => p.dA > 0);
@@ -156,5 +179,5 @@
     };
   }
 
-  return { sanitize, CATS, KIND, MOVE_WAY, WAY_LABEL, QUARTERS, toEn, num, has, forces, isP, tA, tM, tAT, isAct, gap, planDelta, planCost, planSplit, verdict, planImpact, checklist, summarize };
+  return { sanitize, COST_ITEMS, COST_BY_MOVE, costItems, planCostItems, CATS, KIND, MOVE_WAY, WAY_LABEL, QUARTERS, toEn, num, has, forces, isP, tA, tM, tAT, isAct, gap, planDelta, planCost, planSplit, verdict, planImpact, checklist, summarize };
 });

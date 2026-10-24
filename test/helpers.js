@@ -64,7 +64,7 @@ function sampleData() {
     plans: [{
       id: 'p1', type: 'فعال‌سازی ظرفیت', force: 'پایگاه‌های بسیج', from: 'بی‌کار', to: 'هستهٔ تبیین مسئلهٔ روز', title: 'طرح بسیج',
       baseA: '0', baseM: '6000', afterA: '300', afterM: '9000',
-      costs: { train: '60', content: '20' }, fund: 'کمک اداره‌کل یا ستاد',
+      costs: { lead: '60', kit: '20' }, fund: 'کمک اداره‌کل یا ستاد',
       test: { stays: 'بله', role: 'بله', grows: 'بله' }, keep: 'نگه می‌دارم',
       run: { lead: 'مدیر', s1: 'قدم ۱', s3: 'قدم ۳', risk: 'مانع' }, sup: {}
     }]
