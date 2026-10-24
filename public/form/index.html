@@ -229,11 +229,11 @@ details.ex>div{padding:0 0 12px}
 .gapcard h3{margin:0;font-size:17px;line-height:1.6}
 .gapline{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;font-size:14px;color:var(--ink-2)}
 .gapline b{font-size:22px;color:var(--ink);font-weight:800;font-variant-numeric:tabular-nums}
-.dots{display:grid;grid-template-columns:repeat(20,minmax(0,1fr));gap:5px;direction:rtl}
+.dots{display:grid;grid-template-columns:repeat(20,minmax(0,1fr));gap:5px;direction:rtl;max-width:620px}
 .dots i{aspect-ratio:1;border-radius:50%;background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line-2)}
 .dots i.have{background:var(--green);box-shadow:none}
 .dots.aud i.have{background:var(--sky)}
-.dots i.add{background:var(--amber);box-shadow:none}
+.dots i.pl{background:var(--amber);box-shadow:none}
 .dots i.inv{background:var(--green-100);box-shadow:inset 0 0 0 2px var(--green)}
 .three{display:grid;gap:8px}
 .three>div{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border-radius:14px;padding:10px 12px;background:var(--sunken)}
@@ -656,7 +656,7 @@ const seg=(p,opts,o={})=>{const v=get(p);return `<div class="fld">${o.label?`<sp
 const choices=(p,opts)=>{const v=get(p);return `<div class="choices">${opts.map(o=>`<button type="button" class="choice" data-seg="${p}" data-v="${esc(o[0])}" aria-pressed="${v===o[0]}"><span class="rd"></span><span><b>${o[0]}</b>${o[1]?`<span>${o[1]}</span>`:''}</span></button>`).join('')}</div>`};
 const delBtn=(path,i)=>`<button type="button" class="del" data-del="${path}" data-i="${i}" aria-label="حذف">${I.del}</button>`;
 const ex=(t,b)=>`<details class="ex"><summary>${t}</summary><div>${b}</div></details>`;
-function dots(share,tgt,add,kind,inv){const h=Math.round(Math.min(share,100)),a=Math.round(Math.min(add||0,100-h)),v=Math.round(Math.min(inv||0,100-h-a)),t=Math.round(Math.min(tgt||0,100));let s='';for(let i=0;i<100;i++){let c=i<h?'have':i<h+a?'add':i<h+a+v?'inv':'';if(!c&&t&&i<t)c='tgt';s+=`<i class="${c}"></i>`}return `<div class="dots ${kind||''}" aria-hidden="true">${s}</div>`}
+function dots(share,tgt,add,kind,inv){const h=Math.round(Math.min(share,100)),a=add>0&&h<100?Math.max(1,Math.round(Math.min(add,100-h))):0,v=Math.round(Math.min(inv||0,100-h-a)),t=Math.round(Math.min(tgt||0,100));let s='';for(let i=0;i<100;i++){let c=i<h?'have':i<h+a?'pl':i<h+a+v?'inv':'';if(!c&&t&&i<t)c='tgt';s+=`<i class="${c}"></i>`}return `<div class="dots ${kind||''}" aria-hidden="true">${s}</div>`}
 
 /* =====================================================================
    مراحل
