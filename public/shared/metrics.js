@@ -44,8 +44,15 @@
   };
   const COST_DEFAULT = [['train', '۶۰'], ['content', '۲۰'], ['host', '۱۵'], ['gift', '۱۰'], ['other', '']];
   const costItems = type => (COST_BY_MOVE[type] || COST_DEFAULT).map(([k, ph]) => [k, COST_ITEMS[k], ph]);
-  /* ردیف‌های این حرکت، به‌علاوهٔ هر ردیف پرشده‌ای که از نوع قبلی طرح مانده (تا چیزی پنهان نماند) */
-  const planCostItems = p => { const base = costItems(p.type), seen = new Set(base.map(x => x[0])), c = p.costs || {}; return base.concat(Object.keys(COST_ITEMS).filter(k => !seen.has(k) && num(c[k]) > 0).map(k => [k, COST_ITEMS[k] + ' (از نوع قبلی طرح)', ''])); };
+  /* ردیف‌های این حرکت با عنوانی که مدیر خودش گذاشته، ردیف‌های پرشدهٔ نوع قبلی طرح، و ردیف‌هایی که خودش افزوده */
+  const planCostItems = p => {
+    const L = p.costLabels && typeof p.costLabels === 'object' ? p.costLabels : {}, c = p.costs || {};
+    const lab = (k, d) => { const v = String(L[k] == null ? '' : L[k]).trim(); return v || d; };
+    const base = costItems(p.type), seen = new Set(base.map(x => x[0]));
+    const old = Object.keys(COST_ITEMS).filter(k => !seen.has(k) && num(c[k]) > 0).map(k => [k, lab(k, COST_ITEMS[k]), '', 'old', COST_ITEMS[k]]);
+    const xs = []; for (let j = 1; j <= Math.min(num(p.xrows), 8); j++) xs.push(['x' + j, lab('x' + j, 'ردیف دیگر'), '', 'x', 'عنوان ردیف هزینه']);
+    return base.map(([k, l, ph]) => [k, lab(k, l), ph, '', l]).concat(old, xs);
+  };
   const QUARTERS = ['زمستان ۱۴۰۵', 'بهار ۱۴۰۶', 'تابستان ۱۴۰۶', 'پاییز ۱۴۰۶', 'زمستان ۱۴۰۶', 'بهار ۱۴۰۷', 'تابستان ۱۴۰۷', 'پاییز ۱۴۰۷'];
 
   const toEn = s => String(s == null ? '' : s)

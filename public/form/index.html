@@ -266,6 +266,12 @@ details.ex>div{padding:0 0 12px}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--ink-2)}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.shock{background:#2b2f55;color:#fff;border-radius:22px;padding:20px 22px;display:grid;gap:4px;margin:14px 0;box-shadow:0 10px 30px -14px rgba(43,47,85,.6);animation:rise .45s ease-out}
+.shock .n{font-size:clamp(42px,11vw,60px);font-weight:800;line-height:1.15;color:#ffc94d;letter-spacing:-.01em}
+[data-live] .shock{animation:none}
+.shock.sh-bad .n{color:#ff8fa6}.shock.sh-good .n{color:#6fe3b0}
+.shock .l{font-size:18px;font-weight:700;line-height:1.7;text-wrap:balance}
+.shock .s{font-size:14.5px;line-height:1.85;color:#d6d9f0}.shock .s b{color:#fff}
 .big-say{font-size:17px;font-weight:700;line-height:1.8;margin:0}
 .big-say em{font-style:normal;color:#fff;background:var(--crimson);border-radius:10px;padding:0 10px}
 
@@ -307,8 +313,16 @@ details.ex>div{padding:0 0 12px}
 .split{display:flex;gap:6px;flex-wrap:wrap}
 .split span{font-size:12.5px;font-weight:700;border-radius:999px;padding:2px 10px}
 .split .s-inv{background:var(--green-100);color:var(--green-600);box-shadow:inset 0 0 0 1.5px var(--green)} .split .s-new{background:var(--green);color:#fff}
-.costs{display:grid;grid-template-columns:1fr 120px;gap:8px 10px;align-items:center}
-.costs label{font-size:14.5px;font-weight:600}
+.costs{display:grid;gap:8px}
+.crow{display:grid;grid-template-columns:minmax(0,1fr) 120px 40px;gap:8px;align-items:center}
+.crow.hd{font-size:12.5px;color:var(--muted);font-weight:600}.crow.hd small{font-weight:400}
+.clw{min-width:0;display:grid}
+input.clab{background:none;border:1px dashed transparent;border-bottom-color:var(--line-2);border-radius:10px 10px 0 0;font-weight:600;font-size:14.5px;min-height:44px;padding:8px 10px;color:var(--ink)}
+input.clab:hover{border-color:var(--line-2);background:var(--bg)}
+input.clab:focus{border-style:solid;background:var(--bg)}
+.cold{font-size:12px;color:var(--amber-ink);padding:0 10px}
+.add.sm{min-height:44px;font-size:14px}
+@media(max-width:420px){.crow{grid-template-columns:minmax(0,1fr) 96px 32px;gap:6px}.crow .del{width:32px}}
 .road{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 @media(min-width:620px){.road{grid-template-columns:repeat(4,1fr)}}
 .road .q{border:1.5px dashed var(--line-2);border-radius:14px;padding:8px 10px;display:grid;gap:4px;min-height:62px;align-content:start}
@@ -591,8 +605,15 @@ const COST_BY_MOVE = {
 };
 const COST_DEFAULT = [['train', '۶۰'], ['content', '۲۰'], ['host', '۱۵'], ['gift', '۱۰'], ['other', '']];
 const costItems = type => (COST_BY_MOVE[type] || COST_DEFAULT).map(([k, ph]) => [k, COST_ITEMS[k], ph]);
-/* ردیف‌های این حرکت، به‌علاوهٔ هر ردیف پرشده‌ای که از نوع قبلی طرح مانده (تا چیزی پنهان نماند) */
-const planCostItems = p => { const base = costItems(p.type), seen = new Set(base.map(x => x[0])), c = p.costs || {}; return base.concat(Object.keys(COST_ITEMS).filter(k => !seen.has(k) && num(c[k]) > 0).map(k => [k, COST_ITEMS[k] + ' (از نوع قبلی طرح)', ''])); };
+/* ردیف‌های این حرکت با عنوانی که مدیر خودش گذاشته، ردیف‌های پرشدهٔ نوع قبلی طرح، و ردیف‌هایی که خودش افزوده */
+const planCostItems = p => {
+  const L = p.costLabels && typeof p.costLabels === 'object' ? p.costLabels : {}, c = p.costs || {};
+  const lab = (k, d) => { const v = String(L[k] == null ? '' : L[k]).trim(); return v || d; };
+  const base = costItems(p.type), seen = new Set(base.map(x => x[0]));
+  const old = Object.keys(COST_ITEMS).filter(k => !seen.has(k) && num(c[k]) > 0).map(k => [k, lab(k, COST_ITEMS[k]), '', 'old', COST_ITEMS[k]]);
+  const xs = []; for (let j = 1; j <= Math.min(num(p.xrows), 8); j++) xs.push(['x' + j, lab('x' + j, 'ردیف دیگر'), '', 'x', 'عنوان ردیف هزینه']);
+  return base.map(([k, l, ph]) => [k, lab(k, l), ph, '', l]).concat(old, xs);
+};
 const QUARTERS=['زمستان ۱۴۰۵','بهار ۱۴۰۶','تابستان ۱۴۰۶','پاییز ۱۴۰۶','زمستان ۱۴۰۶','بهار ۱۴۰۷','تابستان ۱۴۰۷','پاییز ۱۴۰۷'];
 const FUND=['اعتبار خود شهرستان','کمک اداره‌کل یا ستاد','مشارکت مردمی و خیرین','ترکیبی از این‌ها'];
 const RES=[['money','اعتبار مالی'],['people','نیروی انسانی'],['place','فضا و مکان'],['content','محتوا'],['training','آموزش']];
@@ -653,6 +674,9 @@ const money=v=>v>=1000?FA(v/1000,1)+' میلیارد تومان':v>=1?FA(v,v<10?
 function verdict(p){const t=p.test||{},k=['stays','role','grows'];if(!k.every(x=>has(t[x])))return '';const v=k.every(x=>t[x]==='بله')?'تحول':'برنامه';if(v==='تحول'&&p.revise)p.revise=0;return v}
 function planDelta(p){return{dA:Math.max(num(p.afterA)-num(p.baseA),0),dM:Math.max(num(p.afterM)-num(p.baseM),0)}}
 function planImpact(p){const g=gap(),d=planDelta(p);return{...d,ofGapA:g.gapA?d.dA/g.gapA*100:0,ofGapM:g.gapM?d.dM/g.gapM*100:0,ofTgtA:g.tgtA>g.aT?d.dA/(g.tgtA-g.aT)*100:0}}
+/* کارت شوک: یک عدد بزرگ و یک جملهٔ کوتاه که وضع را بی‌پرده نشان می‌دهد */
+const shock=(n,l,sub,tone)=>`<div class="shock ${tone?'sh-'+tone:''}" role="note"><div class="n">${n}</div><div class="l">${l}</div>${sub?`<div class="s">${sub}</div>`:''}</div>`;
+function projection(){const g=gap(),ok=S.data.plans.filter(p=>planDelta(p).dA>0),avg=ok.length?ok.reduce((a,p)=>a+planDelta(p).dA,0)/ok.length:0,proj=Math.round(avg*QUARTERS.length),toTgt=g.tgtA>g.aT,need=toTgt?g.tgtA-g.aT:g.gapA;return{avg,proj,need,toTgt,pct:need?Math.min(proj/need*100,999):0}}
 function allImpact(){const g=gap();let dA=0,dM=0;S.data.plans.forEach(p=>{const d=planDelta(p);dA+=d.dA;dM+=d.dM});return{dA,dM,ofGapA:g.gapA?dA/g.gapA*100:0,ofGapM:g.gapM?dM/g.gapM*100:0}}
 function sentence(p){const m=MV[p.type];if(!m||!has(p.force)||!has(p.to))return '';return m.s({f:p.force,f2:p.force2,from:p.from||'…',to:p.to})}
 const NEW_FORCES=[['کسبهٔ معتمد','هر روز با ده‌ها مشتری حرف می‌زنند و حرفشان در محله خریدار دارد.'],['رانندگان تاکسی و تاکسی اینترنتی','هر روز با مسافران تازه هم‌کلام می‌شوند.'],['ادمین‌های صفحه‌ها و کانال‌های محلی','هزاران دنبال‌کنندهٔ محلی دارند.'],['پزشکان و کادر درمان','مورد اعتماد مردم‌اند و مخاطب ثابت دارند.'],['ورزشکاران و مربیان باشگاه‌ها','نوجوانان و جوانان حرفشان را می‌شنوند.'],['معتمدان و بزرگان محله و طوایف','حرفشان در جمع خودشان فصل‌الخطاب است.']];
@@ -757,6 +781,7 @@ const STEPS_A=[
   const per=g.aT?Math.round(g.needA/g.aT):0;
   return `<div class="eyebrow">بخش ۲: شکاف</div><h1>این شکافی است که باید پر شود</h1>
   <p class="lead">${per>1?`از هر <b>${FA(per)}</b> مشعلی که شهرستان لازم دارد، امروز <b>یکی</b> روشن است.`:'شکاف کنشگر و مخاطب شهرستان شما را ببینید.'}</p>
+  ${g.aT<g.needA?shock(FA(Math.round(100-g.aShare))+'٪','از کنشگران تبیینی‌ای که شهرستان لازم دارد، امروز در میدان نیستند.',g.needM&&g.gapM?`از هر ۱۰ نفر از مردم شهرستان، <b>${FA(Math.round(g.gapM/g.needM*10))} نفر</b> پیام تبیین را از هیچ نیرویی نمی‌شنوند.`:'','bad'):''}
   <div class="gap16">
    <div class="card gapcard g-act"><h3>کنشگر تبیینی</h3><div class="gapline"><span>امروز</span><b>${FA(g.aT)}</b><span>از ${FA(g.needA)} نفر لازم (۱۰٪ جمعیت)</span></div>${dots(g.aShare,g.ta?g.ta*10:0,0,'',g.iShare)}
     <div class="three">
@@ -775,7 +800,7 @@ const STEPS_A=[
  A('uncovered',{t:'مخاطبان بی‌پوشش',done:()=>S.data.uncovered.length>0,render:()=>{const g=gap(),cur=S.data.uncovered,custom=cur.filter(x=>!SEGMENTS.includes(x));return `
   <div class="eyebrow">بخش ۲: شکاف</div><h1>پیام تبیین به چه کسانی نمی‌رسد؟</h1>
   <p class="lead">${g.gapM?`در صفحهٔ قبل دیدید حرف به <b>${FA(g.gapM)} نفر</b> از مردم شهرستان نمی‌رسد. `:''}این آدم‌ها چه کسانی‌اند؟ قشرها، صنف‌ها یا محله‌هایی را بزنید که امروز هیچ‌کدام از نیروهای شما سراغشان نمی‌رود.</p>
-  <div class="note" style="margin-bottom:12px">این فهرست بعداً در حرکت «ورود به عرصهٔ جدید» پیشنهاد می‌شود.</div>
+  ${g.pop&&g.gapM?shock(FA(g.gapM/g.pop*100,0)+'٪','از مردم شهرستان را امروز هیچ نیرویی پوشش نمی‌دهد.',`یعنی ${FA(g.gapM)} نفر. آن‌ها چه کسانی‌اند؟ پایین علامت بزنید.`,'bad'):''}<div class="note" style="margin-bottom:12px">این فهرست بعداً در حرکت «ورود به عرصهٔ جدید» پیشنهاد می‌شود.</div>
   <div class="card stack"><div class="seg pick">${[...SEGMENTS,...custom].map(x=>`<button type="button" data-tog="uncovered" data-v="${esc(x)}" aria-pressed="${cur.includes(x)}">${esc(x)}</button>`).join('')}</div>
   <div style="display:flex;gap:8px"><input id="unc" placeholder="قشر یا منطقهٔ دیگر" aria-label="قشر یا منطقهٔ دیگر"><button type="button" class="btn se sm" data-addunc style="height:48px">افزودن</button></div></div>`}}),
  A('summary',{t:'جمع‌بندی وضع امروز',done:()=>['strong','weak','gaps'].every(k=>has(S.data.summary[k])),render:()=>{const fs=forces(),pick=s=>fs.filter(f=>f.st===s).map(f=>f.name),g=gap();
@@ -783,7 +808,7 @@ const STEPS_A=[
   return `<div class="eyebrow">بخش ۲: شکاف</div><h1>وضع امروز جهاد تبیین در شهرستان شما</h1>
   <p class="lead">تا اینجا عددها را نوشتید. حالا با زبان خودتان بگویید <b>آرایش نیروهای جهاد تبیین</b> در شهرستان امروز چه وضعی دارد: چه کسانی کار می‌کنند، چه کسانی هستند و کار نمی‌کنند، و به چه کسانی اصلاً نمی‌رسیم. این سه بند پایهٔ انتخاب طرح تحول شماست و دستیار حرف نو هم بازخوردش را از همین‌جا شروع می‌کند.</p>
   ${g.pop?`<div class="from" style="margin-bottom:12px"><small>خلاصهٔ عددهای شما</small>${FA(g.aT)} کنشگر در تبیین فعال‌اند، ${FA(g.aI)} کنشگر فرهنگی منتظر دعوت‌اند و ${FA(g.aNew)} کنشگر تازه لازم است. حرف به ${FA(g.gapM)} نفر نمی‌رسد.</div>`:''}
-  <p class="hint" style="margin:0 0 10px">برای هر بند دو سه جمله کافی است. دکمه‌های بنفش جمله‌هایی است که از جواب‌های خودتان ساخته شده؛ با یک لمس اضافه می‌شوند و می‌توانید ویرایششان کنید.</p>
+  ${g.aI>0?shock(FA(g.aI),'کنشگر فرهنگی در شهرستان شما هست که هنوز در جهاد تبیین نیست.',(g.aT&&g.aI/g.aT>=1?`یعنی <b>${FA(g.aI/g.aT,1)} برابر</b> همهٔ کسانی که امروز در تبیین فعال‌اند. `:'')+'سریع‌ترین راه پر کردن شکاف، دعوت از همین‌هاست.','warn'):''}<p class="hint" style="margin:0 0 10px">برای هر بند دو سه جمله کافی است. دکمه‌های بنفش جمله‌هایی است که از جواب‌های خودتان ساخته شده؛ با یک لمس اضافه می‌شوند و می‌توانید ویرایششان کنید.</p>
   <div class="card stack">
    ${area('summary.strong',{label:'نقاط قوت: کدام نیروها امروز در جهاد تبیین خوب کار می‌کنند و چرا؟',ph:'مثلاً حوزهٔ علمیه و کانون مداحان هر هفته مسئلهٔ روز را تبیین می‌کنند، چون مسئول پیگیر دارند.',rows:3,after:sg('strong',pick('قوی').length?[`${pick('قوی').join(' و ')} در جهاد تبیین قوی‌اند.`]:[])})}
    ${area('summary.weak',{label:'نقاط ضعف: کدام نیروها هستند اما کار تبیینی‌شان کم است؟ چه چیزی مانعشان است؟',ph:'مثلاً هیئات و مساجد پرمخاطب‌اند، اما برنامه‌شان فقط مراسم است و کسی سراغشان نرفته.',rows:3,after:sg('weak',pick('ضعیف').length?[`${pick('ضعیف').join('، ')} با وجود حضور، کار تبیینی ناچیزی دارند.`]:[])})}
@@ -833,7 +858,7 @@ function planSteps(i){const p=()=>P(i),pre=`p${i}.`,tag=S.data.plans.length>1?` 
  {id:'cost@'+i,part:3,pi:i,t:'هزینه',done:()=>planCost(p())>0&&has(p().fund),render:()=>{const tot=p().costMode==='کل';if(!MV[p().type])return NOMOVE('بخش ۴: طرح تحول');return `
   ${EB('بخش ۴: طرح تحول')}<h1>این طرح چقدر خرج دارد؟</h1>
   <p class="lead">ردیف‌ها مخصوص حرکت «${esc(p().type)}» است. هزینهٔ شش ماه را به میلیون تومان و تقریبی بنویسید. ردیف‌هایی را که خرج ندارند خالی بگذارید؛ جمع خودش حساب می‌شود. وقت نیروهای اداره را حساب نکنید.</p>
-  <div class="card stack">${tot?inp(bp+'cost',{label:'کل هزینه (میلیون تومان)',n:true,big:true,req:true,ph:'مثلاً ۸۰'}):`<div class="costs">${planCostItems(p()).map(([k,l,ph])=>`<label for="${fid(bp+'costs.'+k)}">${l}</label>${inp(bp+'costs.'+k,{n:true,ph:ph?'مثلاً '+ph:'۰',al:l})}`).join('')}</div>`}
+  <div class="card stack">${tot?inp(bp+'cost',{label:'کل هزینه (میلیون تومان)',n:true,big:true,req:true,ph:'مثلاً ۸۰'}):`<div class="costs"><div class="crow hd"><span>ردیف هزینه <small>(عنوان را هم می‌توانید عوض کنید)</small></span><span>میلیون تومان</span></div>${planCostItems(p()).map(([k,l,ph,kind,d])=>`<div class="crow"><div class="clw"><input class="clab" data-p="${bp}costLabels.${k}" value="${esc(l)}" placeholder="${esc(d)}" aria-label="عنوان ردیف هزینه">${kind==='old'?'<small class="cold">از نوع قبلی طرح</small>':''}</div>${inp(bp+'costs.'+k,{n:true,ph:ph?'مثلاً '+ph:'۰',al:l})}${kind==='x'?`<button type="button" class="del" data-xdel="${k}" aria-label="حذف ردیف">${I.del}</button>`:'<span></span>'}</div>`).join('')}${num(p().xrows)<8?`<button type="button" class="add sm" data-xadd>+ ردیف هزینهٔ دیگر</button>`:''}</div>`}
    <button type="button" class="link" data-seg="${bp}costMode" data-v="کل" style="justify-self:start">${tot?'ریز هزینه‌ها را می‌نویسم':'ریز هزینه‌ها را نمی‌دانم؛ فقط مبلغ کل را می‌نویسم'}</button>
    ${seg(bp+'fund',FUND,{label:'از کجا تأمین می‌شود؟'})}
    ${inp(bp+'costFor',{label:'بیشتر هزینه صرف چه می‌شود؟',opt:true,ph:'مثلاً دوره‌ی آموزشی دو روزه و بستهٔ محتوا'})}
@@ -880,6 +905,7 @@ function planSteps(i){const p=()=>P(i),pre=`p${i}.`,tag=S.data.plans.length>1?` 
  ]}
 const STEP_END={id:'review',part:4,t:'مرور و ارسال',done:()=>!!S.submittedAt,render:()=>{const ms=missing(),im=allImpact(),g=gap();return `
   <div class="eyebrow">پایان</div><h1>${S.submittedAt?'بوم‌ها ارسال شده است':'مرور و ارسال'}</h1>
+  ${(()=>{const pr=projection();if(!pr.avg||!pr.need)return '';const pc=Math.round(pr.pct);return shock(FA(pc)+'٪',`از ${pr.toTgt?'راه تا هدف دو ساله':'شکاف کنشگر'} را می‌روید، اگر هر سه ماه یک طرح هم‌اندازهٔ طرح‌های امروزتان آغاز کنید.`,pc>=100?'با همین آهنگ به هدف می‌رسید؛ مهم این است که طرح‌ها واقعاً هر سه ماه آغاز شوند.':`<b>${FA(Math.round(pr.need-pr.proj))} کنشگر تبیینی</b> کم می‌ماند. طرح‌ها را بزرگ‌تر کنید یا در هر فصل بیش از یک طرح آغاز کنید.`,pc>=100?'good':pc>=50?'warn':'bad')})()}
   ${g.pop?`<div class="card stack" style="margin-bottom:12px"><b>کار شهرستان ${esc(S.user.county||'')} در سه جمله</b><div class="ways">
    <div class="w1"><b>${FA(g.aI)} کنشگر فرهنگی را به جهاد تبیین دعوت کنید</b><span>مشعل‌های خاموش: هستند و کار فرهنگی می‌کنند، اما هنوز در تبیین نیستند.</span></div>
    <div class="w2"><b>${FA(g.aNew)} کنشگر تازه به میدان بیاورید</b><span>مشعل‌های تازه: حتی اگر همهٔ نیروهای امروز فعال شوند، این‌قدر کم داریم.</span></div>
@@ -922,8 +948,9 @@ const LIVE={
  sentence:()=>`<small>جملهٔ تحول</small><p>${esc(sentence(P(S.pi))||'…')}</p>`,
  impact:()=>{const p=P(S.pi),im=planImpact(p),g=gap();if(!im.dA&&!im.dM)return '<div class="hint">عدد شش ماه بعد را بنویسید تا سهم طرح از شکاف را ببینید.</div>';
   const sp=planSplit(p),f=findForce(p.force),ww=[];if(num(p.afterA)&&num(p.afterA)<num(p.baseA))ww.push('عدد شش ماه بعد از عدد امروز کمتر است.');if(im.dA>g.gapA&&g.gapA)ww.push('افزایش کنشگر از کل شکاف شهرستان بیشتر است؛ عددها را بررسی کنید.');if(g.pop&&num(p.afterM)>g.pop)ww.push('مخاطب شش ماه بعد از جمعیت شهرستان بیشتر است.');if(im.dA&&im.dM&&im.dM/im.dA>500)ww.push(`هر کنشگر تازه به‌طور میانگین به ${FA(Math.round(im.dM/im.dA))} نفر می‌رسد؛ اگر واقعی نیست، بازبینی کنید.`);
-  return `${ww.map(W8).join('')}<div class="impact"><div class="row"><b>${FA(im.dA)}</b><span>کنشگر تبیینی تازه، یعنی <b style="font-size:16px">${FA(im.ofGapA,1)}٪</b> از شکاف ${FA(g.gapA)} نفری${im.ofTgtA?` و ${FA(im.ofTgtA,1)}٪ از راه تا هدف دو ساله`:''}</span></div>${im.dA?`<div class="split"><span class="s-inv">${FA(sp.inv)} دعوت از کنشگران فعلی</span><span class="s-new">${FA(sp.fresh)} کنشگر تازه</span></div>`:''}${im.dM?`<div class="row"><b>${FA(im.dM)}</b><span>مخاطب تازه، یعنی <b style="font-size:16px">${FA(im.ofGapM,1)}٪</b> از شکاف مخاطب</span></div>`:''}${dots(g.aShare,g.ta?g.ta*10:0,g.needA?im.dA/g.needA*100:0)}</div>`},
- cost:()=>{const p=P(S.pi),c=planCost(p),d=planDelta(p);if(!c)return '';return `${c>100000?W8('هزینه بیش از ۱۰۰ میلیارد تومان شده است؛ مبلغ‌ها به میلیون تومان است، بررسی کنید.'):''}<div class="impact"><div class="row"><span>جمع هزینه:</span><b style="font-size:19px">${money(c)}</b></div><div class="row"><b>${d.dA?money(perHead(c,d.dA)):'—'}</b><span>برای هر کنشگر تبیینی تازه</span></div>${d.dM?`<div class="row"><b style="font-size:19px">${money(perHead(c,d.dM))}</b><span>برای هر مخاطب تازه</span></div>`:''}${d.dA?'':'<span class="hint">عدد کنشگر شش ماه بعد را در صفحهٔ قبل بنویسید تا هزینهٔ هر نفر حساب شود.</span>'}</div>`},
+  const toT=g.tgtA>g.aT?g.tgtA-g.aT:0,nT=im.dA&&toT?Math.ceil(toT/im.dA):0;
+  return `${ww.map(W8).join('')}${im.dA&&g.gapA?shock(FA(im.ofGapA,1)+'٪','از شکاف کنشگر شهرستان را همین یک طرح پر می‌کند.',nT?(nT<=QUARTERS.length?`با ${FA(nT)} طرح هم‌اندازهٔ این، به هدف دو ساله می‌رسید؛ نقشهٔ راه دو ساله جای ${FA(QUARTERS.length)} طرح دارد.`:`برای رسیدن به هدف دو ساله ${FA(nT)} طرح هم‌اندازهٔ این لازم است، ولی دو سال فقط ${FA(QUARTERS.length)} فصل دارد. طرح را بزرگ‌تر ببینید.`):'',nT&&nT<=QUARTERS.length?'good':'warn'):''}<div class="impact"><div class="row"><b>${FA(im.dA)}</b><span>کنشگر تبیینی تازه، یعنی <b style="font-size:16px">${FA(im.ofGapA,1)}٪</b> از شکاف ${FA(g.gapA)} نفری${im.ofTgtA?` و ${FA(im.ofTgtA,1)}٪ از راه تا هدف دو ساله`:''}</span></div>${im.dA?`<div class="split"><span class="s-inv">${FA(sp.inv)} دعوت از کنشگران فعلی</span><span class="s-new">${FA(sp.fresh)} کنشگر تازه</span></div>`:''}${im.dM?`<div class="row"><b>${FA(im.dM)}</b><span>مخاطب تازه، یعنی <b style="font-size:16px">${FA(im.ofGapM,1)}٪</b> از شکاف مخاطب</span></div>`:''}${dots(g.aShare,g.ta?g.ta*10:0,g.needA?im.dA/g.needA*100:0)}</div>`},
+ cost:()=>{const p=P(S.pi),c=planCost(p),d=planDelta(p);if(!c)return '';return `${d.dA?shock(money(perHead(c,d.dA)),'خرج آوردن هر کنشگر تبیینی تازه به میدان.',d.dM?`کنشگری که هر کدام به‌طور میانگین حرف را به ${FA(Math.round(d.dM/d.dA))} نفر می‌رساند.`:'','good'):''}${c>100000?W8('هزینه بیش از ۱۰۰ میلیارد تومان شده است؛ مبلغ‌ها به میلیون تومان است، بررسی کنید.'):''}<div class="impact"><div class="row"><span>جمع هزینه:</span><b style="font-size:19px">${money(c)}</b></div>${d.dM?`<div class="row"><b style="font-size:19px">${money(perHead(c,d.dM))}</b><span>برای هر مخاطب تازه</span></div>`:''}${d.dA?'':'<span class="hint">عدد کنشگر شش ماه بعد را در صفحهٔ قبل بنویسید تا هزینهٔ هر نفر حساب شود.</span>'}</div>`},
  counter:()=>{const n=String(P(S.pi).detail||'').trim().length;return n>=250?`<span style="color:var(--green-600)">حدود ${FA(Math.round(n/75))} سطر</span>`:`حدود ${FA(Math.round(n/75))} سطر · دست‌کم ۴ سطر`}
 };
 
@@ -1135,6 +1162,8 @@ document.addEventListener('click',async e=>{
  if($('#menu')&&!e.target.closest('#menu,[data-menu]'))$('#menu').remove();
  if(e.target.matches('[data-close]')){closeLayer();return}
  const t=e.target.closest('button');if(!t)return;const d=t.dataset;
+ if(d.xadd!==undefined){const p=P(S.pi);p.xrows=Math.min(num(p.xrows)+1,8);schedule();rerender();const r=$$('.clab');r.length&&r[r.length-1].select();return}
+ if(d.xdel){const p=P(S.pi),n=num(p.xrows),j=+d.xdel.slice(1);p.costs=p.costs||{};p.costLabels=p.costLabels||{};for(let k=j;k<n;k++){p.costs['x'+k]=p.costs['x'+(k+1)];p.costLabels['x'+k]=p.costLabels['x'+(k+1)]}delete p.costs['x'+n];delete p.costLabels['x'+n];p.xrows=Math.max(n-1,0);schedule();rerender();return}
  if(d.menu!==undefined){if($('#menu'))return $('#menu').remove();const m=document.createElement('div');m.className='menu';m.id='menu';m.innerHTML=`<div class="who"><b>${esc(S.user.name||'')}</b><span>${esc(S.user.county||'')} · ${FD(S.user.phone||'')}</span></div><button data-pw>${I.key}تغییر رمز</button><button data-intro>${I.list}راهنما</button><button id="logout">${I.out}خروج</button>`;$('.bar').appendChild(m);return}
  if(d.view){S.view=(S.view===d.view&&t.classList.contains('tb'))?'step':d.view;render();return}
  if(d.go){closeLayer();go(d.go);return}
