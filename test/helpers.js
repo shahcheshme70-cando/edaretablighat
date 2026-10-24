@@ -11,9 +11,9 @@ async function boot(overrides = {}) {
   const env = { PORT: 0, HOST: '127.0.0.1', DATA_DIR: dir, LOGIN_MAX_ATTEMPTS: 5, ...overrides };
   const s = await start(env);
   const base = `http://127.0.0.1:${s.port}`;
-  // یک مدیر کل و یک مدیر شهرستان
+  // یک حساب ستاد و یک مدیر شهرستان
   s.store.update(db => {
-    db.users.push({ id: 'a_test', role: 'admin', username: 'admin', name: 'مدیر کل', passHash: A.hashPassword('admin-secret-1'), active: true });
+    db.users.push({ id: 'a_test', role: 'admin', username: 'admin', name: 'ستاد', passHash: A.hashPassword('admin-secret-1'), active: true });
     db.users.push({ id: 'u_test', role: 'director', phone: '09151112233', name: 'علی آزمون', county: 'نیشابور', province: 'خراسان رضوی', title: 'مدیر تبلیغات اسلامی شهرستان', passHash: A.hashPassword('12345678'), active: true, mustChange: true });
   });
   return {

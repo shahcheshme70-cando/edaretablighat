@@ -18,7 +18,7 @@ if (require.main === module) {
   start().then(({ store, port }) => {
     const admins = store.get().users.filter(u => u.role === 'admin').length;
     console.log(`[harfeno] روی http://${cfg.HOST}:${port} آماده است · داده: ${cfg.DATA_DIR}`);
-    if (!admins) console.log('[harfeno] هنوز مدیر کلی ساخته نشده. بسازید:  npm run create-admin -- <نام‌کاربری>');
+    if (!admins) console.log('[harfeno] هنوز حساب ستاد ساخته نشده. بسازید:  npm run create-admin -- <نام‌کاربری>');
   });
   const stop = sig => { console.log(`[harfeno] ${sig} دریافت شد؛ خروج.`); process.exit(0); };
   process.on('SIGTERM', () => stop('SIGTERM'));

@@ -166,7 +166,7 @@ const statusOf=u=>!u.active?['غیرفعال','']:u.submittedAt?(u.editedAfterSu
 const siteUrl=()=>(S.me&&S.me.publicUrl)||location.origin+'/';
 
 /* ---------- ورود ---------- */
-function showLogin(msg){closeLayer();$('#app').innerHTML=`<div class="auth"><form class="card" id="lf"><div>${LOGO}<h1 style="margin-top:12px">داشبورد مدیر کل</h1><p class="lead" style="margin:0">نقشهٔ هزار مشعل · بوم تحول آرایش نیروهای مجاهد تبیین</p></div>
+function showLogin(msg){closeLayer();$('#app').innerHTML=`<div class="auth"><form class="card" id="lf"><div>${LOGO}<h1 style="margin-top:12px">داشبورد ستاد</h1><p class="lead" style="margin:0">نقشهٔ هزار مشعل · بوم تحول آرایش نیروهای مجاهد تبیین</p></div>
  <div class="fld"><label for="u">نام کاربری</label><input id="u" class="ltr" autocomplete="username" autocapitalize="off"></div>
  <div class="fld"><label for="p">رمز</label><input id="p" type="password" class="ltr" autocomplete="current-password"></div>
  <div class="err" id="le">${esc(msg||'')}</div><button class="btn pr" type="submit">ورود</button></form></div>`;
@@ -178,7 +178,7 @@ async function boot(){try{S.me=await api.me()}catch(e){if(e.code==='auth')return
  shell();await load()}
 async function load(){S.loading=true;try{S.users=(await api.users()).users}catch(e){if(e.code!=='auth')toast(e.message)}S.loading=false;render()}
 
-function shell(){$('#app').innerHTML=`<header class="bar"><div class="bar-in">${LOGO}<span class="ttl">داشبورد مدیر کل</span><span class="sp"></span><button class="btn se sm" data-refresh title="به‌روزرسانی">↻ به‌روزرسانی</button><button class="btn se sm" data-menu>${esc(S.me.user.name)} ▾</button></div></header>
+function shell(){$('#app').innerHTML=`<header class="bar"><div class="bar-in">${LOGO}<span class="ttl">داشبورد ستاد</span><span class="sp"></span><button class="btn se sm" data-refresh title="به‌روزرسانی">↻ به‌روزرسانی</button><button class="btn se sm" data-menu>${esc(S.me.user.name)} ▾</button></div></header>
  <nav class="tabs" role="tablist">${[['counties','شهرستان‌ها'],['users','مدیران و رمزها'],['feedback','تحلیل و بازخورد']].map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${S.tab===k}">${l}</button>`).join('')}</nav>
  <main class="wrap" id="main"></main>`}
 function render(){$$('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===S.tab));const m=$('#main');if(!m)return;
@@ -300,7 +300,7 @@ document.addEventListener('click',async e=>{
  if(d.refresh!==undefined){await load();toast('به‌روز شد.');return}
  if(d.menu!==undefined){if($('.menu'))return $('.menu').remove();const m=document.createElement('div');m.className='menu';m.innerHTML='<button data-adminpw>تغییر رمز من</button><button data-logout>خروج</button>';$('.bar').appendChild(m);return}
  if(d.logout!==undefined){await api.logout().catch(()=>{});showLogin();return}
- if(d.adminpw!==undefined){modal(`<h3>تغییر رمز مدیر کل</h3><div class="fld"><label>رمز فعلی</label><input type="password" id="pw0" class="ltr"></div><div class="fld"><label>رمز تازه (دست‌کم ۱۰ نویسه)</label><input type="password" id="pw1" class="ltr"></div><div class="err" id="pwe"></div><div class="row"><button class="btn pr" data-pwsave>ذخیره</button><button class="btn se" data-close>انصراف</button></div>`);return}
+ if(d.adminpw!==undefined){modal(`<h3>تغییر رمز حساب ستاد</h3><div class="fld"><label>رمز فعلی</label><input type="password" id="pw0" class="ltr"></div><div class="fld"><label>رمز تازه (دست‌کم ۱۰ نویسه)</label><input type="password" id="pw1" class="ltr"></div><div class="err" id="pwe"></div><div class="row"><button class="btn pr" data-pwsave>ذخیره</button><button class="btn se" data-close>انصراف</button></div>`);return}
  if(d.pwsave!==undefined){try{await api.password($('#pw0').value,$('#pw1').value);closeLayer();toast('رمز تازه ذخیره شد.')}catch(err){$('#pwe').textContent=err.message}return}
  if(d.fbopen){openFb(d.fbopen);return}
  if(d.fbsel){openFb(d.fbsel);return}

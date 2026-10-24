@@ -58,17 +58,17 @@ try {
       if (!/^[a-z0-9._-]{3,32}$/.test(username)) die('نام کاربری ۳ تا ۳۲ حرف انگلیسی، عدد، نقطه یا خط تیره باشد.');
       if (store.get().users.some(u => u.role === 'admin' && u.username === username)) die('این نام کاربری وجود دارد.');
       const pw = opt('password') || strongPw();
-      if (pw.length < 10) die('رمز مدیر کل دست‌کم ۱۰ نویسه باشد.');
+      if (pw.length < 10) die('رمز حساب ستاد دست‌کم ۱۰ نویسه باشد.');
       store.update(db => db.users.push({ id: A.newId('a'), role: 'admin', username, name: opt('name') || username, passHash: A.hashPassword(pw), active: true, createdAt: new Date().toISOString() }));
-      console.log(`✓ مدیر کل ساخته شد\n  نام کاربری: ${username}\n  رمز: ${pw}`);
+      console.log(`✓ حساب ستاد ساخته شد\n  نام کاربری: ${username}\n  رمز: ${pw}`);
       break;
     }
     case 'admin-password': {
       const username = String(args[0] || '').trim().toLowerCase();
       const pw = opt('password') || strongPw();
-      if (pw.length < 10) die('رمز مدیر کل دست‌کم ۱۰ نویسه باشد.');
+      if (pw.length < 10) die('رمز حساب ستاد دست‌کم ۱۰ نویسه باشد.');
       const ok = store.update(db => { const u = db.users.find(x => x.role === 'admin' && x.username === username); if (!u) return false; u.passHash = A.hashPassword(pw); for (const [h, s] of Object.entries(db.sessions)) if (s.userId === u.id) delete db.sessions[h]; return true; });
-      if (!ok) die('چنین مدیر کلی نیست.');
+      if (!ok) die('چنین حساب ستادی نیست.');
       console.log(`✓ رمز تازهٔ ${username}: ${pw}`);
       break;
     }
@@ -104,7 +104,7 @@ try {
       break;
     }
     case 'list': {
-      store.get().users.forEach(u => console.log(u.role === 'admin' ? `مدیر کل   ${u.username}` : `شهرستان  ${u.county.padEnd(14)} ${u.phone}  ${u.name}${u.active === false ? '  (غیرفعال)' : ''}`));
+      store.get().users.forEach(u => console.log(u.role === 'admin' ? `ستاد      ${u.username}` : `شهرستان  ${u.county.padEnd(14)} ${u.phone}  ${u.name}${u.active === false ? '  (غیرفعال)' : ''}`));
       break;
     }
     default:

@@ -80,7 +80,7 @@ test('جدایی نشست‌ها و حفاظت از مسیرها', async t => {
   const d = client(s.base); await loginDirector(d);
   assert.equal((await d.get('/admin/api/admin/users')).status, 401, 'مدیر شهرستان به داشبورد دسترسی ندارد');
   const a = client(s.base); await loginAdmin(a);
-  assert.equal((await a.get('/api/me')).status, 401, 'نشست مدیر کل جای مدیر شهرستان نمی‌نشیند');
+  assert.equal((await a.get('/api/me')).status, 401, 'نشست ستاد جای مدیر شهرستان نمی‌نشیند');
   // درخواست از دامنهٔ دیگر
   const x = await d.put('/api/form', { data: {} }, { origin: 'https://evil.example' });
   assert.equal(x.status, 403);
@@ -99,7 +99,7 @@ test('فایل‌های ایستا و مسیرهای داشبورد', async t =>
   const s = await boot(); t.after(() => s.close());
   const get = async p => { const r = await fetch(s.base + p, { redirect: 'manual' }); return { status: r.status, type: r.headers.get('content-type'), text: await r.text() }; };
   assert.match((await get('/')).text, /نقشهٔ هزار مشعل/);
-  assert.match((await get('/admin/')).text, /داشبورد مدیر کل/);
+  assert.match((await get('/admin/')).text, /داشبورد ستاد/);
   assert.equal((await get('/admin')).status, 301);
   assert.match((await get('/admin/view')).text, /startAdminView/);
   assert.equal((await get('/fonts/RavaghFaNum-Bold.woff')).type, 'font/woff');

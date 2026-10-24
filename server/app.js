@@ -1,5 +1,5 @@
 'use strict';
-/* مسیرها: API مدیر شهرستان، API مدیر کل، و فایل‌های ایستا */
+/* مسیرها: API مدیر شهرستان، API ستاد، و فایل‌های ایستا */
 const fs = require('fs');
 const path = require('path');
 const A = require('./auth');
@@ -136,7 +136,7 @@ function createApp(cfg, store) {
       const u = store.get().users.find(x => x.role === 'director' && x.phone === phone);
       if (!A.validPhone(phone) || !u || u.active === false || !A.verifyPassword(pw, u.passHash)) {
         keys.forEach(k => loginLimiter.fail(k));
-        if (u && u.active === false) throw new HttpError(403, 'حساب شما غیرفعال است. با اداره‌کل تماس بگیرید.');
+        if (u && u.active === false) throw new HttpError(403, 'حساب شما غیرفعال است. با ستاد تماس بگیرید.');
         throw new HttpError(401, 'شماره یا رمز درست نیست.');
       }
       keys.forEach(k => loginLimiter.reset(k));
@@ -180,7 +180,7 @@ function createApp(cfg, store) {
       return send(res, 200, { ok: true });
     }
 
-    /* ===== مدیر کل ===== */
+    /* ===== ستاد ===== */
     if (p === '/api/admin/login' && method === 'POST') {
       const b = await readBody(req, 10 * 1024);
       const username = String(b.username || '').trim().toLowerCase(), pw = A.toEn(b.password || '');
@@ -204,7 +204,7 @@ function createApp(cfg, store) {
       if (seg[0] === 'password' && method === 'POST') {
         const b = await readBody(req, 10 * 1024);
         if (!A.verifyPassword(A.toEn(b.current || ''), s.user.passHash)) throw new HttpError(400, 'رمز فعلی درست نیست.');
-        if (A.toEn(b.next || '').length < 10) throw new HttpError(400, 'رمز تازهٔ مدیر کل دست‌کم ۱۰ نویسه باشد.');
+        if (A.toEn(b.next || '').length < 10) throw new HttpError(400, 'رمز تازهٔ حساب ستاد دست‌کم ۱۰ نویسه باشد.');
         store.update(d => { const u = d.users.find(x => x.id === s.user.id); u.passHash = A.hashPassword(A.toEn(b.next)); killUserSessions(d, u.id, s.hash); store.audit(who, 'admin-password', u.id); });
         return send(res, 200, { ok: true });
       }
