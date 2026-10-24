@@ -493,11 +493,15 @@ details.ex>div{padding:0 0 12px}
 
 /* ---------- auth + modal ---------- */
 .auth{min-height:100vh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);background:var(--bg)}
-.auth-brand{position:relative;overflow:hidden;background:var(--sunken);padding:48px clamp(24px,5vw,64px);display:flex;flex-direction:column;justify-content:center;gap:24px}
+.auth-brand{position:relative;overflow:hidden;background:#3a2b2a;padding:40px clamp(24px,5vw,56px);display:flex;flex-direction:column;justify-content:space-between;gap:24px;min-height:100vh;isolation:isolate}
+.auth-brand .hero{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 30%;z-index:-2}
+.auth-brand::after{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(to top,rgba(26,22,34,.92) 0%,rgba(26,22,34,.62) 32%,rgba(26,22,34,0) 58%)}
+.auth-brand .ab-text{display:grid;gap:12px}
+.auth-brand .ab-text .eyebrow{color:#f3d9b8}
 .auth-brand .motif{position:absolute;left:-120px;bottom:-60px;width:560px;max-width:none;pointer-events:none}
-.auth-brand .logo{height:38px;position:relative}
-.auth-brand h2{position:relative;font-size:clamp(28px,3.4vw,40px);font-weight:800;line-height:1.35;margin:0;max-width:13ch}
-.auth-brand p{position:relative;margin:0;color:var(--ink-2);font-size:15.5px;max-width:40ch}
+.auth-brand .logo{height:34px;position:relative;align-self:flex-start;box-sizing:content-box;background:rgba(255,255,255,.82);padding:8px 12px;border-radius:14px}
+.auth-brand h2{position:relative;font-size:clamp(28px,3.4vw,40px);font-weight:800;line-height:1.35;margin:0;max-width:14ch;color:#fff}
+.auth-brand p{position:relative;margin:0;color:rgba(255,255,255,.88);font-size:15.5px;max-width:40ch}
 .auth-form{display:grid;place-items:center;padding:40px 24px}
 .auth-form form{width:100%;max-width:380px;display:grid;gap:16px}
 .auth-form h1{font-size:26px;font-weight:800;margin:0;line-height:1.45}
@@ -508,7 +512,7 @@ details.ex>div{padding:0 0 12px}
 .ltr{direction:ltr;text-align:right}
 .err{color:var(--crimson);font-size:13.5px;min-height:1.6em;margin-top:-6px}
 .help{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px;margin:0}
-@media (max-width:820px){.auth{grid-template-columns:1fr;align-content:start}.auth-brand{padding:28px 20px}.auth-brand .motif{width:360px;left:-150px;bottom:auto;top:-50px;opacity:.55}.auth-brand h2{font-size:26px;max-width:none}.auth-form{place-items:start center;padding:24px 20px 40px}}
+@media (max-width:820px){.auth{grid-template-columns:1fr;align-content:start}.auth-brand{padding:0;min-height:0;display:block;background:#1f1b26}.auth-brand .hero{position:relative;display:block;height:min(62vw,320px);object-position:50% 28%;z-index:auto}.auth-brand::after{inset:0 0 auto;height:min(62vw,320px);background:linear-gradient(to top,#1f1b26 0%,rgba(31,27,38,0) 40%)}.auth-brand .logo{position:absolute;top:14px;right:16px;z-index:2;height:28px;padding:6px 10px}.auth-brand .ab-text{position:relative;z-index:2;padding:4px 20px 22px;gap:8px}.auth-brand h2{font-size:24px;max-width:none}.auth-brand p{font-size:14.5px}.auth-form{place-items:start center;padding:24px 20px 40px}}
 .scrim{position:fixed;inset:0;background:rgba(48,52,90,.34);z-index:40}
 .modal-wrap{position:fixed;inset:0;z-index:45;overflow:auto;display:grid;place-items:center;padding:20px 16px}
 .modal{width:100%;max-width:440px;background:var(--bg);border-radius:26px;padding:24px;box-shadow:var(--sh4);animation:pop .2s var(--out)}
@@ -1157,7 +1161,7 @@ function showPw(first){$('#layer').innerHTML=`<div class="scrim" data-close></di
 /* =====================================================================
    ورود و راه‌اندازی
    ===================================================================== */
-function loginHTML(){return `<div class="auth"><aside class="auth-brand"><img class="motif" src="motifs/ferferi-3-sky.png" alt="">${LOGO}<div class="eyebrow" style="margin-top:14px">نقشهٔ هزار مشعل · بوم تحول آرایش نیروهای مجاهد تبیین</div><h2>باید آرایش جنگی بگیریم</h2><p>شکاف کنشگر و مخاطب شهرستانتان را ببینید و دست‌کم یک طرح تحول برای پر کردن آن بچینید.</p></aside>
+function loginHTML(){return `<div class="auth"><aside class="auth-brand"><img class="hero" src="shared/login-720.webp" srcset="shared/login-720.webp 720w, shared/login-1100.webp 1100w" sizes="(max-width:820px) 100vw, 50vw" alt="" decoding="async" fetchpriority="high">${LOGO}<div class="ab-text"><div class="eyebrow">نقشهٔ هزار مشعل · بوم تحول آرایش نیروهای مجاهد تبیین</div><h2>باید آرایش جنگی بگیریم</h2><p>شکاف کنشگر و مخاطب شهرستانتان را ببینید و دست‌کم یک طرح تحول برای پر کردن آن بچینید.</p></div></aside>
  <main class="auth-form"><form id="lf" novalidate><div><h1>ورود</h1><p class="lead" style="margin:0">با شمارهٔ همراه و رمزی که ستاد برایتان فرستاده.</p></div>
  <div class="fld"><label for="ph">شمارهٔ همراه</label><input id="ph" class="ltr" type="tel" inputmode="tel" autocomplete="username" placeholder="۰۹۱۲ ۰۰۰ ۰۰۰۰"></div>
  <div class="fld"><label for="pwd">رمز</label><div class="pw"><input id="pwd" type="password" autocomplete="current-password"><button type="button" data-eye="pwd" aria-label="نمایش رمز">${I.eye}</button></div></div>
