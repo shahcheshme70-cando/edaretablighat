@@ -96,7 +96,7 @@ sudo -u harfeno env $(grep -v '^#' .env | xargs) node server/cli.js create-admin
 - **از خط فرمان، تکی**:
 
   ```bash
-  node server/cli.js add-director --phone 09150000000 --name "نام" --county "نیشابور"
+  sudo -u harfeno env $(grep -v '^#' .env | xargs) node server/cli.js add-director --phone 09150000000 --name "نام" --county "نیشابور"
   ```
 
 ابزار خط فرمان را می‌شود در حالی اجرا کرد که سرویس روشن است. سرور تغییر فایل را خودش می‌بیند.

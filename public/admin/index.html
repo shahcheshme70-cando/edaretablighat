@@ -33,10 +33,14 @@ a{color:var(--green-600)}
 .bar{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
 .bar-in{max-width:1240px;margin:0 auto;padding:0 16px;height:58px;display:flex;align-items:center;gap:12px}
 .bar-in .ttl{font-weight:800;font-size:15px;white-space:nowrap}
+.uname{max-width:40vw;min-width:0}.uname span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+@media(max-width:560px){.rtx{display:none}}
+@media(max-width:400px){.ttl{display:none}}
 .sp{flex:1}
 .tabs{max-width:1240px;margin:0 auto;padding:10px 16px 0;display:flex;gap:6px;overflow-x:auto}
 .tabs button{border:1px solid var(--line-2);background:var(--bg);border-radius:999px;padding:6px 16px;font-weight:700;font-size:14px;white-space:nowrap}
 .tabs button[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+@media(max-width:420px){.tabs{gap:4px}.tabs button{flex:1 1 auto;padding:6px 8px;font-size:12.5px}}
 .wrap{max-width:1240px;margin:0 auto;padding:16px 16px 80px}
 h1{font-size:24px;line-height:1.5;margin:4px 0 4px}
 h2{font-size:18px;margin:0 0 6px}
@@ -178,7 +182,7 @@ async function boot(){try{S.me=await api.me()}catch(e){if(e.code==='auth')return
  shell();await load()}
 async function load(){S.loading=true;try{S.users=(await api.users()).users}catch(e){if(e.code!=='auth')toast(e.message)}S.loading=false;render()}
 
-function shell(){$('#app').innerHTML=`<header class="bar"><div class="bar-in">${LOGO}<span class="ttl">داشبورد ستاد</span><span class="sp"></span><button class="btn se sm" data-refresh title="به‌روزرسانی">↻ به‌روزرسانی</button><button class="btn se sm" data-menu>${esc(S.me.user.name)} ▾</button></div></header>
+function shell(){$('#app').innerHTML=`<header class="bar"><div class="bar-in">${LOGO}<span class="ttl">داشبورد ستاد</span><span class="sp"></span><button class="btn se sm" data-refresh title="به‌روزرسانی" aria-label="به‌روزرسانی">↻<span class="rtx"> به‌روزرسانی</span></button><button class="btn se sm uname" data-menu><span>${esc(S.me.user.name)}</span> ▾</button></div></header>
  <nav class="tabs" role="tablist">${[['counties','شهرستان‌ها'],['users','مدیران و رمزها'],['feedback','تحلیل و بازخورد']].map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${S.tab===k}">${l}</button>`).join('')}</nav>
  <main class="wrap" id="main"></main>`}
 function render(){$$('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===S.tab));const m=$('#main');if(!m)return;
@@ -278,10 +282,12 @@ function fbEditorHTML(u,form){const d=form.feedbackDraft||form.feedback||{scores
   <div class="scores">${[['b1','آرایش موجود'],['b2','طرح تحول'],['b3','برنامهٔ اجرایی']].map(([k,l])=>`<div class="fld"><label for="sc_${k}">${l} (از ۱۰)</label><input id="sc_${k}" inputmode="decimal" value="${sc[k]!=null?FA(sc[k],1):''}"></div>`).join('')}</div>
   ${ta('f_sum','جمع‌بندی',d.summary,4)}${ta('f_str','نقاط قوت',d.strengths,3,'هر سطر یک مورد')}${ta('f_gap','جای کار',d.gaps,3,'هر سطر یک مورد')}${ta('f_sug','پیشنهاد برای گام بعد',d.suggestions,3,'هر سطر یک مورد')}${ta('f_msg','یادداشت پایانی (اختیاری)',d.message,2)}
   <div class="row"><button class="btn se" data-fbsave="${u.id}">ذخیرهٔ پیش‌نویس</button><button class="btn pr" data-fbpub="${u.id}">ذخیره و انتشار برای مدیر</button>${pub?`<button class="btn se" data-fbunpub="${u.id}">برداشتن از انتشار</button>`:''}</div></div>`}
-function readFb(){const n=id=>{const v=toEn($(id).value).trim();return v===''?null:Number(v)};const L=id=>$(id).value.split('\n').map(s=>s.trim()).filter(Boolean);
+function readFb(){const n=id=>{const v=toEn($(id).value).trim().replace(/[٫,]/g,'.');return v===''?null:Number(v)};const L=id=>$(id).value.split('\n').map(s=>s.trim()).filter(Boolean);
  return {scores:{b1:n('#sc_b1'),b2:n('#sc_b2'),b3:n('#sc_b3')},summary:$('#f_sum').value.trim(),strengths:L('#f_str'),gaps:L('#f_gap'),suggestions:L('#f_sug'),message:$('#f_msg').value.trim()}}
 async function openFb(id){S.fbSel=id;S.fbForm=null;S.tab='feedback';render();window.scrollTo&&$('#fbed')&&innerWidth<960&&$('#fbed').scrollIntoView({behavior:'smooth',block:'start'});
  try{const f=await api.form(id);if(S.fbSel!==id)return;S.fbForm=f;const u=S.users.find(x=>x.id===id),el=$('#fbed');if(u&&el)el.innerHTML=fbEditorHTML(u,f)}catch(e){toast(e.message)}}
+/* پس از بارگذاری یا انتشار گروهی، ویرایشگر باز همان شهرستان با دادهٔ تازه پر می‌شود */
+async function refreshFb(){if(!S.fbSel)return;const id=S.fbSel;S.fbForm=null;try{const f=await api.form(id);if(S.fbSel!==id)return;S.fbForm=f;bindFb()}catch(e){}}
 function bindFb(){if(S.fbSel&&S.fbForm&&S.fbForm.user.id===S.fbSel){const u=S.users.find(x=>x.id===S.fbSel),el=$('#fbed');if(u&&el)el.innerHTML=fbEditorHTML(u,S.fbForm)}}
 
 /* ---------- رویدادها ---------- */
@@ -305,7 +311,7 @@ document.addEventListener('click',async e=>{
  if(d.fbopen){openFb(d.fbopen);return}
  if(d.fbsel){openFb(d.fbsel);return}
  if(d.reset){const u=S.users.find(x=>x.id===d.reset);modal(`<h3>رمز تازه برای ${esc(u.county)}</h3><p style="margin:0">رمز فعلی ${esc(u.name)} از کار می‌افتد و از همهٔ دستگاه‌ها خارج می‌شود.</p><div class="row"><button class="btn pr" data-resetok="${u.id}">ساختن رمز تازه</button><button class="btn se" data-close>انصراف</button></div>`);return}
- if(d.resetok){try{const r=await api.reset(d.resetok);showCreds([r])}catch(err){toast(err.message)}return}
+ if(d.resetok){if(t.disabled)return;t.disabled=true;try{const r=await api.reset(d.resetok);showCreds([r])}catch(err){toast(err.message);t.disabled=false}return}
  if(d.toggle){const u=S.users.find(x=>x.id===d.toggle);try{await api.patch(u.id,{active:!u.active});await load();toast(u.active?'غیرفعال شد.':'فعال شد.')}catch(err){toast(err.message)}return}
  if(d.edit){const u=S.users.find(x=>x.id===d.edit);modal(`<h3>ویرایش مدیر</h3><div class="fld"><label>نام</label><input id="e_name" value="${esc(u.name)}"></div><div class="fld"><label>شمارهٔ همراه</label><input id="e_phone" class="ltr" value="${esc(u.phone)}"></div><div class="fld"><label>شهرستان</label><input id="e_county" value="${esc(u.county)}"></div><div class="fld"><label>استان</label><input id="e_prov" value="${esc(u.province)}"></div><div class="fld"><label>سمت</label><input id="e_title" value="${esc(u.role)}"></div><div class="err" id="ee"></div><div class="row"><button class="btn pr" data-editok="${u.id}">ذخیره</button><button class="btn se" data-close>انصراف</button></div>`);return}
  if(d.editok){try{await api.patch(d.editok,{name:$('#e_name').value,phone:$('#e_phone').value,county:$('#e_county').value,province:$('#e_prov').value,title:$('#e_title').value});closeLayer();await load();toast('ذخیره شد.')}catch(err){$('#ee').textContent=err.message}return}
@@ -315,13 +321,13 @@ document.addEventListener('click',async e=>{
  if(d.dlcred!==undefined){const csv='﻿شهرستان,نام,شمارهٔ همراه,رمز موقت,متن پیام\n'+S._creds.map(x=>[x.user.county,x.user.name,x.user.phone,x.password,credText(x.user,x.password).replace(/\n/g,' | ')].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='harfeno-passwords.csv';a.click();return}
  if(d.copyprompt!==undefined){try{await navigator.clipboard.writeText($('#prompt').innerText);toast('کپی شد.')}catch(err){toast('کپی نشد.')}return}
  if(d.fbimport!==undefined){const txt=$('#fbtext').value.trim();if(!txt)return toast('اول خروجی Claude را جای‌گذاری کنید.');t.disabled=true;
-  try{const r=await api.importFb(txt);await load();$('#fbres').innerHTML=`<div class="note">${FA(r.matched.length)} بازخورد به‌صورت پیش‌نویس ذخیره شد${r.matched.length?': '+r.matched.map(x=>esc(x.county)).join('، '):''}.</div>${r.unmatched.length?`<div class="warn">${FA(r.unmatched.length)} مورد با هیچ مدیری جور نشد: ${r.unmatched.map(x=>esc(x.county||('ردیف '+FA(x.idx+1)))).join('، ')}</div>`:''}`}catch(err){$('#fbres').innerHTML=`<div class="warn">${esc(err.message)}</div>`}t.disabled=false;return}
+  try{const r=await api.importFb(txt);await load();refreshFb();$('#fbres').innerHTML=`<div class="note">${FA(r.matched.length)} بازخورد به‌صورت پیش‌نویس ذخیره شد${r.matched.length?': '+r.matched.map(x=>esc(x.county)).join('، '):''}.</div>${r.unmatched.length?`<div class="warn">${FA(r.unmatched.length)} مورد با هیچ مدیری جور نشد: ${r.unmatched.map(x=>esc(x.county||('ردیف '+FA(x.idx+1)))).join('، ')}</div>`:''}`}catch(err){$('#fbres').innerHTML=`<div class="warn">${esc(err.message)}</div>`}t.disabled=false;return}
  if(d.fbsave||d.fbpub){const id=d.fbsave||d.fbpub;t.disabled=true;try{await api.saveFb(id,readFb());if(d.fbpub){await api.publish(id);toast('بازخورد برای مدیر منتشر شد.')}else toast('پیش‌نویس ذخیره شد.');await load();S.fbForm=null;openFb(id)}catch(err){toast(err.message)}t.disabled=false;return}
  if(d.fbunpub){try{await api.unpublish(d.fbunpub);await load();S.fbForm=null;openFb(d.fbunpub);toast('از انتشار برداشته شد.')}catch(err){toast(err.message)}return}
  if(d.ai){t.disabled=true;t.textContent='در حال تحلیل… (تا چند دقیقه)';try{await api.analyze(d.ai);await load();S.fbForm=null;openFb(d.ai);toast('پیش‌نویس Claude آماده شد؛ بازبینی و منتشر کنید.')}catch(err){toast(err.message);t.disabled=false;t.textContent='پیش‌نویس با Claude'}return}
  if(d.pubpending!==undefined){const ids=S.users.filter(u=>u.active&&u.feedback.draft&&(!u.feedback.published||(u.feedback.draftAt>u.feedback.publishedAt))).map(u=>u.id);
   modal(`<h3>انتشار ${FA(ids.length)} بازخورد</h3><p style="margin:0">همهٔ پیش‌نویس‌های تازه برای مدیرانشان منتشر می‌شود. مطمئن هستید همه را بازبینی کرده‌اید؟</p><div class="row"><button class="btn pr" data-pubok>انتشار همه</button><button class="btn se" data-close>انصراف</button></div>`);S._pub=ids;return}
- if(d.pubok!==undefined){t.disabled=true;let n=0;for(const id of S._pub){try{await api.publish(id);n++}catch(err){}}closeLayer();await load();toast(FA(n)+' بازخورد منتشر شد.');return}
+ if(d.pubok!==undefined){t.disabled=true;let n=0;for(const id of S._pub){try{await api.publish(id);n++}catch(err){}}closeLayer();await load();refreshFb();toast(FA(n)+' بازخورد منتشر شد.');return}
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLayer();$('.menu')?.remove()}});
 boot();

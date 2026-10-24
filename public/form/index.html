@@ -221,13 +221,15 @@ details.ex>div{padding:0 0 12px}
 .need .v{font-size:34px;font-weight:800;line-height:1.4;font-variant-numeric:tabular-nums}
 .need .v small{font-size:15px;font-weight:600;color:var(--ink-2)}
 .needs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.gapcard{display:grid;gap:12px}
+.gapcard{display:grid;gap:12px;grid-template-columns:minmax(0,1fr)}
+.dots{min-width:0}
+@media (max-width:360px){.g2{grid-template-columns:minmax(0,1fr)}}
 .gapcard.g-act{border-top:4px solid var(--green)}.gapcard.g-aud{border-top:4px solid var(--sky)}.gapcard.g-plan{border-top:4px solid var(--amber)}
 .gapcard.g-act h3,.gapcard.g-act .gapline b{color:var(--green-600)}.gapcard.g-aud h3,.gapcard.g-aud .gapline b{color:var(--sky-ink)}.gapcard.g-plan h3,.gapcard.g-plan .gapline b{color:var(--amber-ink)}
 .gapcard h3{margin:0;font-size:17px;line-height:1.6}
 .gapline{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;font-size:14px;color:var(--ink-2)}
 .gapline b{font-size:22px;color:var(--ink);font-weight:800;font-variant-numeric:tabular-nums}
-.dots{display:grid;grid-template-columns:repeat(20,1fr);gap:5px;direction:rtl}
+.dots{display:grid;grid-template-columns:repeat(20,minmax(0,1fr));gap:5px;direction:rtl}
 .dots i{aspect-ratio:1;border-radius:50%;background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line-2)}
 .dots i.have{background:var(--green);box-shadow:none}
 .dots.aud i.have{background:var(--sky)}
@@ -247,7 +249,7 @@ details.ex>div{padding:0 0 12px}
 .qt{position:relative;background:var(--peri-100);border-radius:20px;padding:18px 18px 14px;margin:4px 0 16px}
 .qt p{margin:0;font-size:16px;line-height:2.05;font-weight:600;color:var(--ink)}
 .qt small{display:block;margin-top:8px;font-size:12.5px;color:var(--peri);font-weight:600}
-.torch{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;direction:rtl}
+.torch{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px;direction:rtl}
 .torch i{aspect-ratio:1;border-radius:50%;background:var(--sky-100);box-shadow:inset 0 0 0 1px var(--line-2)}
 .torch i.lit{background:var(--sky)} .torch i.me{background:var(--green);box-shadow:0 0 0 3px var(--green-100)}
 .torch i.off{background:var(--sunken)}
@@ -1067,16 +1069,18 @@ const server={
  async password(a,b){await req('api/password',{method:'POST',headers:JH,body:JSON.stringify({current:toEn(a),next:toEn(b)})})},
  async logout(){await req('api/logout',{method:'POST'}).catch(()=>{})}
 };
-let API=server,DEMO=false,READONLY=false,saveT=null,saving=false,again=false,dirty=false,retryT=null,retryN=0,blocked=false;
+let API=server,DEMO=false,READONLY=false,saveT=null,saving=false,again=false,dirty=false,editSeq=0,retryT=null,retryN=0,blocked=false;
 function status(c,t){const s=$('#save');if(!s)return;s.className='save '+c;s.lastElementChild.textContent=t}
 /* نسخهٔ محلی: هر تغییر بی‌درنگ روی همین دستگاه هم نگه داشته می‌شود تا با قطع اینترنت یا بستن صفحه از دست نرود */
 const LKEY=()=>'harfeno-local-'+(S.user&&S.user.phone||'x');
 function localPut(){if(READONLY||!S.user)return;try{localStorage.setItem(LKEY(),JSON.stringify({data:S.data,at:Date.now(),rev:S.rev||0,dirty}))}catch(e){}}
 function localGet(){try{return JSON.parse(localStorage.getItem(LKEY())||'null')}catch(e){return null}}
 function localClean(){try{const x=localGet();if(x){x.dirty=false;localStorage.setItem(LKEY(),JSON.stringify(x))}}catch(e){}}
-async function flush(force){clearTimeout(saveT);saveT=null;clearTimeout(retryT);if(blocked)return;if(saving){again=true;return}
- if(!dirty&&!force)return;saving=true;again=false;status('busy','در حال ذخیره…');
- try{const r=await API.save(S.data,S.rev,force===true);if(r&&r.rev!=null)S.rev=r.rev;dirty=false;retryN=0;localClean();status('ok','ذخیره شد');netBanner()}
+let savingP=null;
+function flush(mode){if(saving){again=true;return savingP.then(()=>dirty&&!blocked&&!saving?flush(mode):null)}savingP=flushNow(mode);return savingP}
+async function flushNow(mode){clearTimeout(saveT);saveT=null;clearTimeout(retryT);if(blocked)return;
+ if(!dirty&&mode!=='force')return;saving=true;again=false;status('busy','در حال ذخیره…');const seq=editSeq;
+ try{const r=await API.save(S.data,S.rev,mode==='force');if(r&&r.rev!=null)S.rev=r.rev;retryN=0;if(editSeq===seq){dirty=false;localClean();status('ok','ذخیره شد')}else{again=true;localPut()}netBanner()}
  catch(e){const c=e.code;
   if(c==='auth'){blocked=true;status('err','نشست تمام شد');saving=false;return reLogin()}
   if(c==='conflict'){blocked=true;saving=false;status('err','تعارض نسخه');return conflict(e.body||{})}
@@ -1084,15 +1088,15 @@ async function flush(force){clearTimeout(saveT);saveT=null;clearTimeout(retryT);
   status('err',c==='offline'?'آفلاین؛ روی همین دستگاه نگه داشته شد':'ذخیره نشد؛ دوباره تلاش می‌کنیم');
   netBanner(c==='offline'?(navigator.onLine===false?'اینترنت قطع است. نگران نباشید؛ هر چه می‌نویسید روی همین دستگاه نگه داشته می‌شود و با وصل شدن خودکار ذخیره می‌شود.':`به سرور وصل نمی‌شویم. نگران نباشید؛ هر چه می‌نویسید روی همین دستگاه نگه داشته می‌شود و ${FA(wait)} ثانیهٔ دیگر خودکار دوباره تلاش می‌کنیم.`):`ذخیره روی سرور انجام نشد. ${FA(wait)} ثانیهٔ دیگر خودکار دوباره تلاش می‌کنیم.`);
   retryT=setTimeout(()=>flush(),wait*1000)}
- saving=false;if(again)flush()}
-function schedule(quiet){dirty=true;localPut();if(!quiet)status('busy','در حال ذخیره…');clearTimeout(saveT);saveT=setTimeout(flush,800)}
+ saving=false;if(again&&dirty&&!blocked&&!retryT){again=false;setTimeout(()=>flush(),0)}}
+function schedule(quiet){dirty=true;editSeq++;localPut();if(!quiet)status('busy','در حال ذخیره…');clearTimeout(saveT);saveT=setTimeout(flush,800)}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&dirty)flush()});
 window.addEventListener('online',()=>{netBanner();if(dirty){retryN=0;flush()}});
 window.addEventListener('offline',()=>netBanner('اینترنت قطع است. نگران نباشید؛ هر چه می‌نویسید روی همین دستگاه نگه داشته می‌شود و با وصل شدن خودکار ذخیره می‌شود.'));
 window.addEventListener('beforeunload',e=>{if(dirty&&!READONLY){localPut();e.preventDefault();e.returnValue=''}});
 function netBanner(t){let b=$('#net');if(!t){if(b)b.remove();return}if(!b){b=document.createElement('div');b.id='net';b.className='net';b.setAttribute('role','status');document.body.appendChild(b)}b.innerHTML=`<span>${esc(t)}</span>${navigator.onLine!==false?'<button type="button" data-retry>الان تلاش کن</button>':''}`}
 function reLogin(){$('#layer').innerHTML=`<div class="scrim"></div><div class="modal-wrap"><form class="modal" id="rlf"><h2>نشست شما تمام شده است</h2><p class="hint" style="margin:0 0 12px">برای امنیت، پس از مدتی بی‌کاری از حساب خارج می‌شوید. رمز را دوباره بزنید؛ هر چه نوشته‌اید سر جایش است و پس از ورود ذخیره می‌شود.</p><div class="fld"><label for="rlp">رمز</label><div class="pw"><input id="rlp" type="password" autocomplete="current-password"><button type="button" data-eye="rlp" aria-label="نمایش رمز">${I.eye}</button></div></div><div class="err" id="rle" role="alert"></div><button class="btn pr wide" type="submit" style="margin-top:12px">ورود و ذخیره</button></form></div>`;document.body.style.overflow='hidden';
- $('#rlf').onsubmit=async ev=>{ev.preventDefault();const b=ev.target.querySelector('[type=submit]');b.disabled=true;$('#rle').textContent='';try{await API.login(S.user.phone,$('#rlp').value);blocked=false;closeLayer();await flush(true);toast('دوباره وارد شدید و تغییرات ذخیره شد.')}catch(e){$('#rle').textContent=e.message;b.disabled=false}}}
+ $('#rlf').onsubmit=async ev=>{ev.preventDefault();const b=ev.target.querySelector('[type=submit]');b.disabled=true;$('#rle').textContent='';try{await API.login(S.user.phone,$('#rlp').value);blocked=false;closeLayer();await flush('now');toast('دوباره وارد شدید و تغییرات ذخیره شد.')}catch(e){$('#rle').textContent=e.message;b.disabled=false}}}
 function conflict(body){const when=body.updatedAt?new Date(body.updatedAt).toLocaleString('fa-IR'):'';$('#layer').innerHTML=`<div class="scrim"></div><div class="modal-wrap"><div class="modal"><h2>این بوم جای دیگری هم تغییر کرده است</h2><p class="hint" style="margin:0 0 14px">نسخهٔ روی سرور ${when?`در ${esc(when)} `:''}از دستگاه یا مرورگر دیگری ذخیره شده و با نسخهٔ این دستگاه فرق دارد. کدام را نگه داریم؟</p><div class="stack"><button class="btn pr wide" data-keep="mine">نسخهٔ همین دستگاه را نگه دار</button><button class="btn se wide" data-keep="server">نسخهٔ روی سرور را بیاور</button></div></div></div>`;document.body.style.overflow='hidden'}
 window.addEventListener('error',e=>{console.error(e.error||e.message);if(!READONLY)localPut();toast('خطایی پیش آمد؛ داده‌های شما روی همین دستگاه محفوظ است. اگر تکرار شد، صفحه را تازه کنید.')});
 window.addEventListener('unhandledrejection',e=>{console.error(e.reason);if(!READONLY)localPut()});
@@ -1134,19 +1138,19 @@ document.addEventListener('click',async e=>{
  if(d.bomprint!==undefined){S.bomPrint=!S.bomPrint;render();return}
  if(d.bomzoom!==undefined){S.bomZoom=!S.bomZoom;render();return}
  if(d.print!==undefined){S.bomZoom=false;S.bomPrint=true;render();setTimeout(()=>window.print(),300);return}
- if(d.retry!==undefined){retryN=0;flush(true);return}
- if(d.keep){blocked=false;closeLayer();if(d.keep==='mine'){await flush(true);toast('نسخهٔ همین دستگاه ذخیره شد.')}else{const me=await API.me().catch(()=>null);if(me){S.data=normalize(me.data);S.rev=me.rev;dirty=false;localClean();app();toast('نسخهٔ روی سرور آمد.')}}return}
+ if(d.retry!==undefined){retryN=0;flush('now');return}
+ if(d.keep){blocked=false;closeLayer();if(d.keep==='mine'){await flush('force');toast('نسخهٔ همین دستگاه ذخیره شد.')}else{const me=await API.me().catch(()=>null);if(me){S.data=normalize(me.data);S.rev=me.rev;dirty=false;localClean();app();toast('نسخهٔ روی سرور آمد.')}}return}
  if(d.jump!==undefined){if(GT){GT.scrollIntoView({behavior:'smooth',block:'center'});if(GT.matches('input,textarea'))setTimeout(()=>GT.focus({preventScroll:true}),350)}return}
  if(d.revise!==undefined){const p=P(+d.revise);Object.keys(p.test||{}).forEach(k=>{if(p.test[k]==='هنوز نه')p.test[k]=''});p.revise=1;schedule();go('shift@'+d.revise);return}
  if(d.openforce!==undefined){(S.fopen=S.fopen||new Set()).add(+d.openforce);rerender();setTimeout(()=>{const c=$('#force-'+d.openforce);if(c){c.scrollIntoView({behavior:'smooth',block:'center'});c.querySelector('input')?.focus({preventScroll:true})}},60);return}
  if(d.goplan){go('shift@'+d.goplan);return}
  if(d.addplan!==undefined){S.data.plans.push(newPlan());S.pi=S.data.plans.length-1;S.openMove=null;schedule();go('moves@'+S.pi);return}
- if(d.submit!==undefined){if(missing().length||t.disabled)return;t.disabled=true;const tx=t.textContent;t.textContent='در حال ارسال…';try{if(dirty)await flush(true);if(dirty)throw new Error('تغییرات هنوز ذخیره نشده است. پس از وصل شدن اینترنت دوباره بزنید.');S.submittedAt=await API.submit();render();toast('بوم‌ها ارسال شد.')}catch(err){t.disabled=false;t.textContent=tx;toast(err.code==='offline'?'اینترنت قطع است؛ بوم‌ها روی همین دستگاه محفوظ است. پس از وصل شدن دوباره بزنید.':err.message)}return}
+ if(d.submit!==undefined){if(missing().length||t.disabled)return;t.disabled=true;const tx=t.textContent;t.textContent='در حال ارسال…';try{if(dirty)await flush('now');if(dirty)throw new Error('تغییرات هنوز ذخیره نشده است. پس از وصل شدن اینترنت دوباره بزنید.');S.submittedAt=await API.submit();render();toast('بوم‌ها ارسال شد.')}catch(err){t.disabled=false;t.textContent=tx;toast(err.code==='offline'?'اینترنت قطع است؛ بوم‌ها روی همین دستگاه محفوظ است. پس از وصل شدن دوباره بزنید.':err.message)}return}
  if(d.pw!==undefined){$('#menu')?.remove();showPw();return}
  if(d.intro!==undefined){$('#menu')?.remove();showIntro();return}
  if(d.eye){const i=document.getElementById(d.eye);i.type=i.type==='password'?'text':'password';return}
  if(d.closeIntro!==undefined){closeLayer();S.data.meta.intro=1;schedule(true);return}
- if(t.id==='logout'){$('#menu')?.remove();if(dirty)await flush(true);if(dirty&&!confirm2())return;if(!dirty){try{localStorage.removeItem(LKEY())}catch(e){}}await API.logout();S.user=null;start();return}
+ if(t.id==='logout'){$('#menu')?.remove();if(dirty)await flush('now');if(dirty&&!confirm2())return;if(!dirty){try{localStorage.removeItem(LKEY())}catch(e){}}await API.logout();S.user=null;start();return}
 });
 
 function showIntro(){$('#layer').innerHTML=`<div class="scrim"></div><div class="modal-wrap"><div class="modal intro" role="dialog" aria-modal="true" aria-labelledby="ih" style="max-width:560px"><img class="motif" src="motifs/ferferi-4-green.png" alt="">
@@ -1179,7 +1183,7 @@ async function start(){if(/\/admin\/view\/?$/.test(location.pathname))return sta
   if(!/^09\d{9}$/.test(ph))return $('#le').textContent='شمارهٔ همراه را کامل وارد کنید؛ مثلاً ۰۹۱۲۳۴۵۶۷۸۹.';if(!pw)return $('#le').textContent='رمز را وارد کنید.';
   const b=ev.target.querySelector('[type=submit]');b.disabled=true;b.textContent='در حال ورود…';try{boot(await API.login(ph,pw))}catch(err){$('#le').textContent=err.message;b.disabled=false;b.textContent='ورود'}};return}
  boot(me)}
-function boot(me){S.user=me.user;S.rev=me.rev||0;const loc=localGet();const srvAt=me.updatedAt?Date.parse(me.updatedAt):0;const useLocal=loc&&loc.dirty&&loc.data&&loc.at>srvAt;S.data=normalize(useLocal?loc.data:me.data);if(useLocal){dirty=true;setTimeout(()=>{toast('تغییراتی که دفعهٔ قبل ذخیره نشده بود، از همین دستگاه بازیابی شد.');flush()},600)}S.feedback=me.feedback||null;S.submittedAt=me.submittedAt||null;S.view='step';S.step=S.data.meta.step||'why1';S.pi=0;app();if(me.user.mustChange&&!sessionStorageGet('pwAsked')){sessionStorageSet('pwAsked','1');setTimeout(()=>showPw(true),400)}}
+function boot(me){S.user=me.user;S.rev=me.rev||0;const loc=localGet();const srvAt=me.updatedAt?Date.parse(me.updatedAt):0;const useLocal=loc&&loc.dirty&&loc.data&&loc.at>srvAt;S.data=normalize(useLocal?loc.data:me.data);if(useLocal){dirty=true;S.rev=loc.rev||0;setTimeout(()=>{toast('تغییراتی که دفعهٔ قبل ذخیره نشده بود، از همین دستگاه بازیابی شد.');flush()},600)}S.feedback=me.feedback||null;S.submittedAt=me.submittedAt||null;S.view='step';S.step=S.data.meta.step||'why1';S.pi=0;app();if(me.user.mustChange&&!sessionStorageGet('pwAsked')){sessionStorageSet('pwAsked','1');setTimeout(()=>showPw(true),400)}}
 function sessionStorageGet(k){try{return sessionStorage.getItem(k)}catch(e){return null}}
 function sessionStorageSet(k,v){try{sessionStorage.setItem(k,v)}catch(e){}}
 function app(){$('#app').innerHTML=shell();render()}

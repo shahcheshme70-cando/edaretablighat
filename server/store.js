@@ -47,7 +47,11 @@ class Store {
     const tmp = this.file + '.tmp-' + process.pid + '-' + crypto.randomBytes(4).toString('hex');
     const fd = fs.openSync(tmp, 'w', 0o600);
     try { fs.writeSync(fd, JSON.stringify(d)); fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
+    // اگر با کاربر root (مثلاً ابزار خط فرمان با sudo) اجرا شود، مالک فایل همان کاربر سرویس می‌ماند
+    let owner = null;
+    try { if (process.getuid && process.getuid() === 0) { const st = fs.statSync(this.file); owner = [st.uid, st.gid]; } } catch (e) { owner = null; }
     fs.renameSync(tmp, this.file);
+    if (owner) { try { fs.chownSync(this.file, owner[0], owner[1]); } catch (e) { /* ادامه */ } }
     try { this._mtime = fs.statSync(this.file).mtimeMs; } catch (e) { this._mtime = 0; }
   }
 
@@ -56,7 +60,7 @@ class Store {
     try {
       const m = fs.statSync(this.file).mtimeMs;
       if (this._mtime && m !== this._mtime) { this.db = Object.assign(emptyDb(), JSON.parse(fs.readFileSync(this.file, 'utf8'))); this._mtime = m; }
-    } catch (e) { /* در صورت خطا همان نسخهٔ حافظه می‌ماند */ }
+    } catch (e) { if (e.code !== 'ENOENT') console.error('[store] خواندن دوبارهٔ db.json ممکن نشد؛ دسترسی فایل را بررسی کنید:', e.message); }
   }
 
   _backups() {

@@ -71,7 +71,7 @@ function buildBundle(db, ids) {
 
 const str = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
 const list = (v, n, max) => (Array.isArray(v) ? v : String(v || '').split(/\n+/)).map(x => str(x, max)).filter(Boolean).slice(0, n);
-const score = v => { const x = Number(M.toEn(v)); return Number.isFinite(x) ? Math.max(0, Math.min(10, Math.round(x * 10) / 10)) : null; };
+const score = v => { if (v == null || String(v).trim() === '') return null; const x = Number(M.toEn(v).replace('٫', '.')); return Number.isFinite(x) ? Math.max(0, Math.min(10, Math.round(x * 10) / 10)) : null; };
 
 /* پاک‌سازی یک بازخورد ورودی (از فایل، از Claude یا از ویرایشگر داشبورد) */
 function cleanFeedback(f) {

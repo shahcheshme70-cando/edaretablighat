@@ -6,6 +6,9 @@ const A = require('./auth');
 const AN = require('./analysis');
 const M = require('../public/shared/metrics.js');
 
+// خلاصهٔ یک بوم؛ دادهٔ خراب یک مدیر نباید داشبورد همه را از کار بیندازد
+function safeSummary(d) { try { return M.summarize(d || {}); } catch (e) { console.error('[metrics]', e.message); return M.summarize({}); } }
+
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.woff': 'font/woff', '.woff2': 'font/woff2',
@@ -17,6 +20,7 @@ const CSP = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 's
 class HttpError extends Error { constructor(status, msg, extra) { super(msg); this.status = status; this.extra = extra; } }
 
 function createApp(cfg, store) {
+  const DUMMY_HASH = A.hashPassword(A.newToken());
   const loginLimiter = new RateLimiter2(cfg);
   setInterval(() => loginLimiter.sweep(), 60000).unref();
 
@@ -28,14 +32,15 @@ function createApp(cfg, store) {
   };
   const clientIp = req => {
     if (cfg.TRUST_PROXY) {
+      // X-Real-IP را nginx خودش می‌گذارد؛ از X-Forwarded-For فقط آخرین مورد (افزودهٔ nginx) قابل اعتماد است
+      if (req.headers['x-real-ip']) return String(req.headers['x-real-ip']).trim();
       const xf = req.headers['x-forwarded-for'];
-      if (xf) return String(xf).split(',')[0].trim();
-      if (req.headers['x-real-ip']) return String(req.headers['x-real-ip']);
+      if (xf) return String(xf).split(',').pop().trim();
     }
     return req.socket.remoteAddress || '';
   };
   const parseCookies = req => Object.fromEntries(String(req.headers.cookie || '').split(';').map(s => s.trim()).filter(Boolean).map(s => {
-    const i = s.indexOf('='); return [s.slice(0, i), decodeURIComponent(s.slice(i + 1))];
+    const i = s.indexOf('='); let v = s.slice(i + 1); try { v = decodeURIComponent(v); } catch (e) { /* کوکی نامعتبر نادیده گرفته می‌شود */ } return [s.slice(0, i), v];
   }));
   const cookie = (name, val, maxAge) => `${name}=${encodeURIComponent(val)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${cfg.COOKIE_SECURE ? '; Secure' : ''}`;
 
@@ -53,7 +58,9 @@ function createApp(cfg, store) {
       req.on('end', () => {
         if (over) return reject(tooBig());
         if (!size) return resolve({});
-        try { resolve(JSON.parse(Buffer.concat(chunks).toString('utf8'))); } catch (e) { reject(new HttpError(400, 'دادهٔ ارسالی معتبر نیست.')); }
+        let v; try { v = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch (e) { return reject(new HttpError(400, 'دادهٔ ارسالی معتبر نیست.')); }
+        if (!v || typeof v !== 'object' || Array.isArray(v)) return reject(new HttpError(400, 'دادهٔ ارسالی معتبر نیست.'));
+        resolve(v);
       });
       req.on('error', reject);
     });
@@ -132,9 +139,12 @@ function createApp(cfg, store) {
       const b = await readBody(req, 10 * 1024);
       const phone = A.normPhone(b.phone), pw = A.toEn(b.password || '');
       const keys = ['ip:' + clientIp(req), 'ph:' + phone];
-      if (keys.some(k => loginLimiter.blocked(k))) throw new HttpError(429, `تلاش‌ها زیاد بود؛ ${Math.ceil(loginLimiter.retryAfter(keys[1]) / 60)} دقیقهٔ دیگر دوباره امتحان کنید.`);
+      const bk = keys.find(k => loginLimiter.blocked(k));
+      if (bk) throw new HttpError(429, `تلاش‌ها زیاد بود؛ ${Math.ceil(loginLimiter.retryAfter(bk) / 60)} دقیقهٔ دیگر دوباره امتحان کنید.`);
       const u = store.get().users.find(x => x.role === 'director' && x.phone === phone);
-      if (!A.validPhone(phone) || !u || u.active === false || !A.verifyPassword(pw, u.passHash)) {
+      // حتی برای شمارهٔ ناموجود هم رمز سنجیده می‌شود تا از زمان پاسخ نشود فهمید شماره ثبت شده یا نه
+      const okPw = A.verifyPassword(pw, u ? u.passHash : DUMMY_HASH);
+      if (!A.validPhone(phone) || !u || u.active === false || !okPw) {
         keys.forEach(k => loginLimiter.fail(k));
         if (u && u.active === false) throw new HttpError(403, 'حساب شما غیرفعال است. با ستاد تماس بگیرید.');
         throw new HttpError(401, 'شماره یا رمز درست نیست.');
@@ -149,6 +159,8 @@ function createApp(cfg, store) {
       const s = getSession(req, 'director'); if (!s) throw new HttpError(401, 'نشست شما تمام شده است؛ دوباره وارد شوید.');
       const b = await readBody(req, cfg.MAX_FORM_BYTES);
       if (!b.data || typeof b.data !== 'object' || Array.isArray(b.data)) throw new HttpError(400, 'دادهٔ بوم معتبر نیست.');
+      for (const k of ['forces', 'plans', 'pairs', 'uncovered']) if (b.data[k] != null && !Array.isArray(b.data[k])) throw new HttpError(400, 'دادهٔ بوم معتبر نیست.');
+      if (b.data.summary != null && (typeof b.data.summary !== 'object' || Array.isArray(b.data.summary))) throw new HttpError(400, 'دادهٔ بوم معتبر نیست.');
       const db = store.get(), cur = db.forms[s.user.id] || { rev: 0 };
       if (!b.force && b.rev != null && Number(b.rev) !== Number(cur.rev || 0)) {
         throw new HttpError(409, 'این بوم روی دستگاه دیگری تغییر کرده است.', { rev: cur.rev || 0, updatedAt: cur.updatedAt || null });
@@ -187,7 +199,8 @@ function createApp(cfg, store) {
       const keys = ['aip:' + clientIp(req), 'au:' + username];
       if (keys.some(k => loginLimiter.blocked(k))) throw new HttpError(429, 'تلاش‌ها زیاد بود؛ چند دقیقهٔ دیگر دوباره امتحان کنید.');
       const u = store.get().users.find(x => x.role === 'admin' && x.username === username);
-      if (!u || u.active === false || !A.verifyPassword(pw, u.passHash)) { keys.forEach(k => loginLimiter.fail(k)); throw new HttpError(401, 'نام کاربری یا رمز درست نیست.'); }
+      const okPw = A.verifyPassword(pw, u ? u.passHash : DUMMY_HASH);
+      if (!u || u.active === false || !okPw) { keys.forEach(k => loginLimiter.fail(k)); throw new HttpError(401, 'نام کاربری یا رمز درست نیست.'); }
       keys.forEach(k => loginLimiter.reset(k));
       startSession(res, u, 'admin', req);
       store.update(() => store.audit(u.username, 'admin-login', u.id));
@@ -216,7 +229,7 @@ function createApp(cfg, store) {
             ...directorView(u), active: u.active !== false, createdAt: u.createdAt, lastLoginAt: u.lastLoginAt || null,
             updatedAt: f.updatedAt || null, submittedAt: f.submittedAt || null, editedAfterSubmit: f.editedAfterSubmit || null,
             feedback: { draft: !!fb.draft, published: !!fb.published, publishedAt: fb.publishedAt || null, draftAt: fb.draftAt || null },
-            metrics: M.summarize(f.data || {})
+            metrics: safeSummary(f.data)
           };
         });
         return send(res, 200, { users: rows });
@@ -267,7 +280,7 @@ function createApp(cfg, store) {
       if (seg[0] === 'users' && target && seg[2] === 'form' && method === 'GET') {
         const out = meFor(db, target), fb = db.feedback[uid] || {};
         out.feedbackDraft = fb.draft || null; out.feedbackDraftAt = fb.draftAt || null;
-        out.metrics = M.summarize(out.data);
+        out.metrics = safeSummary(out.data);
         out.readonly = true;
         return send(res, 200, out);
       }
@@ -291,7 +304,8 @@ function createApp(cfg, store) {
       }
       if (seg[0] === 'users' && target && seg[2] === 'analyze' && method === 'POST') {
         if (!cfg.ANTHROPIC_API_KEY) throw new HttpError(400, 'تحلیل خودکار فعال نیست؛ کلید Claude روی سرور تنظیم نشده است.');
-        const fb = await AN.analyzeWithClaude(cfg, AN.countyEntry(target, db.forms[uid]));
+        let fb;
+        try { fb = await AN.analyzeWithClaude(cfg, AN.countyEntry(target, db.forms[uid])); } catch (e) { throw new HttpError(502, e.message); }
         store.update(d => { const x = d.feedback[uid] = d.feedback[uid] || {}; x.draft = fb; x.draftAt = new Date().toISOString(); x.source = 'ai'; store.audit(who, 'feedback-ai', uid); });
         return send(res, 200, { ok: true, draft: fb });
       }
@@ -307,7 +321,7 @@ function createApp(cfg, store) {
       if (seg[0] === 'feedback' && seg[1] === 'import' && method === 'POST') {
         const b = await readBody(req, 4 * 1024 * 1024);
         let items = b.items;
-        if (typeof b.text === 'string') items = AN.extractJson(b.text);
+        if (typeof b.text === 'string') { try { items = AN.extractJson(b.text); } catch (e) { throw new HttpError(400, e.message); } }
         if (items && !Array.isArray(items) && Array.isArray(items.items)) items = items.items;
         if (!items) throw new HttpError(400, 'بازخوردی پیدا نشد.');
         const r = AN.matchItems(db, items);
@@ -354,7 +368,9 @@ function createApp(cfg, store) {
       if (req.headers['if-modified-since'] && new Date(req.headers['if-modified-since']) >= new Date(st.mtime.toUTCString())) { res.writeHead(304, headers); return res.end(); }
       res.writeHead(200, headers);
       if (req.method === 'HEAD') return res.end();
-      fs.createReadStream(file).pipe(res);
+      const st2 = fs.createReadStream(file);
+      st2.on('error', () => { if (!res.headersSent) res.writeHead(500); res.end(); });
+      st2.pipe(res);
     });
   }
   function staticRoute(req, res, p) {
@@ -366,13 +382,14 @@ function createApp(cfg, store) {
     if (p === '/robots.txt') { res.writeHead(200, { 'Content-Type': 'text/plain' }); return res.end('User-agent: *\nDisallow: /\n'); }
     if (p === '/admin') { res.writeHead(301, { Location: '/admin/' }); return res.end(); }
     if (p === '/admin/' || p === '/admin/index.html') return serveFile(req, res, path.join(pub, 'admin', 'index.html'));
-    if (p === '/admin/view' || p === '/admin/view/') return serveFile(req, res, path.join(pub, 'form', 'index.html'));
+    if (p === '/admin/view/') { res.writeHead(301, { Location: '/admin/view' + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '') }); return res.end(); }
+    if (p === '/admin/view') return serveFile(req, res, path.join(pub, 'form', 'index.html'));
     if (p === '/' || p === '/index.html') return serveFile(req, res, path.join(pub, 'form', 'index.html'));
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('پیدا نشد');
   }
 
   /* ---------- دروازهٔ اصلی ---------- */
-  return async function handler(req, res) {
+  async function handler(req, res) {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('Referrer-Policy', 'same-origin');
@@ -381,7 +398,8 @@ function createApp(cfg, store) {
     if (cfg.COOKIE_SECURE) res.setHeader('Strict-Transport-Security', 'max-age=31536000');
     let url;
     try { url = new URL(req.url, 'http://x'); } catch (e) { res.writeHead(400); return res.end(); }
-    let p = decodeURIComponent(url.pathname).replace(/\/{2,}/g, '/');
+    let p;
+    try { p = decodeURIComponent(url.pathname).replace(/\/{2,}/g, '/'); } catch (e) { res.writeHead(400); return res.end(); }
     if (p.includes('..')) { res.writeHead(400); return res.end(); }
     const host = String(req.headers.host || '').toLowerCase().split(':')[0];
     // دو دامنهٔ جدا (اختیاری)
@@ -400,7 +418,12 @@ function createApp(cfg, store) {
     }
     if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); return res.end(); }
     staticRoute(req, res, p);
-  };
+  }
+  // هیچ خطای پیش‌بینی‌نشده‌ای نباید سرور را از کار بیندازد
+  return (req, res) => handler(req, res).catch(e => {
+    console.error('[http]', req.method, req.url, e);
+    try { if (!res.headersSent) { res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' }); } res.end(); } catch (e2) { /* اتصال بسته شده */ }
+  });
 }
 
 // محدودکنندهٔ ورود با تنظیمات

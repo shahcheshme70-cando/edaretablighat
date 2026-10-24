@@ -36,6 +36,20 @@
   };
   const has = v => v != null && String(v).trim() !== '' && !(Array.isArray(v) && !v.length);
 
+  /* دادهٔ ورودی ممکن است ناقص یا خراب باشد؛ قبل از هر محاسبه شکلش درست می‌شود */
+  const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+  const arr = v => Array.isArray(v) ? v : [];
+  const str = v => typeof v === 'string' ? v : (v == null ? '' : String(v));
+  function sanitize(d) {
+    d = isObj(d) ? d : {};
+    return Object.assign({}, d, {
+      forces: arr(d.forces).filter(isObj).map(f => Object.assign({}, f, { name: str(f.name) })),
+      plans: arr(d.plans).filter(isObj).map(p => Object.assign({}, p, { test: isObj(p.test) ? p.test : {}, run: isObj(p.run) ? p.run : {}, costs: isObj(p.costs) ? p.costs : {}, force: str(p.force), type: str(p.type) })),
+      pairs: arr(d.pairs).filter(isObj),
+      uncovered: arr(d.uncovered).filter(x => typeof x === 'string'),
+      summary: isObj(d.summary) ? d.summary : {}
+    });
+  }
   const forces = d => (d.forces || []).filter(f => has(f.name));
   const isP = f => (f.kind || KIND[f.name] || 'g') === 'p';
   const tA = f => isP(f) ? num(f.n) : num(f.n) * num(f.aa);
@@ -112,7 +126,7 @@
 
   /* خلاصهٔ یک بوم برای داشبورد و بستهٔ تحلیل */
   function summarize(d) {
-    d = d && typeof d === 'object' ? d : {};
+    d = sanitize(d);
     const g = gap(d), plans = (d.plans || []);
     const ck = checklist(d), done = ck.filter(x => x.done).length;
     let dA = 0, dM = 0, inv = 0, fresh = 0, cost = 0;
@@ -142,5 +156,5 @@
     };
   }
 
-  return { CATS, KIND, MOVE_WAY, WAY_LABEL, QUARTERS, toEn, num, has, forces, isP, tA, tM, tAT, isAct, gap, planDelta, planCost, planSplit, verdict, planImpact, checklist, summarize };
+  return { sanitize, CATS, KIND, MOVE_WAY, WAY_LABEL, QUARTERS, toEn, num, has, forces, isP, tA, tM, tAT, isAct, gap, planDelta, planCost, planSplit, verdict, planImpact, checklist, summarize };
 });
