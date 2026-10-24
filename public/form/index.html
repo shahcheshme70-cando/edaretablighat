@@ -1,0 +1,1184 @@
+<meta charset="utf-8">
+<title>نقشهٔ هزار مشعل</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#30345a">
+<style>
+@font-face{font-family:"Ravagh";src:url("fonts/RavaghFaNum-Regular.woff") format("woff");font-weight:400;font-display:swap}
+@font-face{font-family:"Ravagh";src:url("fonts/RavaghFaNum-Medium.woff") format("woff");font-weight:500;font-display:swap}
+@font-face{font-family:"Ravagh";src:url("fonts/RavaghFaNum-SemiBold.woff") format("woff");font-weight:600;font-display:swap}
+@font-face{font-family:"Ravagh";src:url("fonts/RavaghFaNum-Bold.woff") format("woff");font-weight:700;font-display:swap}
+@font-face{font-family:"Ravagh";src:url("fonts/RavaghFaNum-ExtraBold.woff") format("woff");font-weight:800;font-display:swap}
+/* Layout: one question per screen. A calm single column (max 640px) with a four-part progress rail on top and a sticky «بعدی» bar at the bottom. The gap is the visual anchor: two 100-dot grids. The bom shape lives in a separate «نمای بوم» page that shows the filled canvases like the printed sheets. حرف نو system: white, navy ink, one green action, pills, Ravagh. Light only. */
+:root{
+  color-scheme:light;
+  --bg:#ffffff; --sunken:#f4f5f8; --ink:#30345a; --ink-2:#555a7d; --muted:#81859f; --line:#eaeaea; --line-2:#dcdee7;
+  --green:#2fb57c; --green-600:#23905f; --green-100:#e3f5ec;
+  --peri:#6e7fd9; --peri-100:#eceffb; --amber:#e8ae30; --amber-100:#fcf3de; --amber-ink:#87610f; --crimson:#db2a58; --crimson-100:#fbe5ec; --sky:#40bbe7; --sky-100:#e2f4fb; --sky-ink:#13739d;
+  --focus:0 0 0 3px rgba(110,127,217,.35);
+  --sh1:0 1px 2px rgba(48,52,90,.05),0 2px 8px rgba(48,52,90,.05);
+  --sh2:0 8px 24px rgba(48,52,90,.10);
+  --sh4:0 24px 64px rgba(48,52,90,.24);
+  --out:cubic-bezier(.16,.84,.44,1);
+  --font:"Ravagh","Vazirmatn","Segoe UI",Tahoma,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{background:var(--sunken)}
+body{margin:0;color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.85;direction:rtl;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:none;box-shadow:var(--focus)}
+[hidden]{display:none!important}
+.muted{color:var(--muted)} .req{color:var(--crimson)} .opt{font-weight:400;color:var(--muted);font-size:12.5px}
+.hint{font-size:13px;color:var(--muted);line-height:1.8}
+
+/* ---------- top bar ---------- */
+.bar{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.9);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.bar-in{max-width:980px;margin:0 auto;padding-inline:16px;height:58px;display:flex;align-items:center;gap:12px}
+.logo{height:28px;width:auto;display:block;flex:0 0 auto}
+.bar .sp{flex:1}
+.save{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);white-space:nowrap}
+.save i{width:7px;height:7px;border-radius:50%;background:var(--line-2)}
+.save.ok i{background:var(--green)} .save.busy i{background:var(--amber)} .save.err i{background:var(--crimson)}
+.save.err{color:var(--crimson)}
+.tb{white-space:nowrap;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border:1px solid var(--line-2);border-radius:999px;background:var(--bg);font-size:13.5px;font-weight:600;color:var(--ink)}
+.tb:hover{background:var(--sunken)}
+.tb svg{width:17px;height:17px;color:var(--ink-2)}
+.tb[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tb[aria-pressed="true"] svg{color:#fff}
+.av{width:36px;height:36px;border-radius:50%;background:var(--green-100);color:var(--green-600);display:grid;place-items:center;font-weight:800;font-size:13px;border:0}
+.menu{position:absolute;top:56px;left:16px;width:250px;background:var(--bg);border:1px solid var(--line);border-radius:18px;box-shadow:var(--sh2);padding:8px;z-index:35;animation:pop .18s var(--out)}
+.menu .who{padding:8px 12px 10px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.menu .who b{display:block}
+.menu .who span{font-size:12.5px;color:var(--muted)}
+.menu button{display:flex;width:100%;align-items:center;gap:10px;background:none;border:0;border-radius:12px;padding:9px 12px;font-size:14px;text-align:right}
+.menu button:hover{background:var(--sunken)}
+.menu svg{width:18px;height:18px;color:var(--muted)}
+@keyframes pop{from{opacity:0;transform:translateY(-4px)}}
+@media (max-width:560px){.save span{display:none}.tb{padding:0 10px;font-size:12.5px;gap:4px}.bar .logo{height:26px}}
+@media (max-width:340px){.tb .lbl{display:none}}
+
+/* ---------- progress rail ---------- */
+.rail{max-width:640px;margin:0 auto;padding:18px 16px 0}
+.pulse{animation:pulse 1.7s ease-out infinite;position:relative;z-index:1}
+input.pulse,textarea.pulse,select.pulse{border-color:var(--green)!important;background:#f3fbf7}
+.seg.pulse,.choices.pulse,.chips .pulse,.cand .pulse{border-radius:16px}
+.seg.pulse,.choices.pulse{outline:2px dashed var(--green);outline-offset:5px}
+.move .mh.pulse{background:var(--green-100);border-radius:20px}
+.btn.pulse{animation:pulseb 1.7s ease-out infinite}
+input.pulse:focus,textarea.pulse:focus{animation:none;box-shadow:0 0 0 3px var(--green-100)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(47,181,124,.55)}70%{box-shadow:0 0 0 10px rgba(47,181,124,0)}100%{box-shadow:0 0 0 0 rgba(47,181,124,0)}}
+@keyframes pulseb{0%{box-shadow:0 0 0 0 rgba(47,181,124,.6)}70%{box-shadow:0 0 0 12px rgba(47,181,124,0)}100%{box-shadow:0 0 0 0 rgba(47,181,124,0)}}
+@media (prefers-reduced-motion:reduce){.pulse,.btn.pulse{animation:none;box-shadow:0 0 0 3px var(--green)}}
+.jump{position:fixed;bottom:calc(84px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:40;display:flex;gap:8px;align-items:center;background:var(--green);color:#fff;border:0;border-radius:999px;padding:8px 16px;font-size:13.5px;font-weight:700;box-shadow:0 6px 18px rgba(47,181,124,.35);animation:pulseb 1.7s ease-out infinite}
+.jump b{font-size:16px}
+.fdone{display:flex;align-items:center;gap:12px;width:100%;text-align:right;background:var(--bg);border:1px solid var(--line-2);border-radius:18px;padding:12px 14px}
+.fdone .ok{width:28px;height:28px;border-radius:50%;background:var(--green-100);color:var(--green-600);display:grid;place-items:center;font-weight:800;flex:none}
+.fdone .fn{flex:1;min-width:0;display:grid;gap:2px}
+.fdone .fn b{font-size:15px}
+.fdone .fn small{font-size:12.5px;color:var(--ink-2);display:flex;align-items:center;gap:5px}
+.fdone .fn small .i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.fdone .ed{font-size:13px;font-weight:700;color:var(--green-600)}
+.viewbar{position:sticky;top:calc(59px + env(safe-area-inset-top,0px));z-index:25;display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:1100px;margin:0 auto;padding:10px 16px;background:rgba(244,245,250,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.viewbar .back{background:var(--green);color:#fff;border:0;border-radius:999px;padding:9px 16px;font-weight:700;font-size:14px;min-height:40px}
+.viewbar span{font-size:13px;color:var(--muted);font-weight:700}
+.actq{margin-top:6px;font-size:13.5px}
+.actq summary{cursor:pointer;color:var(--peri);font-weight:600;line-height:1.8;list-style:none}
+.actq summary::before{content:'＋ '}
+.actq[open] summary::before{content:'－ '}
+.actq .fld{margin-top:8px}
+.instr p b{color:#fff}
+.north.compact .nt>small,.north.compact .nbar{display:none}
+.north.compact .north-in{padding:7px 12px}
+.sheetbox.fluid{overflow:visible;height:auto!important}
+.sheetbox.fluid .sheet{width:auto;min-height:0;transform:none!important;padding:20px 14px 64px;border-radius:18px}
+.sheetbox.fluid .bh h2{font-size:24px}.sheetbox.fluid .bh p{font-size:14px}
+.sheetbox.fluid .bgrid{grid-template-columns:1fr;gap:22px}
+.sheetbox.fluid .b2c{grid-template-columns:1fr 1fr;gap:4px 14px}
+.sheetbox.fluid .bsec h3{font-size:18px}
+.sheetbox.fluid .bt-t{display:block;overflow-x:auto;max-width:100%;white-space:normal}
+.sheetbox.fluid .bgrid>.col,.sheetbox.fluid .bsec,.sheetbox.fluid .binfo{min-width:0}
+.sheetbox.fluid td.st .cb:not(.on){display:none}
+.sheetbox.fluid .bsec[data-go="forces"] .bt-t th:last-child,.sheetbox.fluid .bsec[data-go="forces"] .bt-t td:last-child{display:none}
+.sheetbox.fluid .bt-t td,.sheetbox.fluid .bt-t th{padding:5px 6px}
+.sheetbox.fluid .bt-t td.st{white-space:normal}
+.sheetbox.fluid .bt-t td.st .cb{margin-inline-end:6px}
+.sheetbox.fluid .byn>span:first-child{min-width:0;flex-basis:100%}
+@media (max-width:420px){.part span{font-size:10.5px}.parts{gap:4px}.rail{padding-top:14px}}
+.north{position:sticky;top:calc(59px + env(safe-area-inset-top,0px));z-index:20;max-width:640px;margin:12px auto 0;padding:0 16px}
+.north-in{width:100%;display:flex;gap:10px;align-items:flex-start;text-align:right;background:#30345a;color:#fff;border:0;border-radius:16px;padding:10px 14px;box-shadow:0 6px 18px rgba(48,52,90,.18)}
+.north .ns{color:#e8ae30;font-size:20px;line-height:1.3}
+.north .nt{flex:1;min-width:0;display:grid;gap:3px}
+.north small{font-size:11.5px;opacity:.8}
+.north b{font-size:13.5px;line-height:1.65}
+.north b i{font-style:normal;opacity:.75;font-weight:600}
+.nbar{height:5px;border-radius:999px;background:rgba(255,255,255,.2);overflow:hidden;display:block}
+.nbar span{display:block;height:100%;background:#e8ae30;border-radius:999px}
+.btn svg{width:18px;height:18px;flex:none}
+.parts{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.part{background:none;border:0;padding:0;text-align:right;display:grid;gap:6px}
+.part .ln{height:5px;border-radius:999px;background:var(--line-2);overflow:hidden;position:relative}
+.part .ln i{position:absolute;inset-block:0;right:0;background:var(--green);border-radius:999px;transition:width .3s}
+.part span{font-size:11.5px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.part.cur span{color:var(--ink)}
+.part.cur .ln{background:#c9ccd9}
+
+/* ---------- step ---------- */
+.wrap{max-width:640px;margin:0 auto;padding:18px 16px calc(120px + env(safe-area-inset-bottom,0px))}
+.step{animation:rise .26s var(--out)}
+@keyframes rise{from{opacity:.3;transform:translateY(8px)}}
+.eyebrow{font-size:12.5px;font-weight:600;color:var(--peri);letter-spacing:.02em}
+.step h1{font-size:26px;font-weight:800;line-height:1.5;margin:4px 0 8px;text-wrap:balance}
+.lead{color:var(--ink-2);font-size:15px;margin:0 0 20px}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:var(--sh1)}
+.stack{display:grid;gap:14px}
+.gap16{display:grid;gap:16px}
+.fld{display:flex;flex-direction:column;gap:6px;min-width:0}
+.fld>label,.fld>.lb{font-size:14.5px;font-weight:600}
+input,select,textarea{width:100%;min-width:0;background:var(--bg);border:1px solid var(--line-2);border-radius:12px;padding:10px 14px;font-size:16px;min-height:48px;transition:border-color .14s,box-shadow .14s}
+input:hover,select:hover,textarea:hover{border-color:#c4c7d6}
+input:focus,select:focus,textarea:focus{border-color:var(--peri);box-shadow:var(--focus)}
+textarea{resize:vertical;line-height:1.95;min-height:110px}
+input.n{font-variant-numeric:tabular-nums}
+input.big{font-size:24px;font-weight:700;min-height:60px;text-align:center}
+::placeholder{color:#a9acc1}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.g3 .fld>label{font-size:13px;color:var(--ink-2)}
+
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--line-2);background:var(--bg);border-radius:999px;padding:0 14px;min-height:40px;font-size:14px;color:var(--ink-2);display:inline-flex;align-items:center;gap:6px}
+.seg button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.seg .i{width:8px;height:8px;border-radius:50%}
+.seg button[aria-pressed="true"] .i{background:#fff!important}
+.s-قوی{background:var(--green)} .s-متوسط{background:var(--sky)} .s-ضعیف{background:var(--amber)} .s-بلااستفاده{background:var(--crimson)} .s-{background:var(--line-2)}
+.st4 button[data-v="قوی"][aria-pressed="true"]{background:var(--green);border-color:var(--green)}
+.st4 button[data-v="متوسط"][aria-pressed="true"]{background:var(--sky);border-color:var(--sky)}
+.st4 button[data-v="ضعیف"][aria-pressed="true"]{background:var(--amber);border-color:var(--amber)}
+.st4 button[data-v="بلااستفاده"][aria-pressed="true"]{background:var(--crimson);border-color:var(--crimson)}
+.pick button[aria-pressed="true"]{background:var(--peri-100);border-color:var(--peri);color:var(--ink);font-weight:600}
+.choice{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line-2);border-radius:18px;padding:13px 15px;background:var(--bg);text-align:right;width:100%}
+.choice:hover{border-color:#c4c7d6}
+.choice[aria-pressed="true"]{border-color:var(--green);background:var(--green-100);box-shadow:0 0 0 1px var(--green)}
+.choice .rd{flex:0 0 auto;width:20px;height:20px;border-radius:50%;border:2px solid var(--line-2);margin-top:4px;display:grid;place-items:center;background:var(--bg)}
+.choice[aria-pressed="true"] .rd{border-color:var(--green)}
+.choice[aria-pressed="true"] .rd::after{content:"";width:10px;height:10px;border-radius:50%;background:var(--green)}
+.choice b{display:block;font-size:15.5px}
+.choice span span{display:block;font-size:13.5px;color:var(--ink-2);line-height:1.8}
+.choices{display:grid;gap:8px}
+
+.item{border:1px solid var(--line-2);border-radius:20px;padding:14px;display:grid;gap:12px;background:var(--bg)}
+.item-h{display:flex;align-items:center;gap:8px}
+.item-h input{flex:1;font-weight:700}
+.idx{font-size:12px;color:var(--muted);font-weight:700;min-width:18px;text-align:center}
+.del{width:40px;height:40px;border-radius:50%;border:0;background:none;color:var(--muted);display:grid;place-items:center;flex:0 0 auto}
+.del:hover{background:var(--crimson-100);color:var(--crimson)}
+.del svg{width:18px;height:18px}
+.add{border:1.5px dashed var(--line-2);background:none;border-radius:18px;min-height:52px;font-size:15px;font-weight:600;color:var(--ink-2);width:100%}
+.add:hover{border-color:var(--green);color:var(--green-600);background:var(--green-100)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border:1px solid var(--line-2);background:var(--sunken);border-radius:999px;padding:0 12px;min-height:34px;font-size:13.5px;color:var(--ink-2)}
+.chips button:hover{border-color:var(--green);color:var(--green-600)}
+.tally{position:sticky;top:66px;z-index:5;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;font-variant-numeric:tabular-nums}
+.tally>div{border-radius:16px;padding:8px 14px;box-shadow:var(--sh2);display:flex;flex-direction:column;line-height:1.5}
+.tally .ta{background:var(--green);color:#fff}.tally .tm{background:var(--sky);color:#fff}
+.tally b{font-size:20px;font-weight:800}
+.ftot{display:flex;flex-wrap:wrap;gap:4px 16px;background:var(--sunken);border-radius:12px;padding:8px 12px;font-size:13.5px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.ftot .ta b{color:var(--green-600)} .ftot .tm b{color:var(--sky-ink)}
+.cat{display:grid;gap:8px}
+.cat+.cat{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.cat-h{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700}
+.kind{font-size:11.5px;font-weight:600;border-radius:999px;padding:0 9px;background:var(--sunken);color:var(--ink-2);white-space:nowrap}
+.instr{display:flex;gap:10px;align-items:center;background:var(--ink);color:#fff;border-radius:16px;padding:10px 14px;font-size:14.5px;font-weight:600;margin-bottom:12px}
+.instr span{width:26px;height:26px;border-radius:8px;background:#fff;color:var(--ink);display:grid;place-items:center;font-weight:800;flex:0 0 auto}
+.tally .sm{font-size:12px;opacity:.92}
+
+.note{background:var(--sky-100);border-radius:16px;padding:12px 14px;font-size:14px;color:var(--ink-2)}
+.note b{color:var(--ink)}
+.from{background:var(--peri-100);border-radius:16px;padding:12px 14px;font-size:14px;color:var(--ink-2)}
+.from small{display:block;font-size:12px;font-weight:700;color:var(--peri)}
+details.ex{background:var(--amber-100);border-radius:16px;padding:0 14px;font-size:14px;color:var(--ink-2)}
+details.ex summary{cursor:pointer;font-weight:600;color:var(--amber-ink);padding:10px 0;list-style:none}
+details.ex summary::-webkit-details-marker{display:none}
+details.ex summary::before{content:"+ "}
+details.ex[open] summary::before{content:"− "}
+details.ex>div{padding:0 0 12px}
+.sugg{display:flex;flex-wrap:wrap;gap:6px}
+.sugg button{border:0;background:var(--peri-100);color:var(--ink);border-radius:10px;padding:7px 12px;min-height:38px;font-size:13px;text-align:right;line-height:1.7}
+.sugg button::before{content:"+ ";color:var(--peri);font-weight:800}
+.check{display:flex;gap:10px;align-items:center;font-weight:600;border:1px solid var(--line-2);border-radius:16px;padding:13px 15px;cursor:pointer;background:var(--bg)}
+.check input{width:22px;height:22px;min-height:0;accent-color:var(--green);flex:0 0 auto}
+.check:has(input:checked){border-color:var(--green);background:var(--green-100)}
+
+/* ---------- gap visual ---------- */
+.need{text-align:center;padding:22px 18px}
+.need .nk{font-size:13.5px;color:var(--ink-2)}
+.need{border-radius:20px}
+.need .nk{font-weight:700}
+.need.n-act{background:var(--green-100)}.need.n-act .v,.need.n-act .nk{color:var(--green-600)}
+.need.n-aud{background:var(--sky-100)}.need.n-aud .v,.need.n-aud .nk{color:var(--sky-ink)}
+.need .v{font-size:34px;font-weight:800;line-height:1.4;font-variant-numeric:tabular-nums}
+.need .v small{font-size:15px;font-weight:600;color:var(--ink-2)}
+.needs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gapcard{display:grid;gap:12px}
+.gapcard.g-act{border-top:4px solid var(--green)}.gapcard.g-aud{border-top:4px solid var(--sky)}.gapcard.g-plan{border-top:4px solid var(--amber)}
+.gapcard.g-act h3,.gapcard.g-act .gapline b{color:var(--green-600)}.gapcard.g-aud h3,.gapcard.g-aud .gapline b{color:var(--sky-ink)}.gapcard.g-plan h3,.gapcard.g-plan .gapline b{color:var(--amber-ink)}
+.gapcard h3{margin:0;font-size:17px;line-height:1.6}
+.gapline{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;font-size:14px;color:var(--ink-2)}
+.gapline b{font-size:22px;color:var(--ink);font-weight:800;font-variant-numeric:tabular-nums}
+.dots{display:grid;grid-template-columns:repeat(20,1fr);gap:5px;direction:rtl}
+.dots i{aspect-ratio:1;border-radius:50%;background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line-2)}
+.dots i.have{background:var(--green);box-shadow:none}
+.dots.aud i.have{background:var(--sky)}
+.dots i.add{background:var(--amber);box-shadow:none}
+.dots i.inv{background:var(--green-100);box-shadow:inset 0 0 0 2px var(--green)}
+.three{display:grid;gap:8px}
+.three>div{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border-radius:14px;padding:10px 12px;background:var(--sunken)}
+.three i{width:14px;height:14px;border-radius:50%;display:block}
+.three b{font-size:18px;font-variant-numeric:tabular-nums}
+.three small{display:block;color:var(--ink-2);font-size:12.5px;line-height:1.7}
+.three .r-act b{color:var(--green-600)} .three .r-inv{background:var(--green-100)} .three .r-inv b{color:var(--green-600)}
+.three .r-new{background:var(--crimson-100)} .three .r-new b{color:var(--crimson)} .three .r-aud{background:var(--sky-100)} .three .r-aud b{color:var(--sky-ink)}
+.three .do{font-size:12px;font-weight:800;border-radius:999px;padding:1px 9px;margin-inline-start:6px;background:#fff}
+.story h1{font-size:25px;line-height:1.6}
+.story .say{font-size:16.5px;line-height:2.05;color:var(--ink);margin:0 0 16px}
+.story .say b{color:var(--ink)}
+.qt{position:relative;background:var(--peri-100);border-radius:20px;padding:18px 18px 14px;margin:4px 0 16px}
+.qt p{margin:0;font-size:16px;line-height:2.05;font-weight:600;color:var(--ink)}
+.qt small{display:block;margin-top:8px;font-size:12.5px;color:var(--peri);font-weight:600}
+.torch{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;direction:rtl}
+.torch i{aspect-ratio:1;border-radius:50%;background:var(--sky-100);box-shadow:inset 0 0 0 1px var(--line-2)}
+.torch i.lit{background:var(--sky)} .torch i.me{background:var(--green);box-shadow:0 0 0 3px var(--green-100)}
+.torch i.off{background:var(--sunken)}
+.chain{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;color:var(--ink-2)}
+.chain b{font-size:22px;color:var(--ink)}
+.ways{display:grid;gap:10px}
+.ways>div{border-radius:18px;padding:14px 16px;display:grid;gap:4px}
+.ways b{font-size:16.5px} .ways span{font-size:14px;color:var(--ink-2);line-height:1.9}
+.ways .w1{background:var(--green-100);box-shadow:inset 0 0 0 2px var(--green)} .ways .w1 b{color:var(--green-600)}
+.ways .w2{background:var(--green)} .ways .w2 b,.ways .w2 span{color:#fff}
+.ways .w3{background:var(--sky-100)} .ways .w3 b{color:var(--sky-ink)}
+.ways .n{font-size:12px;font-weight:800;opacity:.8}
+.dots i.tgt{box-shadow:inset 0 0 0 2px var(--peri)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12.5px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.big-say{font-size:17px;font-weight:700;line-height:1.8;margin:0}
+.big-say em{font-style:normal;color:#fff;background:var(--crimson);border-radius:10px;padding:0 10px}
+
+/* ---------- moves ---------- */
+.move{border:1px solid var(--line-2);border-radius:20px;background:var(--bg);overflow:hidden}
+.move>button.mh{display:flex;align-items:center;gap:12px;width:100%;background:none;border:0;padding:14px 16px;text-align:right}
+.move .mn{flex:0 0 auto;width:34px;height:34px;border-radius:50%;background:var(--sunken);display:grid;place-items:center;font-weight:800;font-size:14px}
+.move .mt{flex:1;min-width:0}
+.move .mt b{display:block;font-size:16px}
+.move .mt span{display:block;font-size:13.5px;color:var(--ink-2);line-height:1.7}
+.move .cnt{font-size:12px;font-weight:700;border-radius:999px;padding:1px 10px;background:var(--green-100);color:var(--green-600);white-space:nowrap}
+.move .cnt.z{background:var(--sunken);color:var(--muted)}
+.move .mb{padding:0 16px 16px;display:grid;gap:10px}
+.move .mwhat{margin:0;font-size:14.5px;line-height:2;color:var(--ink)}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.vs>div{border-radius:14px;padding:10px 12px;font-size:13.5px;line-height:1.85}
+.vs small{display:block;font-weight:800;font-size:12px;margin-bottom:2px}
+.vs .v-p{background:var(--sunken);color:var(--ink-2)} .vs .v-p small{color:var(--muted)}
+.vs .v-t{background:var(--green-100);color:var(--ink)} .vs .v-t small{color:var(--green-600)}
+.waygrp{margin-top:16px;display:grid;gap:10px}
+.wg-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:10px 14px;border-radius:14px}
+.wg-h b{font-size:15.5px} .wg-h span{font-size:12.5px;font-weight:700}
+.waygrp.w1 .wg-h{background:var(--green-100);box-shadow:inset 0 0 0 2px var(--green)} .waygrp.w1 .wg-h b,.waygrp.w1 .wg-h span{color:var(--green-600)}
+.waygrp.w2 .wg-h{background:var(--green)} .waygrp.w2 .wg-h b,.waygrp.w2 .wg-h span{color:#fff}
+.waygrp.w3 .wg-h{background:var(--sky-100)} .waygrp.w3 .wg-h b,.waygrp.w3 .wg-h span{color:var(--sky-ink)}
+.verdict{border-radius:18px;padding:14px 16px;display:grid;gap:8px}
+.verdict b{font-size:16.5px} .verdict p{margin:0;font-size:14px;line-height:1.95;color:var(--ink-2)}
+.verdict.bad{background:var(--crimson-100)} .verdict.bad>b{color:var(--crimson)}
+.verdict.good{background:var(--green-100)} .verdict.good>b{color:var(--green-600)}
+.fix{background:#fff;border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.9}
+.fix small{display:block;color:var(--muted);font-size:12px;font-weight:700}
+.row-btn{display:flex;gap:8px;flex-wrap:wrap}
+.sc{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.sc:last-child{border-bottom:0}
+.sc i{width:12px;height:12px;border-radius:50%;margin-top:7px;display:block}
+.sc.ok i{background:var(--green)} .sc.mid i{background:var(--amber)} .sc.no i{background:var(--crimson)}
+.sc span{display:block;font-size:12.5px;color:var(--muted);font-weight:600}
+.sc b{font-size:16px} .sc small{display:block;font-size:13px;color:var(--ink-2);line-height:1.8}
+.split{display:flex;gap:6px;flex-wrap:wrap}
+.split span{font-size:12.5px;font-weight:700;border-radius:999px;padding:2px 10px}
+.split .s-inv{background:var(--green-100);color:var(--green-600);box-shadow:inset 0 0 0 1.5px var(--green)} .split .s-new{background:var(--green);color:#fff}
+.costs{display:grid;grid-template-columns:1fr 120px;gap:8px 10px;align-items:center}
+.costs label{font-size:14.5px;font-weight:600}
+.road{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media(min-width:620px){.road{grid-template-columns:repeat(4,1fr)}}
+.road .q{border:1.5px dashed var(--line-2);border-radius:14px;padding:8px 10px;display:grid;gap:4px;min-height:62px;align-content:start}
+.road .q small{font-size:11.5px;color:var(--muted);font-weight:700}
+.road .q span{font-size:13px;color:var(--muted)}
+.road .q.on{border:0;background:var(--amber-100)}
+.road .q button{background:none;border:0;padding:0;text-align:right;font-size:13.5px;font-weight:700;color:var(--amber-ink);line-height:1.7}
+.stg{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start}
+.stg .sn{width:28px;height:28px;border-radius:50%;background:var(--sunken);display:grid;place-items:center;font-weight:800;font-size:13px;margin-top:4px}
+.move .exm{font-size:13.5px;color:var(--ink-2);background:var(--amber-100);border-radius:14px;padding:10px 12px}
+.move .exm b{color:var(--amber-ink)}
+.move.open{border-color:var(--ink)}
+.move.chosen{border-color:var(--green);box-shadow:0 0 0 1px var(--green)}
+.cand{display:flex;align-items:center;gap:10px;background:var(--sunken);border-radius:14px;padding:10px 12px}
+.cand span{flex:1;min-width:0;font-size:14px}
+.cand small{display:block;font-size:12.5px;color:var(--muted);line-height:1.7}
+.cand button{white-space:nowrap}
+.cmp{width:100%;border-collapse:collapse;font-size:14px}
+.cmp th{text-align:right;font-weight:700;padding:6px 8px;font-size:13px;color:var(--muted);border-bottom:1px solid var(--line)}
+.cmp td{padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+.cmp td:last-child{color:var(--green-600);font-weight:600}
+
+.sentence{background:var(--sunken);border-radius:16px;padding:14px 16px}
+.sentence small{display:block;font-size:12px;color:var(--muted);font-weight:600}
+.sentence p{margin:0;font-size:16px;font-weight:600;line-height:1.95}
+.ba{display:grid;grid-template-columns:auto 1fr 1fr;gap:8px 10px;align-items:center}
+.ba .hd{font-size:12.5px;color:var(--muted);font-weight:600}
+.ba .rl{font-weight:700}
+.impact{background:var(--amber-100);border-radius:18px;padding:14px 16px;display:grid;gap:8px}
+.impact .row{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.impact b{font-size:24px;font-weight:800;color:var(--amber-ink);font-variant-numeric:tabular-nums}
+.impact span{font-size:14px;color:var(--ink-2)}
+.yn{border:1px solid var(--line-2);border-radius:18px;padding:14px;display:grid;gap:8px;background:var(--bg)}
+.yn b{font-size:15px;line-height:1.7}
+.yn>span{font-size:13px;color:var(--muted)}
+.warn{background:var(--amber-100);border-radius:16px;padding:12px 14px;font-size:14px;color:#7a5810}
+.stage{border:1px solid var(--line-2);border-radius:22px;padding:14px;display:grid;gap:12px;background:var(--bg)}
+.stage-h{display:flex;gap:10px;align-items:center}
+.stage-h .sn{width:32px;height:32px;border-radius:50%;background:var(--ink);color:#fff;font-weight:800;display:grid;place-items:center;flex:0 0 auto}
+.stage-h b{display:block;font-size:15.5px;line-height:1.5}
+.stage-h small{display:block;font-size:12.5px;color:var(--muted)}
+.act{display:grid;grid-template-columns:1fr 1fr 40px;gap:6px;background:var(--sunken);border-radius:16px;padding:8px}
+.act .a1{grid-column:1/3}
+.act .dl{grid-row:1;grid-column:3}
+.act input,.act select{min-height:44px;font-size:15px}
+
+/* ---------- bottom bar ---------- */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:25;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}
+.nav-in{max-width:640px;margin:0 auto;display:flex;gap:10px;align-items:center}
+.nav .pos{flex:1;font-size:12.5px;color:var(--muted);text-align:center}
+.btn{border:0;border-radius:999px;padding:0 24px;height:48px;font-weight:700;font-size:15.5px;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;transition:background .14s,transform .1s}
+.btn:active{transform:scale(.985)}
+.btn.pr{background:var(--green);color:#fff;box-shadow:0 6px 18px rgba(47,181,124,.3)}
+.btn.pr:hover{background:var(--green-600)}
+.btn.pr:disabled{background:#b8c9c0;box-shadow:none;cursor:not-allowed}
+.btn.se{background:var(--bg);border:1px solid var(--line-2);color:var(--ink)}
+.btn.se:hover{background:var(--sunken)}
+.btn.sm{height:38px;padding:0 16px;font-size:14px;font-weight:600}
+.btn.wide{width:100%}
+.link{background:none;border:0;color:var(--green-600);font-weight:700;font-size:14px;padding:0}
+
+/* ---------- bom view ---------- */
+.bomwrap{max-width:1100px;margin:0 auto;padding:18px 16px 60px}
+.bom-h{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:end;justify-content:space-between;margin-bottom:14px}
+.bom-h h1{margin:0;font-size:26px;font-weight:800;line-height:1.45}
+.w8{background:var(--amber-100);color:var(--amber-ink);border-radius:12px;padding:8px 12px;font-size:13px;line-height:1.8;width:100%}
+.w8::before{content:'⚠ '}
+.net{position:fixed;inset-inline:12px;bottom:88px;z-index:60;background:#30345a;color:#fff;border-radius:16px;padding:12px 14px;display:flex;gap:10px;align-items:center;font-size:13.5px;line-height:1.8;box-shadow:0 8px 24px rgba(0,0,0,.18);max-width:560px;margin:0 auto}
+.net span{flex:1}
+.net button{background:#fff;color:#30345a;border:0;border-radius:999px;padding:6px 12px;font-weight:700;font-size:13px;white-space:nowrap}
+.sheetbox{position:relative;margin-bottom:18px;overflow:hidden}
+.sheetbox.zoom{overflow-x:auto;height:auto!important}
+.sheetbox.zoom .sheet{transform:none!important}
+.sheet{width:1400px;min-height:990px;background:#fff;color:#1d1f2e;border:1px solid var(--line);box-shadow:var(--sh1);padding:34px 40px 70px;position:relative;transform-origin:top right;font-size:14px}
+.bh{text-align:center;margin-bottom:18px;color:#8d90a4}
+.bh h2{margin:0;font-size:34px;font-weight:900;color:#1d1f2e;letter-spacing:.01em}
+.bh p{margin:2px 0 4px;font-size:19px;color:#8d90a4}
+.bh svg{width:120px;height:16px}
+.bgrid{display:grid;grid-template-columns:1fr 1fr;gap:34px;align-items:start}
+.bgrid .col{display:grid;gap:22px}
+.binfo{position:relative;padding:14px 18px 12px 0;cursor:pointer}
+.binfo::before{content:'';position:absolute;top:0;right:0;width:46px;height:28px;border-top:2px solid #c9cbd6;border-right:2px solid #c9cbd6}
+.binfo::after{content:'';position:absolute;bottom:0;left:0;width:46px;height:28px;border-bottom:2px solid #c9cbd6;border-left:2px solid #c9cbd6}
+.binfo .bt{font-size:19px;font-weight:900;margin-bottom:8px}
+.b2c{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px}
+.b2c small,.bline small,.bl{display:block;font-size:13px;font-weight:800;color:#3c3f55;margin-top:6px}
+.b2c small::before,.bline small::before,.bl::before{content:'◂ ';color:#9a9db0;font-size:10px}
+.kvl{font-size:13.5px;margin:2px 0}
+.bsec{position:relative;padding:12px 16px 0 0;cursor:pointer;border-radius:6px}
+.bsec::before{content:'';position:absolute;top:0;right:0;width:46px;height:28px;border-top:2px solid #c9cbd6;border-right:2px solid #c9cbd6}
+.bsec:hover{background:#fafbff}
+.bsec h3{margin:0 0 4px;font-size:21px;font-weight:900;display:flex;gap:6px;align-items:baseline}
+.bsec h3 span::after{content:'.'}
+.bsub{margin:0 0 10px;color:#7b7e93;font-size:13.5px;line-height:1.9}
+.bq{margin:0 0 8px;font-size:14.5px;line-height:2;color:#2c2f45;border-right:3px solid #c9cbd6;padding-right:10px}
+.bt-t{width:100%;border-collapse:collapse;border:1.5px solid #3a3d52;font-size:13px}
+.bt-t thead th{background:#8a8c99;color:#fff;font-weight:700;padding:8px 6px;border-left:1px solid #fff;text-align:center}
+.bt-t thead tr th:first-child{clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}
+.bt-t td,.bt-t th.rh{border:1px solid #3a3d52;padding:6px 8px;vertical-align:middle;height:34px}
+.bt-t th.rh{background:#8a8c99;color:#fff;font-weight:700;text-align:center;width:120px}
+.bt-t td.n{text-align:center;font-variant-numeric:tabular-nums;color:var(--peri);font-weight:700}
+.bt-t td.nm{font-weight:700;color:var(--peri)}
+.bt-t td.sm{font-size:12px;color:#5b5e74}
+.bt-t td.st{white-space:nowrap}
+.bt-t td.tall{height:110px;vertical-align:top;line-height:1.9}
+.cb{display:inline-flex;align-items:center;gap:4px;margin-inline-end:10px;font-size:12.5px;color:#3c3f55;line-height:1.9}
+.cb i{width:12px;height:12px;border:1.5px solid #3a3d52;border-radius:3px;display:inline-block;flex:none;position:relative}
+.cb.on{color:#1d1f2e;font-weight:700}
+.cb.on i{background:var(--green);border-color:var(--green)}
+.cb.on i::after{content:'';position:absolute;left:3px;top:0;width:3px;height:7px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.binfo .cb{display:flex}
+.pen{color:var(--peri);font-weight:700;line-height:1.9}
+.pen.sm,div.pen.sm{font-size:12.5px;font-weight:600}
+.blank{display:block;border-bottom:1.5px dotted #b5b7c4;height:24px}
+.bline{margin-top:8px;line-height:1.9}
+.bline .cb{display:flex}
+.btot,.bgap{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:13px}
+.btot b{color:var(--peri)}
+.bgap span{border-radius:999px;padding:2px 12px;font-weight:700;font-size:12.5px}
+.bgap .w1{background:var(--green-100);color:var(--green-600);box-shadow:inset 0 0 0 1.5px var(--green)}
+.bgap .w2{background:var(--green);color:#fff}
+.bgap .w3{background:var(--sky-100);color:var(--sky-ink)}
+.bgap .w4{background:var(--amber-100);color:var(--amber-ink)}
+.bway{margin-bottom:10px}
+.bway>small{display:block;font-size:12.5px;font-weight:800;color:#7b7e93;margin-bottom:2px}
+.bmove{padding:3px 6px;border-radius:8px}
+.bmove .cb{font-size:13.5px;display:flex;align-items:flex-start}
+.bmove .cb i{margin-top:6px}
+.bmove.on{background:var(--green-100)}
+.byn{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:5px 0;border-bottom:1px dotted #c9cbd6;font-size:13.5px}
+.byn>span:first-child{flex:1;min-width:220px}
+.bverdict{margin-top:10px;padding:8px 12px;border-radius:8px;background:#f2f3f7;font-size:13.5px}
+.bverdict.ok{background:var(--green-100);color:var(--green-600);font-weight:700}
+.bverdict.no{background:var(--crimson-100);color:var(--crimson);font-weight:700}
+.bstage{margin-bottom:10px}
+.bst-h{display:flex;gap:8px;align-items:baseline;font-size:14px}
+.bst-h span{font-size:12.5px;color:#7b7e93}
+.bfoot{position:absolute;bottom:14px;left:0;right:0;display:flex;justify-content:center}
+.bfoot .logo{height:34px;width:auto}
+@media print{
+ @page{size:A4 landscape;margin:0}
+ body{background:#fff}
+ .bar,.demo,.nav,.bom-h,.bomwrap>.hint,#layer,.rail{display:none!important}
+ .bomwrap{padding:0;max-width:none}
+ .sheetbox{height:auto!important;overflow:visible;margin:0;page-break-after:always;break-after:page}
+ .sheet{transform:scale(.8)!important;transform-origin:top right;border:0;box-shadow:none}
+}
+.k3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.k2{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:760px){.k3,.k2{grid-template-columns:1fr}}
+.k{border:1px solid var(--line-2);border-radius:16px;padding:12px 14px;text-align:right;background:var(--bg);display:grid;gap:4px;align-content:start;min-width:0}
+.k:hover{border-color:var(--green)}
+.k.span2{grid-column:span 2}
+.k.span3{grid-column:1/-1}
+@media (max-width:760px){.k.span2{grid-column:auto}}
+.k small{font-size:12px;color:var(--muted);font-weight:700}
+.k .kv{font-size:14px;line-height:1.85;color:var(--ink);white-space:pre-line;overflow-wrap:anywhere}
+.k .kv.empty{color:#b0b3c6}
+.ktable{width:100%;border-collapse:collapse;font-size:13.5px}
+.ktable th{font-size:12px;color:var(--muted);text-align:right;font-weight:600;padding:4px 6px;border-bottom:1px solid var(--line)}
+.ktable td{padding:5px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.ktable .n{font-variant-numeric:tabular-nums}
+.pill{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:0 10px;background:var(--sunken)}
+.pill.g{background:var(--green-100);color:var(--green-600)}
+.pill.a{background:var(--amber-100);color:var(--amber-ink)}
+.pill.c{background:var(--crimson-100);color:#a3173f}
+.overflow{overflow-x:auto}
+
+/* ---------- review ---------- */
+.miss{display:grid;gap:6px}
+.miss button{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:right;background:var(--bg);border:1px solid var(--line-2);border-radius:14px;padding:10px 14px;font-size:14px}
+.miss button:hover{border-color:var(--green)}
+.plancard{display:flex;gap:12px;align-items:center}
+.plancard b{display:block}
+.plancard span{font-size:13px;color:var(--ink-2)}
+
+/* ---------- feedback ---------- */
+.score{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.score div{background:var(--sunken);border-radius:16px;padding:12px;text-align:center}
+.score b{display:block;font-size:26px;font-weight:800}
+.score small{font-size:12px;color:var(--ink-2)}
+.lst{margin:0;padding-inline-start:20px}
+.lst li{margin-block:4px}
+
+/* ---------- auth + modal ---------- */
+.auth{min-height:100vh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);background:var(--bg)}
+.auth-brand{position:relative;overflow:hidden;background:var(--sunken);padding:48px clamp(24px,5vw,64px);display:flex;flex-direction:column;justify-content:center;gap:24px}
+.auth-brand .motif{position:absolute;left:-120px;bottom:-60px;width:560px;max-width:none;pointer-events:none}
+.auth-brand .logo{height:38px;position:relative}
+.auth-brand h2{position:relative;font-size:clamp(28px,3.4vw,40px);font-weight:800;line-height:1.35;margin:0;max-width:13ch}
+.auth-brand p{position:relative;margin:0;color:var(--ink-2);font-size:15.5px;max-width:40ch}
+.auth-form{display:grid;place-items:center;padding:40px 24px}
+.auth-form form{width:100%;max-width:380px;display:grid;gap:16px}
+.auth-form h1{font-size:26px;font-weight:800;margin:0;line-height:1.45}
+.pw{position:relative}
+.pw input{padding-left:50px}
+.pw button{position:absolute;left:5px;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;border:0;background:none;color:var(--muted);display:grid;place-items:center}
+.pw button svg{width:19px;height:19px}
+.ltr{direction:ltr;text-align:right}
+.err{color:var(--crimson);font-size:13.5px;min-height:1.6em;margin-top:-6px}
+.help{font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px;margin:0}
+@media (max-width:820px){.auth{grid-template-columns:1fr;align-content:start}.auth-brand{padding:28px 20px}.auth-brand .motif{width:360px;left:-150px;bottom:auto;top:-50px;opacity:.55}.auth-brand h2{font-size:26px;max-width:none}.auth-form{place-items:start center;padding:24px 20px 40px}}
+.scrim{position:fixed;inset:0;background:rgba(48,52,90,.34);z-index:40}
+.modal-wrap{position:fixed;inset:0;z-index:45;overflow:auto;display:grid;place-items:center;padding:20px 16px}
+.modal{width:100%;max-width:440px;background:var(--bg);border-radius:26px;padding:24px;box-shadow:var(--sh4);animation:pop .2s var(--out)}
+.modal h2{margin:0 0 6px;font-size:20px}
+.list{display:grid;gap:4px;max-height:60vh;overflow:auto}
+.list button{display:flex;gap:10px;align-items:center;background:none;border:0;border-radius:12px;padding:8px 10px;text-align:right;font-size:14px}
+.list button:hover{background:var(--sunken)}
+.list button.cur{background:var(--peri-100);font-weight:700}
+.list .d{width:20px;height:20px;border-radius:50%;flex:0 0 auto;border:2px solid var(--line-2);display:grid;place-items:center;font-size:11px;color:#fff}
+.list .d.on{background:var(--green);border-color:var(--green)}
+.list h4{margin:10px 10px 2px;font-size:12px;color:var(--muted)}
+
+/* ---------- intro ---------- */
+.intro{position:relative;overflow:hidden}
+.intro .motif{position:absolute;left:-160px;top:-70px;width:520px;opacity:.5;pointer-events:none}
+.intro>*{position:relative}
+.path{display:grid;gap:10px;margin:18px 0}
+.path div{display:flex;gap:12px;align-items:flex-start;background:var(--bg);border:1px solid var(--line);border-radius:18px;padding:12px 14px}
+.path span{width:30px;height:30px;border-radius:50%;background:var(--ink);color:#fff;font-weight:800;display:grid;place-items:center;flex:0 0 auto;font-size:14px}
+.path b{display:block}
+.path small{display:block;font-size:13.5px;color:var(--ink-2)}
+
+.toast{position:fixed;bottom:calc(88px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 18px;border-radius:999px;font-size:14px;box-shadow:var(--sh2);z-index:60;display:flex;gap:10px;align-items:center;max-width:calc(100% - 32px)}
+.toast button{background:rgba(255,255,255,.16);border:0;color:#fff;border-radius:999px;padding:3px 12px;font-size:13px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div id="app"></div>
+<div id="layer"></div>
+<div class="toast" id="toast" hidden></div><button type="button" class="jump" id="jump" data-jump hidden></button>
+
+<script>
+/* =====================================================================
+   مفاهیم ثابت
+   ===================================================================== */
+const STATUS=[['قوی','کار تبیینی منظم و اثرگذار دارد'],['متوسط','کار تبیینی دارد، اما نامنظم یا محدود'],['ضعیف','حضور دارد، اما کار تبیینی‌اش ناچیز است'],['بلااستفاده','ظرفیت دارد، اما هیچ نقشی در تبیین ندارد']];
+const CATS=[
+ ['مساجد و هیئات','g',['مساجد','هیئات مذهبی','حوزه‌های علمیه','کانون‌ها و خانه‌های قرآنی']],
+ ['کانون‌ها و تشکل‌ها','g',['کانون‌های فرهنگی‌هنری مساجد','کانون‌های فرهنگی تبلیغی','پایگاه‌های بسیج','گروه‌های جهادی','موکب‌ها','مدارس قرآنی و امین']],
+ ['روحانیان، مبلغان و مداحان','p',['روحانیون مستقر','امامان جماعت','بانوان مبلغ','مداحان و ذاکرین']],
+ ['معلمان، اساتید و مربیان','p',['معلمان پرورشی','معلمان و فرهنگیان','اساتید دانشگاه','مربیان کانون‌ها']],
+ ['فعالان رسانه و چهره‌های محلی','p',['فعالان فضای مجازی','هنرمندان','ورزشکاران','پزشکان','کسبهٔ معتمد']]];
+const FORCE_EX=CATS.flatMap(c=>c[2]);
+const KIND=Object.fromEntries(CATS.flatMap(c=>c[2].map(n=>[n,c[1]])));
+const SEGMENTS=['نوجوانان','جوانان و دانشجویان','بانوان خانه‌دار','کارگران','اصناف و بازاریان','کارمندان','روستاییان','حاشیه‌نشینان','محله‌های مرفه','اقوام و اهل سنت','ورزشکاران و هواداران','فضای مجازی محلی'];
+const LV=['زیاد','کم','هیچ'];
+const WAYS={inv:{t:'دعوت از کنشگران فعلی',c:'w1',d:'کنشگران فرهنگیِ امروز را به جهاد تبیین می‌آورد.'},new:{t:'آوردن کنشگر تازه',c:'w2',d:'آدم‌هایی را کنشگر می‌کند که تا امروز نبوده‌اند.'},aud:{t:'روشن کردن جاهای تاریک',c:'w3',d:'حرف را به قشر و محله‌ای می‌رساند که امروز بی‌پوشش است.'}};
+const MOVES=[
+ {t:'تغییر نقش',way:'inv',d:'همان نیرو می‌ماند، نقشش عوض می‌شود.',what:'نیرویی که امروز کار دیگری می‌کند، مثلاً خدمات‌رسانی یا برگزاری مراسم، تبیین را جزو کار اصلی خودش می‌کند. آدم‌ها و مکان‌ها همان‌اند؛ جایگاهشان مؤثرتر می‌شود.',when:'نیرویی که مخاطب زیاد دارد، اما کار تبیینی‌اش ضعیف یا متوسط است.',ex:'هیئتی که تنها خدمات‌رسانی می‌کرد، کانون جهاد تبیین می‌شود.',prog:'چند سخنرانی تبیینی در هیئت برگزار می‌شود.',tah:'مسئولان هیئت تبیین مسئلهٔ روز را بخش ثابت هر جلسه می‌کنند و برایش نیروی مشخص می‌گذارند.',f:'کدام نیرو نقشش عوض می‌شود؟',from:'امروز چه نقشی دارد؟',to:'پس از تحول چه نقشی می‌گیرد؟',ph:['هیئات مذهبی','برگزاری مراسم و خدمات','کانون تبیین مسئلهٔ روز در محله'],s:d=>`${d.f} از «${d.from}» به «${d.to}» تبدیل می‌شود.`},
+ {t:'فعال‌سازی ظرفیت',way:'inv',d:'ظرفیتی که هست و بی‌کار مانده، به کار می‌افتد.',what:'نیرویی که در شهرستان حضور دارد، اما در جهاد تبیین هیچ نقشی ندارد، برای یک کار تبیینی مشخص فعال می‌شود. نزدیک‌ترین و ارزان‌ترین مشعل‌ها همین‌ها هستند.',when:'نیروهایی که سطح فعالیتشان را «بلااستفاده» یا «ضعیف» زده‌اید.',ex:'معلم پرورشیِ حاضر در مدرسه، به شبهه‌های دانش‌آموزان پاسخ می‌دهد.',prog:'یک همایش برای معلمان پرورشی برگزار می‌شود.',tah:'معلمان پرورشی دوره می‌بینند و پاسخ به پرسش‌های دانش‌آموزان جزو کار هر هفتهٔ آن‌ها می‌شود.',f:'کدام نیرو بی‌کار مانده؟',from:'امروز چه می‌کند؟',to:'برای چه کار تبیینی فعال می‌شود؟',ph:['معلمان پرورشی','در تبیین نقشی ندارند','پاسخ به شبهات دانش‌آموزان'],s:d=>`${d.f} برای «${d.to}» فعال می‌شوند.`},
+ {t:'ایجاد اتصال',way:'inv',d:'دو نیروی جدا از هم، کمبود هم را پر می‌کنند.',what:'یکی محتوا دارد و پایگاه ندارد، دیگری پایگاه دارد و محتوا ندارد. با یک قرار ثابت و تقسیم کار، از دو نقطهٔ پراکنده یک حلقهٔ متصل ساخته می‌شود. کمبودها با اتصال جبران می‌شود، نه با بودجه.',when:'جفت نیروهایی که در صفحهٔ «ارتباط نیروها» همکاری‌شان را کم یا هیچ زده‌اید.',ex:'فعالان قرآنی به مساجد وصل می‌شوند و پایگاه قرآنیِ تبیینی شکل می‌گیرد.',prog:'یک برنامهٔ مشترک میان دو نیرو برگزار می‌شود.',tah:'دو نیرو قرار ثابت هفتگی و تقسیم کار روشن دارند و هر کدام کار دیگری را کامل می‌کند.',f:'نیروی اول',f2:'نیروی دوم',from:'امروز چه رابطه‌ای دارند؟',to:'از پیوند این دو چه شکل می‌گیرد؟',ph:['فعالان قرآنی','جدا از هم کار می‌کنند','پایگاه‌های قرآنیِ تبیینی','مساجد'],s:d=>`${d.f} و ${d.f2||'…'} به هم وصل می‌شوند و «${d.to}» شکل می‌گیرد.`},
+ {t:'فعال‌سازی مخاطب',way:'new',d:'مخاطبِ تماشاگر، خودش کنشگر می‌شود.',what:'هر نیرو مخاطبانی دارد که سال‌هاست فقط می‌شنوند. از میان آن‌ها کسانی که آماده‌اند، شناسایی می‌شوند و با یک مربی، خودشان سخنران، راوی یا نیروی رسانه‌ای می‌شوند. صف مخاطبان به صف نیروها می‌پیوندد.',when:'نیروهایی که به ازای هر کنشگر، مخاطب زیادی دارند.',ex:'نوجوانی که تماشاگر هیئت بود، خودش سخنران و نیروی رسانه‌ای هیئت می‌شود.',prog:'برای نوجوانان هیئت مسابقه برگزار می‌شود.',tah:'هستهٔ نوجوانان هیئت با یک مربی شکل می‌گیرد و سخنران و رسانهٔ هیئت، خود نوجوانان می‌شوند.',f:'مخاطبان کدام نیرو؟',from:'امروز چه نقشی دارند؟',to:'به چه کنشگرانی تبدیل می‌شوند؟',ph:['هیئات مذهبی','تماشاگر مراسم','نانورسانه‌های تبیینی'],s:d=>`مخاطبان ${d.f} از «${d.from}» به «${d.to}» تبدیل می‌شوند.`},
+ {t:'افزودن نیروی جدید',way:'new',d:'نیرویی که امروز در آرایش نیست، وارد می‌شود.',what:'کاسب و بازاری، راننده، ادمین صفحهٔ محلی، معتمد محله، پزشک، ورزشکار و بزرگان طوایف در هیچ چارتی نیستند، اما حرفشان در شهر خریدار دارد. پژوهش میدانی سازمان نشان داد بیشتر طرح‌ها درون دایرهٔ آشنا مانده‌اند؛ راه رسیدن به ده درصد از بیرون این دایره می‌گذرد.',when:'نیروهایی که در فهرست امروز شهرستان شما نیستند.',ex:'رانندگان تاکسی به شبکهٔ مجاهدان تبیین شهرستان اضافه می‌شوند.',prog:'یک جلسهٔ سخنرانی برای رانندگان تاکسی برگزار می‌شود.',tah:'رانندگان یک راهبر از میان خودشان دارند و هر هفته محتوای کوتاه تبیینی را در مسیرها روایت می‌کنند.',f:'کدام نیروی تازه اضافه می‌شود؟',from:'چرا تا امروز در آرایش نبوده؟',to:'در آرایش چه نقشی می‌گیرد؟',ph:['رانندگان تاکسی','کسی سراغشان نرفته','راوی روایت درست در مسیرهای شهری'],s:d=>`${d.f} به آرایش جهاد تبیین شهرستان اضافه می‌شوند و نقش «${d.to}» را می‌گیرند.`},
+ {t:'ورود به عرصهٔ جدید',way:'aud',d:'حرف به قشر یا محله‌ای می‌رسد که امروز بی‌پوشش است.',what:'بخش بزرگی از مردم را هیچ نیرویی پوشش نمی‌دهد. این حرکت یعنی جهاد تبیین به آن قشر، صنف یا محله برسد؛ و بهتر از همه، با کنشگرانی از خود همان قشر، نه با رفت‌وآمد نیروهای بیرونی.',when:'قشرها و محله‌هایی که در صفحهٔ «مخاطبان بی‌پوشش» علامت زده‌اید.',ex:'کسبهٔ معتمد هر راستهٔ بازار، راوی روایت درست برای همکاران و مشتریانشان می‌شوند.',prog:'یک برنامهٔ فرهنگی در بازار برگزار می‌شود.',tah:'در هر راسته یک کاسب معتمد، کنشگر همان راسته می‌شود و با بقیه در ارتباط می‌ماند.',f:'به کدام قشر، صنف یا محله می‌رسید؟',from:'امروز چه وضعی دارد؟',to:'چه کسی آنجا کنشگر می‌شود و چه می‌کند؟',ph:['اصناف بازار','پیام تبیین به آن‌ها نمی‌رسد','کسبهٔ معتمد هر راسته، راوی روایت درست می‌شوند'],s:d=>`جهاد تبیین به ${d.f} می‌رسد: ${d.to}.`}];
+const MV=Object.fromEntries(MOVES.map(m=>[m.t,m]));
+const STAGES=[['ماه اول','شروع کوچک','با یک گروه کوچک شروع کنید تا روش محک بخورد.',['هفتهٔ اول','هفتهٔ دوم','هفتهٔ سوم','هفتهٔ چهارم'],'مثلاً ۱۵ معلم پیشگام دوره را گذرانده‌اند و هر کدام یک کلاس را بر عهده گرفته‌اند.'],['ماه دوم و سوم','گسترش','آنچه جواب داد، گسترش پیدا می‌کند.',['ماه دوم','ماه سوم'],'مثلاً ۶۰ معلم فعال‌اند و هر مدرسه یک مربی دارد.'],['ماه چهارم تا ششم','ماندگاری','تحول باید بدون پیگیری روزانهٔ شما سر پا بماند.',['ماه چهارم','ماه پنجم','ماه ششم'],'مثلاً ۱۰۰ معلم بی‌پیگیری روزانهٔ اداره کار می‌کنند و خودشان معلم تازه دعوت می‌کنند.']];
+const COSTS=[['train','آموزش و دوره','مثلاً ۶۰'],['content','محتوا، چاپ و تجهیزات','مثلاً ۲۰'],['host','رفت‌وآمد، مکان و پذیرایی','مثلاً ۱۵'],['gift','هدیه و تشویق','مثلاً ۱۰'],['other','سایر','']];
+const QUARTERS=['زمستان ۱۴۰۵','بهار ۱۴۰۶','تابستان ۱۴۰۶','پاییز ۱۴۰۶','زمستان ۱۴۰۶','بهار ۱۴۰۷','تابستان ۱۴۰۷','پاییز ۱۴۰۷'];
+const FUND=['اعتبار خود شهرستان','کمک اداره‌کل یا ستاد','مشارکت مردمی و خیرین','ترکیبی از این‌ها'];
+const RES=[['money','اعتبار مالی'],['people','نیروی انسانی'],['place','فضا و مکان'],['content','محتوا'],['training','آموزش']];
+const SUP=[['content','محتوا و بسته‌های آموزشی'],['training','دوره‌های توانمندسازی'],['money','اعتبار مالی'],['share','انتقال تجربه‌های موفق'],['letters','مکاتبه و هماهنگی با نهادها'],['other','سایر']];
+const RISK_EX=['همراهی نکردن دستگاه همکار','حضور صوری و اجباری','افت پیگیری پس از شروع','کمبود اعتبار'];
+
+/* =====================================================================
+   ابزارها
+   ===================================================================== */
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const FA=(n,d=0)=>Number(n||0).toLocaleString('fa-IR',{maximumFractionDigits:d});
+const FD=s=>String(s??'').replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+const toEn=s=>String(s??'').replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+const num=v=>{const t=toEn(v),m=/میلیون/.test(t)?1e6:/هزار/.test(t)?1e3:1;const x=parseFloat(t.replace(/[,،٬\s]/g,'').replace('٫','.').replace(/[^\d.\-]/g,''));return isNaN(x)?0:Math.max(0,x*m)};
+const normPhone=v=>{let s=toEn(v).replace(/\D/g,'');if(s.startsWith('0098'))s='0'+s.slice(4);else if(s.startsWith('98')&&s.length===12)s='0'+s.slice(2);else if(s.length===10&&s[0]==='9')s='0'+s;return s};
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const has=v=>Array.isArray(v)?v.length>0:(v===true||String(v??'').trim()!=='');
+const cut=(s,n)=>{s=String(s||'').replace(/\s+/g,' ').trim();return s.length>n?s.slice(0,n)+'…':s};
+const uid=()=>Math.random().toString(36).slice(2,9);
+const today=()=>new Date().toLocaleDateString('fa-IR',{year:'numeric',month:'long',day:'numeric'});
+const I={
+ del:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>',
+ grid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>',
+ list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
+ eye:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+ key:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8M17 6l3 3M14 9l2 2"/></svg>',
+ msg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+ out:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>'
+};
+const LOGO=`<svg class="logo" viewBox="230 190 860 260" role="img" aria-label="حرف نو"><path fill="#2FB57C" d="M949.88,198.4c-60.97,0-110.4,49.43-110.4,110.4v122.79h53.25l-.36-51.98v-72.02c0-31.82,25.79-57.61,57.61-57.61s57.61,25.79,57.61,57.61v72.02h-64.99l-23.94,51.98h141.62v-122.79c0-60.97-49.43-110.4-110.4-110.4Z"/><g fill="#30345A"><path d="M597.3,249.76c-35.63,0-64.62,28.99-64.62,64.62,0,14.11,4.56,27.17,12.27,37.81h-21.72c-18.71,0-33.93-15.22-33.93-33.93v-48.31c0-7.39-5.99-13.37-13.37-13.37s-13.37,5.99-13.37,13.37v48.31c0,33.46,27.22,60.68,60.68,60.68h71.94c.71.02,1.42.05,2.14.05,35.63,0,64.62-28.99,64.62-64.62s-28.99-64.62-64.62-64.62ZM597.3,352.25c-20.88,0-37.87-16.99-37.87-37.87s16.99-37.87,37.87-37.87,37.87,16.99,37.87,37.87-16.99,37.87-37.87,37.87Z"/><path d="M432.21,256.84c-7.39,0-13.37,5.99-13.37,13.37v48.31c0,18.71-15.22,33.93-33.93,33.93h-26.11c7.71-10.64,12.27-23.7,12.27-37.81,0-35.63-28.99-64.62-64.62-64.62s-64.62,28.99-64.62,64.62,28.99,64.62,64.62,64.62c.72,0,1.43-.03,2.14-.05h2.14l-15.1,33.78c-3.26,6.63-.52,14.64,6.11,17.9,1.9.93,3.91,1.37,5.89,1.37,4.94,0,9.69-2.75,12.01-7.48l20.89-45.58h44.38c33.46,0,60.68-27.22,60.68-60.68v-48.31c0-7.39-5.99-13.37-13.37-13.37ZM268.58,314.64c0-20.88,16.99-37.87,37.87-37.87s37.87,16.99,37.87,37.87-16.41,37.24-36.8,37.81h-2.14c-20.38-.57-36.8-17.29-36.8-37.81Z"/><path d="M742.28,250.02h-34.03c-7.39,0-13.37,5.99-13.37,13.37s5.99,13.37,13.37,13.37h34.03c20.88,0,37.87,16.99,37.87,37.87s-16.99,37.87-37.87,37.87h-55.55c-5.27,0-9.82,3.06-12,7.49-.38.55-.73,1.11-1.03,1.73l-23.36,51.06c-3.24,6.64-.5,14.65,6.14,17.89,1.89.93,3.89,1.36,5.87,1.36,4.95,0,9.71-2.76,12.03-7.5l20.81-45,47.1-.28c35.63,0,64.62-28.99,64.62-64.62s-28.99-64.62-64.62-64.62Z"/><circle cx="388.89" cy="217.39" r="19.27"/><circle cx="597.47" cy="217.39" r="19.27"/></g></svg>`;
+
+/* =====================================================================
+   داده
+   ===================================================================== */
+const S={user:null,data:{},feedback:null,submittedAt:null,view:'step'};
+function newPlan(){return{id:uid(),test:{},run:{},stages:[0,1,2].map(()=>({goal:'',actions:[{},{}]})),team:{lead:{},exec:{},support:{}},risks:[{},{},{}],kpis:[],res:{},sup:{}}}
+function normalize(d){d=d&&typeof d==='object'?d:{};d.meta=d.meta||{};d.forces=Array.isArray(d.forces)?d.forces:[];d.pairs=Array.isArray(d.pairs)?d.pairs:[];d.uncovered=Array.isArray(d.uncovered)?d.uncovered:[];d.summary=d.summary||{};
+ d.forces.forEach(f=>{if(!f.kind)f.kind=KIND[f.name]||'g';if(f.aa==null&&f.a!=null){const n=num(f.n)||1;f.aa=String(+(num(f.a)/n).toFixed(1));f.mm=String(Math.round(num(f.m)/n));delete f.a;delete f.m}});d.plans=Array.isArray(d.plans)&&d.plans.length?d.plans:[newPlan()];d.plans.forEach(p=>{const n=newPlan();for(const k in n)if(p[k]==null)p[k]=n[k];RES.forEach(([k])=>p.res[k]=p.res[k]||{});['lead','exec','support'].forEach(k=>p.team[k]=p.team[k]||{})});return d}
+const get=p=>p.split('.').reduce((o,k)=>o==null?undefined:o[k],S.data);
+function set(p,v){const ks=p.split('.');let o=S.data;for(let i=0;i<ks.length-1;i++){if(o[ks[i]]==null||typeof o[ks[i]]!=='object')o[ks[i]]=/^\d+$/.test(ks[i+1])?[]:{};o=o[ks[i]]}o[ks.at(-1)]=v}
+const forces=()=>S.data.forces.filter(f=>has(f.name));
+const findForce=n=>forces().find(f=>f.name.trim()===String(n||'').trim());
+const isP=f=>(f.kind||KIND[f.name]||'g')==='p';
+const tA=f=>isP(f)?num(f.n):num(f.n)*num(f.aa),tM=f=>num(f.n)*num(f.mm);
+const P=i=>S.data.plans[i];
+
+/* ---------- the gap ---------- */
+const isAct=f=>f.st==='قوی'||f.st==='متوسط';
+const tAT=f=>isAct(f)?(has(f.act)?Math.min(num(f.act),tA(f)):tA(f)):0;
+function gap(){const pop=num(S.data.pop);let a=0,aT=0,m=0;forces().forEach(f=>{a+=tA(f);aT+=tAT(f);m+=tM(f)});const mm=num(S.data.mReal)||m;
+ const needA=pop*.1,needM=pop,ta=Math.min(num(S.data.ta),100),tm=Math.min(num(S.data.tm),100),aI=a-aT,aNew=Math.max(needA-a,0);
+ return{pop,a,aT,aI,aNew,m:mm,needA,needM,gapA:Math.max(needA-aT,0),gapM:Math.max(needM-mm,0),aShare:needA?aT/needA*100:0,iShare:needA?aI/needA*100:0,mShare:needM?mm/needM*100:0,tgtA:pop*ta/100,tgtM:pop*tm/100,ta,tm}}
+function planSplit(p){const d=planDelta(p),f=findForce(p.force),room=f&&MV[p.type]&&MV[p.type].way==='inv'?Math.max(tA(f)-num(p.baseA),0):0,inv=Math.min(d.dA,room);return{inv,fresh:d.dA-inv}}
+const planCost=p=>p.costMode==='کل'?num(p.cost):COSTS.reduce((a,[k])=>a+num((p.costs||{})[k]),0);
+const planQ=(p,i)=>{const q=QUARTERS.indexOf(p.q);return q>=0?q:Math.min(i,QUARTERS.length-1)};
+const perHead=(cost,n)=>n>0&&cost>0?cost/n:0;
+const money=v=>v>=1000?FA(v/1000,1)+' میلیارد تومان':v>=1?FA(v,v<10?1:0)+' میلیون تومان':FA(Math.round(v*1000))+' هزار تومان';
+function verdict(p){const t=p.test||{},k=['stays','role','grows'];if(!k.every(x=>has(t[x])))return '';const v=k.every(x=>t[x]==='بله')?'تحول':'برنامه';if(v==='تحول'&&p.revise)p.revise=0;return v}
+function planDelta(p){return{dA:Math.max(num(p.afterA)-num(p.baseA),0),dM:Math.max(num(p.afterM)-num(p.baseM),0)}}
+function planImpact(p){const g=gap(),d=planDelta(p);return{...d,ofGapA:g.gapA?d.dA/g.gapA*100:0,ofGapM:g.gapM?d.dM/g.gapM*100:0,ofTgtA:g.tgtA>g.aT?d.dA/(g.tgtA-g.aT)*100:0}}
+function allImpact(){const g=gap();let dA=0,dM=0;S.data.plans.forEach(p=>{const d=planDelta(p);dA+=d.dA;dM+=d.dM});return{dA,dM,ofGapA:g.gapA?dA/g.gapA*100:0,ofGapM:g.gapM?dM/g.gapM*100:0}}
+function sentence(p){const m=MV[p.type];if(!m||!has(p.force)||!has(p.to))return '';return m.s({f:p.force,f2:p.force2,from:p.from||'…',to:p.to})}
+const NEW_FORCES=[['کسبهٔ معتمد','هر روز با ده‌ها مشتری حرف می‌زنند و حرفشان در محله خریدار دارد.'],['رانندگان تاکسی و تاکسی اینترنتی','هر روز با مسافران تازه هم‌کلام می‌شوند.'],['ادمین‌های صفحه‌ها و کانال‌های محلی','هزاران دنبال‌کنندهٔ محلی دارند.'],['پزشکان و کادر درمان','مورد اعتماد مردم‌اند و مخاطب ثابت دارند.'],['ورزشکاران و مربیان باشگاه‌ها','نوجوانان و جوانان حرفشان را می‌شنوند.'],['معتمدان و بزرگان محله و طوایف','حرفشان در جمع خودشان فصل‌الخطاب است.']];
+function opportunities(){
+ const fs=forces(),O={},ratio=f=>tM(f)/Math.max(tA(f),1);
+ O['تغییر نقش']=fs.filter(f=>(f.st==='ضعیف'||f.st==='متوسط')&&tM(f)>=500).sort((x,y)=>tM(y)-tM(x)).slice(0,3).map(f=>({f:f.name,why:`${FA(tM(f))} مخاطب دارد، اما کار تبیینی‌اش ${f.st} است.`,pa:f.st==='ضعیف'?tA(f):0,pm:0}));
+ O['فعال‌سازی ظرفیت']=fs.filter(f=>f.st==='بلااستفاده'||(f.st==='ضعیف'&&tM(f)<500)).sort((x,y)=>tA(y)-tA(x)).slice(0,3).map(f=>({f:f.name,why:`${FA(tA(f))} کنشگر دارد که در تبیین ${f.st==='بلااستفاده'?'بی‌کار مانده‌اند':'کار ناچیزی دارند'}.`,pa:tA(f),pm:0}));
+ O['ایجاد اتصال']=S.data.pairs.filter(x=>has(x.a)&&has(x.b)&&(x.lv==='کم'||x.lv==='هیچ')).slice(0,3).map(x=>({f:x.a,f2:x.b,why:`همکاری امروزشان ${x.lv==='هیچ'?'هیچ':'کم'} است.`,pa:0,pm:0}));
+ O['فعال‌سازی مخاطب']=fs.filter(f=>tM(f)>=300&&ratio(f)>=40).sort((x,y)=>ratio(y)-ratio(x)).slice(0,3).map(f=>({f:f.name,why:`به ازای هر کنشگر ${FA(ratio(f))} مخاطب دارد؛ با فعال کردن بخشی از مخاطبان، تا ${FA(Math.min(Math.round(tM(f)/100),Math.max(tA(f)*3,10)))} کنشگر تازه ممکن است.`,pa:Math.min(Math.round(tM(f)/100),Math.max(tA(f)*3,10)),pm:0}));
+ const names=fs.map(f=>f.name);O['افزودن نیروی جدید']=NEW_FORCES.filter(([x])=>!names.some(n=>n.includes(x.split(' ')[0]))).slice(0,4).map(([x,w])=>({f:x,why:w,pa:0,pm:0}));
+ O['ورود به عرصهٔ جدید']=S.data.uncovered.slice(0,3).map(x=>({f:x,why:'امروز هیچ نیرویی به آن‌ها نمی‌رسد.',pa:0,pm:0}));
+ return O}
+
+/* =====================================================================
+   فیلدها
+   ===================================================================== */
+const fid=p=>'f_'+p.replace(/[^\w]/g,'_');
+const lab=(o,id)=>o.label?`<label for="${id}">${o.label}${o.req?' <span class="req">*</span>':''}${o.opt?' <span class="opt">(اختیاری)</span>':''}</label>`:'';
+const inp=(p,o={})=>{const id=fid(p);return `<div class="fld">${lab(o,id)}<input id="${id}" data-p="${p}" value="${esc(get(p))}"${o.n?' inputmode="decimal" class="n'+(o.big?' big':'')+'"':''}${o.ph?` placeholder="${esc(o.ph)}"`:''}${o.list?` list="${o.list}"`:''}${o.al?` aria-label="${esc(o.al)}"`:''}>${o.hint?`<span class="hint">${o.hint}</span>`:''}</div>`};
+const area=(p,o={})=>{const id=fid(p);return `<div class="fld">${lab(o,id)}<textarea id="${id}" data-p="${p}" rows="${o.rows||4}"${o.ph?` placeholder="${esc(o.ph)}"`:''}>${esc(get(p))}</textarea>${o.hint?`<span class="hint">${o.hint}</span>`:''}${o.after||''}</div>`};
+const seg=(p,opts,o={})=>{const v=get(p);return `<div class="fld">${o.label?`<span class="lb">${o.label}</span>`:''}<div class="seg ${o.cls||''}" role="group">${opts.map(x=>`<button type="button" data-seg="${p}" data-v="${esc(x)}" aria-pressed="${v===x}">${o.dot?`<span class="i s-${x}"></span>`:''}${x}</button>`).join('')}</div>${o.hint?`<span class="hint">${o.hint}</span>`:''}</div>`};
+const choices=(p,opts)=>{const v=get(p);return `<div class="choices">${opts.map(o=>`<button type="button" class="choice" data-seg="${p}" data-v="${esc(o[0])}" aria-pressed="${v===o[0]}"><span class="rd"></span><span><b>${o[0]}</b>${o[1]?`<span>${o[1]}</span>`:''}</span></button>`).join('')}</div>`};
+const delBtn=(path,i)=>`<button type="button" class="del" data-del="${path}" data-i="${i}" aria-label="حذف">${I.del}</button>`;
+const ex=(t,b)=>`<details class="ex"><summary>${t}</summary><div>${b}</div></details>`;
+function dots(share,tgt,add,kind,inv){const h=Math.round(Math.min(share,100)),a=Math.round(Math.min(add||0,100-h)),v=Math.round(Math.min(inv||0,100-h-a)),t=Math.round(Math.min(tgt||0,100));let s='';for(let i=0;i<100;i++){let c=i<h?'have':i<h+a?'add':i<h+a+v?'inv':'';if(!c&&t&&i<t)c='tgt';s+=`<i class="${c}"></i>`}return `<div class="dots ${kind||''}" aria-hidden="true">${s}</div>`}
+
+/* =====================================================================
+   مراحل
+   ===================================================================== */
+const PARTS=['چرا','شکاف','شش حرکت','طرح تحول','اجرا'];
+function A(id,o){return{id,part:1,...o}}
+
+function W(id,t,body){return{id,part:0,t,done:()=>!!(S.data.meta.seen||{})[id],render:()=>{(S.data.meta.seen=S.data.meta.seen||{})[id]=1;return `<div class="story"><div class="eyebrow">بخش ۱: چرا</div>${body()}${id!=='why5'?'<button type="button" class="link" data-go="pop" style="margin-top:18px">این بحث را دیده‌ام؛ برو سراغ پر کردن بوم ←</button>':''}</div>`}}}
+const torch=(lit,me,off)=>{let h='';for(let i=0;i<100;i++){const c=me&&me.includes(i)?'me':i<(off??100)?(lit===true||(lit&&lit.includes(i))?'lit':''):'off';h+=`<i class="${c}"></i>`}return `<div class="torch" aria-hidden="true">${h}</div>`};
+const STORY=[
+ W('why1','همه مخاطب‌اند',()=>`<h1>در نظام اسلامی، همهٔ مردم مخاطب‌اند</h1>
+  <p class="say">برای راه‌انداختن یک انقلاب، حضور بخشی از مردم کافی است. اما نظامی که بر فهم و انتخاب آگاهانهٔ مردم بنا شده، نمی‌تواند به بخشی از مردم بسنده کند. <b>فهم باید همگانی باشد.</b></p>
+  <div class="qt"><p>«در تبیین این‌جوری نیست؛ در فهم و در تشخیص باید همه را در نظر گرفت. اگر همه فهمیدند، حضور هم تأثیرگذار می‌شود.»</p><small>امام شهید (رضوان‌الله‌علیه)، دیدار اعضای شورای عالی جهاد سازندگی، اسفند ۱۴۰۱</small></div>
+  <div class="card stack">${torch(true)}<div class="legend"><span><i style="background:var(--sky)"></i>هر نقطه یک درصد مردم شهرستان ${esc(S.user.county||'شما')}</span></div></div>
+  <p class="hint" style="margin-top:12px">این بوم حدود ۴۵ دقیقه وقت می‌گیرد. هر تغییر خودکار ذخیره می‌شود و می‌توانید در چند نوبت پر کنید.</p>`),
+ W('why2','چطور به همه برسیم',()=>`<h1>حرف چطور به همهٔ مردم می‌رسد؟</h1>
+  <p class="say">امام شهید اصلِ همگانی‌بودن تبیین را مسلّم گرفت و پرسید چطور باید آن را عمومی کرد:</p>
+  <div class="qt"><p>«چگونه باید این تبیین را عمومی کرد که همه بفهمند؟ صداوسیما اینجا خیلی مهم است؛ فضای مجازی چند برابر صداوسیما نقش دارد؛ و بعد از آن‌ها کارهای حضوری و چهره‌به‌چهره.»</p><small>همان دیدار، اسفند ۱۴۰۱</small></div>
+  <p class="say">صداوسیما و فضای مجازی و کار چهره‌به‌چهره، هر سه را <b>آدم‌ها</b> می‌گردانند. حرف وقتی به دل می‌نشیند که از زبان کسی برسد که مخاطب او را می‌شناسد و قبولش دارد: معلمش، همکارش، امام جماعت محله‌اش، یا صفحه و کانالی که هر روز دنبالش می‌کند.</p>
+  <div class="qt"><p>«تبیین حقیقت از زبانهای مختلف، از حنجره‌های مختلف، با تعبیرات مختلف، با ابتکارات مختلف.»</p><small>امام شهید (رضوان‌الله‌علیه)، دیدار مردم قم، ۱۹ دی ۱۴۰۱</small></div>
+  <p class="say"><b>پس برای رسیدن به همه، به حنجره‌های زیاد نیاز داریم؛ در کوچه و مسجد و مدرسه، و در گروه و کانال و صفحه.</b></p>`),
+ W('why3','هزار مشعل',()=>`<h1>هزار مشعل، به‌جای یک نورافکن</h1>
+  <p class="say">راهبردی که امام شهید (رضوان‌الله‌علیه) برای این میدان ترسیم فرمود، <b>هزار مشعل</b> است:</p>
+  <div class="qt"><p>«هر کدام از شما به عنوان یک وظیفه، مثل یک چراغی، مثل یک نوری پیرامون خودتان را روشن کنید. امروز همهٔ ما بایستی در این میدان حرکت بکنیم؛ هر کدام به نحوی و با سهمی که در این راه داریم.»</p><small>امام شهید (رضوان‌الله‌علیه)، ۵ مهر ۱۴۰۰</small></div>
+  <p class="say">یک نورافکن بزرگ، هر قدر قوی باشد، همه‌جا را روشن نمی‌کند و وقتی خاموش شود، همه‌جا تاریک می‌ماند. اما هزاران چراغ کوچک که هر کدام پیرامون خودش را روشن می‌کند، هر شب روشن می‌ماند.</p>
+  <div class="card stack">${torch([0, 1, 2, 5, 6, 7, 10, 11, 12, 15, 16, 17, 20, 21, 22, 25, 26, 27, 32, 33, 34, 37, 38, 39, 42, 43, 44, 47, 48, 49, 52, 53, 54, 57, 58, 59, 60, 61, 62, 64, 65, 66, 70, 71, 72, 74, 75, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 97, 98, 99],[11, 16, 43, 48, 71, 75, 88])}<p class="hint" style="margin:0">هر نقطهٔ سبز یک مشعل است، یعنی یک کنشگر. پیرامون خودش را روشن می‌کند: خانواده، همکاران، شاگردان، اهل مسجد و محله، و دنبال‌کنندگان صفحه و کانالش.</p></div>
+  <p class="say" style="margin-top:16px">کار کوچک هر کنشگر، یک مشعل از هزاران مشعل است؛ جزئی از یک طرح بزرگ، نه چراغی تنها در تاریکی.</p>`),
+ W('why4','ده درصد',()=>`<h1>چرا ده درصد؟</h1>
+  <p class="say">یک حساب ساده: اگر هر مشعل بتواند حرف را به حدود <b>ده نفر</b> برساند، رودررو یا در فضای مجازی، برای اینکه حرف به <b>همه</b> برسد، از هر ده نفر <b>یک نفر</b> باید مشعل باشد.</p>
+  <div class="card stack"><div class="g2"><div class="need n-act" style="padding:12px"><div class="v">۱۰٪</div><div class="nk">کنشگر</div></div><div class="need n-aud" style="padding:12px"><div class="v">۱۰۰٪</div><div class="nk">مخاطب</div></div></div><p class="hint" style="margin:0;text-align:center">هر کنشگر حرف را به حدود ده نفر می‌رساند؛ در جمع‌های حضوری یا در گروه و صفحه‌اش.</p>${torch(true,[0,11,22,33,44,55,66,77,88,99])}<div class="legend"><span><i style="background:var(--green)"></i>کنشگر</span><span><i style="background:var(--sky)"></i>مخاطبی که حرف به او می‌رسد</span></div></div>
+  <p class="say" style="margin-top:16px">گام اول تحول سازمان، از ۱۳۹۷، کارش رساندن پیام به <b>همهٔ مردم</b> بود. گام دوم کارش این است که از دل همین مردم، <b>ده درصد کنشگر</b> بیرون بیاید که بمانند و در جهاد تبیین کار کنند.</p>`),
+ W('why5','سه کار',()=>`<h1>مشعل‌ها از کجا بیایند و کجا روشن شوند؟</h1>
+  <p class="say">برای رسیدن به ده درصد، مشعل‌ها از دو جا می‌آیند. و یک نکتهٔ مهم هم هست که اگر از آن غافل شویم، همهٔ این مشعل‌ها کم‌اثر می‌شوند:</p>
+  <div class="ways">
+   <div class="w1"><span class="n">منبع اول · مشعل‌های خاموش</span><b>کنشگران فرهنگیِ امروز را به جهاد تبیین دعوت کنیم</b><span>هیئت داریم، مداح داریم، معلم و مربی و خادم مسجد داریم. کار فرهنگی می‌کنند، اما بسیاری‌شان هنوز در تبیین نقشی ندارند. مشعل‌اند، اما خاموش. نزدیک‌ترین و ارزان‌ترین مشعل‌ها همین‌ها هستند.</span></div>
+   <div class="w2"><span class="n">منبع دوم · مشعل‌های تازه</span><b>آدم‌هایی را کنشگر کنیم که تا امروز نبوده‌اند</b><span>حتی اگر همهٔ نیروهای امروز فعال شوند، باز به ده درصد نمی‌رسیم. باید از میان مردم، از مخاطبان هیئت و مسجد تا کاسب و راننده و ادمین صفحهٔ محلی، کنشگر تازه پیدا کنیم.</span></div>
+   <div class="w3"><span class="n">نکتهٔ مهم · جای مشعل</span><b>مشعل را جایی روشن کنیم که تاریک است</b><span>اگر همهٔ مشعل‌ها در همان مسجد و هیئت روشن شوند، همان جمع همیشگی روشن‌تر می‌شود و بقیهٔ شهر تاریک می‌ماند. مشعل‌های تازه باید در قشرها و محله‌هایی روشن شوند که امروز هیچ نیرویی به آن‌ها نمی‌رسد؛ تا حرف به <b>مخاطب تازه</b> برسد.</span></div>
+  </div>
+  <div class="note" style="margin-top:16px"><b>در این بوم چه می‌کنیم؟</b> اول با عددهای شهرستان خودتان می‌بینید هر کدام از این سه چقدر جای کار دارد. بعد شش حرکتِ تحول در آرایش نیروها را می‌شناسید و نخستین طرح تحول را می‌چینید. پیشنهاد ما این است که <b>هر سه ماه یک طرح تحول تازه</b> آغاز کنید و هر جا توانش را داشتید، طرح‌های هم‌زمان را بیشتر کنید.</div>`)
+];
+const STEPS_A=[
+ A('pop',{t:'جمعیت شهرستان',done:()=>has(S.data.pop),render:()=>{const g=gap();return `
+  <div class="eyebrow">بخش ۲: شکاف</div><h1>جمعیت شهرستان ${esc(S.user.county||'')} چقدر است؟</h1>
+  <p class="lead">مخاطب جهاد تبیین همهٔ مردم‌اند و دست‌کم ۱۰٪ آن‌ها باید خودشان کنشگر باشند. از عدد جمعیت شروع می‌کنیم.</p>
+  <div class="card stack">${inp('pop',{n:true,big:true,ph:'مثلاً ۲۵۰۰۰۰',al:'جمعیت شهرستان',hint:'عدد سرشماری یا برآورد فرمانداری کافی است.'})}
+  <div data-live="need">${LIVE.need()}</div></div>`}}),
+ A('pick',{t:'انتخاب نیروها',done:()=>forces().length>=3,render:()=>`
+  <div class="eyebrow">بخش ۲: شکاف</div><h1>در شهرستان شما کدام نیروها هستند؟</h1>
+  <p class="lead">هر نیرویی را که در شهرستان دارید انتخاب کنید، حتی اگر امروز کم‌کار یا بلااستفاده است. عددهایشان را در صفحهٔ بعد می‌نویسید.</p>
+  <div class="instr"><span>✓</span>روی هر نیرویی که در شهرستان دارید بزنید تا تیک بخورد.</div>
+  <div class="card">${pickerHTML()}</div>
+  <p class="hint" style="margin-top:10px" data-live="pickcount">${LIVE.pickcount()}</p>`}),
+ A('forces',{t:'نیروها',done:()=>forces().filter(f=>has(f.st)&&has(f.n)&&(isP(f)||has(f.aa)||has(f.mm))).length>=3,render:()=>`
+  <div class="eyebrow">بخش ۲: شکاف</div><h1>هر نیرو چقدر کنشگر و مخاطب دارد؟</h1>
+  <p class="lead">برای هر نیرو سطح فعالیت و عددها را بنویسید. عدد تقریبی کافی است.</p>
+  ${ex('عددها را چطور بنویسم؟','<b>مجموعه‌ها</b>، مثل هیئت یا مسجد: <b>تعداد</b> یعنی چند تا در شهرستان هست؛ <b>کنشگرِ هر واحد</b> یعنی هر کدام به‌طور میانگین چند فعال فرهنگی دارد، مثل سخنران، مداح، خادم فعال یا مسئول رسانه؛ <b>مخاطبِ هر واحد</b> یعنی هر کدام به‌طور میانگین چند مخاطب دارد. سامانه ضرب می‌کند: ۴۰۰ هیئت × ۵ کنشگر = ۲٬۰۰۰ کنشگر.<br><br><b>افراد</b>، مثل معلم پرورشی یا مداح: هر نفر خودش یک کنشگر است؛ پس فقط بنویسید چند نفرند و هر نفر به‌طور میانگین چند مخاطب دارد.<br><br>کنشگر لازم نیست کارش تبیینی باشد؛ همهٔ فعالان فرهنگی آن نیرو را بشمارید. مخاطب هم همهٔ مخاطبان آن است.')}
+  <div style="margin-top:8px">${ex('سطح فعالیت یعنی چه؟','سطح فعالیت می‌گوید این نیرو امروز چقدر در جهاد تبیین نقش دارد.<br><b>قوی:</b> کار تبیینی منظم و اثرگذار دارد؛ مثلاً هیئتی که هر هفته مسئلهٔ روز را تبیین می‌کند و جوانانش خودشان محتوا می‌سازند.<br><b>متوسط:</b> کار تبیینی دارد، اما نامنظم یا محدود؛ مثلاً فقط در مناسبت‌ها سخنران تبیینی دعوت می‌کند.<br><b>ضعیف:</b> حضور دارد، اما کار تبیینی‌اش ناچیز است؛ مثلاً مراسمش برپاست ولی حرفی از مسائل روز نمی‌زند.<br><b>بلااستفاده:</b> ظرفیت دارد، اما هیچ نقشی در تبیین ندارد.')}</div>
+  <div style="margin-top:14px" data-live="tally">${LIVE.tally()}</div>
+  <div class="stack">${S.data.forces.length?S.data.forces.map((f,i)=>{const pp=isP(f),custom=!FORCE_EX.includes(f.name);if(S.fopen&&!S.fopen.has(i)&&fDone(f))return `<button type="button" class="fdone" id="force-${i}" data-openforce="${i}"><span class="ok">✓</span><span class="fn"><b>${esc(f.name)}</b><small><i class="i s-${f.st}"></i>${f.st} · ${FA(tA(f))} کنشگر · ${FA(tM(f))} مخاطب</small></span><span class="ed">ویرایش</span></button>`;return `<div class="item" id="force-${i}">
+   <div class="item-h"><span class="idx">${FA(i+1)}</span><input data-p="forces.${i}.name" value="${esc(f.name)}" placeholder="نام نیرو" aria-label="نام نیرو"><span class="kind">${pp?'افراد':'مجموعه'}</span>${delBtn('forces',i)}</div>
+   ${custom?`<div class="seg" role="group" aria-label="نوع نیرو"><button type="button" data-kind="${i}" data-v="g" aria-pressed="${!pp}">مجموعه</button><button type="button" data-kind="${i}" data-v="p" aria-pressed="${pp}">افراد</button></div>`:''}
+   ${seg(`forces.${i}.st`,STATUS.map(s=>s[0]),{label:'سطح فعالیت در جهاد تبیین',cls:'st4',dot:true,hint:f.st?STATUS.find(s=>s[0]===f.st)[1]+'.':'یکی را انتخاب کنید.'})}
+   ${pp?`<div class="g2">${inp(`forces.${i}.n`,{label:'چند نفر؟',n:true,ph:'۰'})}${inp(`forces.${i}.mm`,{label:'مخاطبِ هر نفر',n:true,ph:'۰'})}</div>`
+       :`<div class="g3">${inp(`forces.${i}.n`,{label:'چند واحد؟',n:true,ph:'۰'})}${inp(`forces.${i}.aa`,{label:'کنشگرِ هر واحد',n:true,ph:'۰'})}${inp(`forces.${i}.mm`,{label:'مخاطبِ هر واحد',n:true,ph:'۰'})}</div>`}
+   <div class="ftot" data-ftot="${i}">${ftot(f)}</div>${isAct(f)&&tA(f)?`<details class="actq"${has(f.act)?' open':''}><summary>آیا همهٔ این ${FA(tA(f))} کنشگر در تبیین فعال‌اند؟ اگر نه، عدد را اصلاح کنید</summary>${inp(`forces.${i}.act`,{label:'چند نفرشان واقعاً کار تبیینی می‌کنند؟',n:true,opt:true,ph:FA(tA(f)),hint:'خالی بماند یعنی همه.'})}</details>`:''}
+  </div>`}).join(''):'<div class="card" style="text-align:center"><p class="lead" style="margin:0">هنوز نیرویی انتخاب نشده است. از فهرست پایین انتخاب کنید.</p></div>'}</div>
+  <div class="card" style="margin-top:16px"><div class="cat-h" style="margin-bottom:10px;font-size:15.5px">نیروی دیگری دارید؟ از همین فهرست اضافه کنید.</div>${pickerHTML()}</div>`}),
+ A('links',{t:'ارتباط نیروها',done:()=>has(S.data.cohesion),render:()=>{const fo=forces().map(f=>f.name);return `
+  <div class="eyebrow">بخش ۲: شکاف</div><h1>نیروها با هم کار می‌کنند یا جدا از هم؟</h1>
+  <p class="lead">نیروهای پراکنده، تواناییِ هم را هدر می‌دهند. همین‌جا معلوم می‌شود کجا می‌شود دو نیرو را به هم وصل کرد.</p>
+  <div class="card stack"><span class="lb" style="font-weight:600">در مجموع</span>${choices('cohesion',[['شبکهٔ منسجم','نیروها هماهنگ و مرتبط با هم کار می‌کنند.'],['همکاری موردی','گاهی همکاری هست، اما ساختارمند نیست.'],['پراکنده','هر نیرو مستقل و جدا از دیگران کار می‌کند.']])}</div>
+  <div class="card stack" style="margin-top:12px"><div><b>کدام دو نیرو اگر با هم کار کنند، کار بزرگ‌تری می‌شود؟</b><div class="hint">مثلاً فعالان قرآنی محتوا دارند و مسجد پایگاه دارد. بگویید امروز چقدر با هم کار می‌کنند.</div></div>
+   ${S.data.pairs.map((x,i)=>`<div class="item" style="background:var(--sunken);border:0"><div class="g2"><select data-p="pairs.${i}.a" aria-label="نیروی اول"><option value="">نیروی اول</option>${fo.map(n=>`<option${x.a===n?' selected':''}>${esc(n)}</option>`).join('')}</select><select data-p="pairs.${i}.b" aria-label="نیروی دوم"><option value="">نیروی دوم</option>${fo.map(n=>`<option${x.b===n?' selected':''}>${esc(n)}</option>`).join('')}</select></div><div style="display:flex;align-items:center;gap:8px;justify-content:space-between">${seg(`pairs.${i}.lv`,LV,{label:'همکاری امروز'})}${delBtn('pairs',i)}</div></div>`).join('')}
+   <button type="button" class="add" data-add="pairs">+ یک جفت نیرو</button></div>`}}),
+ A('gap',{t:'شکاف',done:()=>has(S.data.ta)&&has(S.data.tm),render:()=>{const g=gap();
+  if(!g.pop||!forces().length)return `<div class="eyebrow">بخش ۲: شکاف</div><h1>شکاف شهرستان شما</h1><div class="card"><p class="lead" style="margin:0">برای دیدن شکاف، اول جمعیت و نیروهای شهرستان را وارد کنید.</p><div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn se sm" data-go="pop">جمعیت</button><button class="btn se sm" data-go="forces">نیروها</button></div></div>`;
+  const per=g.aT?Math.round(g.needA/g.aT):0;
+  return `<div class="eyebrow">بخش ۲: شکاف</div><h1>این شکافی است که باید پر شود</h1>
+  <p class="lead">${per>1?`از هر <b>${FA(per)}</b> مشعلی که شهرستان لازم دارد، امروز <b>یکی</b> روشن است.`:'شکاف کنشگر و مخاطب شهرستان شما را ببینید.'}</p>
+  <div class="gap16">
+   <div class="card gapcard g-act"><h3>کنشگر تبیینی</h3><div class="gapline"><span>امروز</span><b>${FA(g.aT)}</b><span>از ${FA(g.needA)} نفر لازم (۱۰٪ جمعیت)</span></div>${dots(g.aShare,g.ta?g.ta*10:0,0,'',g.iShare)}
+    <div class="three">
+     <div class="r-act"><i style="background:var(--green)"></i><div>در جهاد تبیین فعال‌اند<small>کنشگرانِ نیروهای «قوی» و «متوسط» که کار تبیینی می‌کنند</small></div><b>${FA(g.aT)}</b></div>
+     <div class="r-inv"><i style="background:var(--green-100);box-shadow:inset 0 0 0 2px var(--green)"></i><div>کنشگر فرهنگی‌اند، اما در تبیین نیستند<span class="do" style="color:var(--green-600)">دعوت کنید</span><small>کنشگرانِ نیروهای «ضعیف» و «بلااستفاده»، و کنشگرانی از نیروهای فعال که هنوز در تبیین نیستند</small></div><b>${FA(g.aI)}</b></div>
+     <div class="r-new"><i style="background:var(--sunken);box-shadow:inset 0 0 0 1px var(--line-2)"></i><div>هنوز نیستند<span class="do" style="color:var(--crimson)">اضافه کنید</span><small>آدم‌هایی که باید تازه به میدان بیایند</small></div><b>${FA(g.aNew)}</b></div>
+    </div>
+    <p class="big-say">شکاف: <em>${FA(g.gapA)}</em> کنشگر تبیینی</p></div>
+   <div class="card gapcard g-aud"><h3>مخاطب</h3><div class="gapline"><span>امروز</span><b>${FA(g.m)}</b><span>از ${FA(g.needM)} نفر (همهٔ مردم)</span></div>${dots(g.mShare,g.tm,0,'aud')}<p class="big-say">شکاف: <em>${FA(g.gapM)}</em> نفر که پیام تبیین به آن‌ها نمی‌رسد</p><div class="three"><div class="r-aud"><i style="background:var(--sky)"></i><div>مخاطب تازه<span class="do" style="color:var(--sky-ink)">برسانید</span><small>هر مشعل تازه باید به آدم‌های تازه برسد، نه همان جمع همیشگی.</small></div><b>${FA(g.gapM)}</b></div></div></div>
+   <div class="legend"><span><i style="background:var(--green)"></i>کنشگر تبیینی</span><span><i style="background:var(--green-100);box-shadow:inset 0 0 0 2px var(--green)"></i>منتظر دعوت</span><span><i style="background:var(--sky)"></i>مخاطب امروز</span><span><i style="box-shadow:inset 0 0 0 2px var(--peri)"></i>هدف دو سال آینده</span><span>هر نقطه یک درصد از آنچه لازم است</span></div>
+   <div class="card stack"><div><b>★ ستارهٔ قطبی: هدف شما برای دو سال آینده چیست؟</b><div class="hint">تا دو سال دیگر چند درصد جمعیت کنشگر تبیینی باشند و پیام تبیین به چند درصد برسد؟ این هدف از این صفحه به بعد بالای همهٔ صفحه‌ها می‌ماند و طرح‌های تحول شما با همین هدف سنجیده می‌شوند.</div></div>
+    <div class="g2">${inp('ta',{label:'کنشگر تبیینی (درصد جمعیت)',n:true,ph:'مثلاً ۳',req:true})}${inp('tm',{label:'مخاطب (درصد جمعیت)',n:true,ph:'مثلاً ۵۰',req:true})}</div>
+    <div class="hint">${FA(g.m)} مخاطب جمع سادهٔ نیروهاست و ممکن است تکراری باشد. ${has(S.data.mReal)?'':'<button type="button" class="link" data-show="mreal">برآورد دقیق‌تری دارید؟</button>'}</div>
+    <div ${has(S.data.mReal)||S.showMreal?'':'hidden'} id="mreal">${inp('mReal',{label:'مخاطب واقعی بدون تکرار',n:true,opt:true})}</div></div>
+  </div>`}}),
+ A('uncovered',{t:'مخاطبان بی‌پوشش',done:()=>S.data.uncovered.length>0,render:()=>{const g=gap(),cur=S.data.uncovered,custom=cur.filter(x=>!SEGMENTS.includes(x));return `
+  <div class="eyebrow">بخش ۲: شکاف</div><h1>پیام تبیین به چه کسانی نمی‌رسد؟</h1>
+  <p class="lead">${g.gapM?`در صفحهٔ قبل دیدید حرف به <b>${FA(g.gapM)} نفر</b> از مردم شهرستان نمی‌رسد. `:''}این آدم‌ها چه کسانی‌اند؟ قشرها، صنف‌ها یا محله‌هایی را بزنید که امروز هیچ‌کدام از نیروهای شما سراغشان نمی‌رود.</p>
+  <div class="note" style="margin-bottom:12px">این فهرست بعداً در حرکت «ورود به عرصهٔ جدید» پیشنهاد می‌شود.</div>
+  <div class="card stack"><div class="seg pick">${[...SEGMENTS,...custom].map(x=>`<button type="button" data-tog="uncovered" data-v="${esc(x)}" aria-pressed="${cur.includes(x)}">${esc(x)}</button>`).join('')}</div>
+  <div style="display:flex;gap:8px"><input id="unc" placeholder="قشر یا منطقهٔ دیگر" aria-label="قشر یا منطقهٔ دیگر"><button type="button" class="btn se sm" data-addunc style="height:48px">افزودن</button></div></div>`}}),
+ A('summary',{t:'جمع‌بندی وضع امروز',done:()=>['strong','weak','gaps'].every(k=>has(S.data.summary[k])),render:()=>{const fs=forces(),pick=s=>fs.filter(f=>f.st===s).map(f=>f.name),g=gap();
+  const sg=(k,arr)=>arr.length?`<div class="sugg">${arr.map(t=>`<button type="button" data-append="summary.${k}" data-v="${esc(t)}">${esc(t)}</button>`).join('')}</div>`:'';
+  return `<div class="eyebrow">بخش ۲: شکاف</div><h1>وضع امروز جهاد تبیین در شهرستان شما</h1>
+  <p class="lead">تا اینجا عددها را نوشتید. حالا با زبان خودتان بگویید <b>آرایش نیروهای جهاد تبیین</b> در شهرستان امروز چه وضعی دارد: چه کسانی کار می‌کنند، چه کسانی هستند و کار نمی‌کنند، و به چه کسانی اصلاً نمی‌رسیم. این سه بند پایهٔ انتخاب طرح تحول شماست و دستیار حرف نو هم بازخوردش را از همین‌جا شروع می‌کند.</p>
+  ${g.pop?`<div class="from" style="margin-bottom:12px"><small>خلاصهٔ عددهای شما</small>${FA(g.aT)} کنشگر در تبیین فعال‌اند، ${FA(g.aI)} کنشگر فرهنگی منتظر دعوت‌اند و ${FA(g.aNew)} کنشگر تازه لازم است. حرف به ${FA(g.gapM)} نفر نمی‌رسد.</div>`:''}
+  <p class="hint" style="margin:0 0 10px">برای هر بند دو سه جمله کافی است. دکمه‌های بنفش جمله‌هایی است که از جواب‌های خودتان ساخته شده؛ با یک لمس اضافه می‌شوند و می‌توانید ویرایششان کنید.</p>
+  <div class="card stack">
+   ${area('summary.strong',{label:'نقاط قوت: کدام نیروها امروز در جهاد تبیین خوب کار می‌کنند و چرا؟',ph:'مثلاً حوزهٔ علمیه و کانون مداحان هر هفته مسئلهٔ روز را تبیین می‌کنند، چون مسئول پیگیر دارند.',rows:3,after:sg('strong',pick('قوی').length?[`${pick('قوی').join(' و ')} در جهاد تبیین قوی‌اند.`]:[])})}
+   ${area('summary.weak',{label:'نقاط ضعف: کدام نیروها هستند اما کار تبیینی‌شان کم است؟ چه چیزی مانعشان است؟',ph:'مثلاً هیئات و مساجد پرمخاطب‌اند، اما برنامه‌شان فقط مراسم است و کسی سراغشان نرفته.',rows:3,after:sg('weak',pick('ضعیف').length?[`${pick('ضعیف').join('، ')} با وجود حضور، کار تبیینی ناچیزی دارند.`]:[])})}
+   ${area('summary.gaps',{label:'خلأهای اصلی: به چه کسانی حرف نمی‌رسد و کدام نیرو در شهرستان اصلاً نیست؟',ph:'مثلاً به کارگران شهرک صنعتی و محله‌های حاشیه هیچ نیرویی نمی‌رسد؛ کسبه و رانندگان در آرایش نیستند.',rows:3,after:sg('gaps',[...(pick('بلااستفاده').length?[`${pick('بلااستفاده').join(' و ')} بلااستفاده مانده‌اند.`]:[]),...(g.gapA?[`${FA(g.gapA)} کنشگر تا وضع مطلوب فاصله داریم.`]:[]),...(S.data.uncovered.length?[`پیام تبیین به ${S.data.uncovered.slice(0,3).join('، ')} نمی‌رسد.`]:[])])})}
+  </div>`}})
+];
+const STEP_B={id:'moves',part:2,t:'انتخاب حرکت',done:()=>has(P(S.pi).type),render:()=>{const O=opportunities(),p=P(S.pi),g=gap(),open=S.openMove??(p.type?MOVES.findIndex(m=>m.t===p.type):-1);
+  const wayN={inv:g.aI?`${FA(g.aI)} کنشگر فرهنگی منتظر دعوت`:'',new:g.aNew?`${FA(g.aNew)} کنشگر تازه لازم است`:'',aud:g.gapM?`${FA(g.gapM)} نفر بی‌پوشش`:''};
+  const mv=(m,i)=>{const c=O[m.t]||[],isOpen=open===i,chosen=p.type===m.t;return `<div class="move${isOpen?' open':''}${chosen?' chosen':''}">
+   <button type="button" class="mh" data-move="${i}" aria-expanded="${isOpen}"><span class="mn">${FA(i+1)}</span><span class="mt"><b>${m.t}</b><span>${m.d}</span></span>${chosen?'<span class="cnt">انتخاب شما</span>':`<span class="cnt${c.length?'':' z'}">${c.length?FA(c.length)+' پیشنهاد':'باز کنید'}</span>`}</button>
+   ${isOpen?`<div class="mb"><p class="mwhat">${m.what}</p>
+    <div class="vs"><div class="v-p"><small>برنامه</small>${m.prog}</div><div class="v-t"><small>تحول</small>${m.tah}</div></div>
+    <div class="hint"><b>کِی سراغش بروید؟</b> ${m.when}</div>
+    ${c.length?`<div class="hint" style="font-weight:700;color:var(--ink)">پیشنهاد از عددهای شهرستان شما</div>${c.map(x=>`<div class="cand"><span>${esc(x.f2?x.f+' و '+x.f2:x.f)}<small>${esc(x.why)}</small></span><button type="button" class="btn pr sm" data-pick="${i}" data-f="${esc(x.f)}" data-f2="${esc(x.f2||'')}">انتخاب</button></div>`).join('')}`:'<div class="hint">از عددهای بخش ۲ پیشنهادی برای این حرکت پیدا نشد؛ اگر ایده‌ای دارید، باز هم می‌توانید انتخابش کنید.</div>'}
+    <button type="button" class="btn se sm" data-pick="${i}" style="justify-self:start">${chosen?'ادامه با همین حرکت':'ایدهٔ خودم را با این حرکت می‌نویسم'}</button></div>`:''}</div>`};
+  return `<div class="eyebrow">بخش ۳: شش حرکت${S.data.plans.length>1?` · طرح ${FA(S.pi+1)}`:''}</div><h1>تحول در آرایش نیروها یعنی چه؟</h1>
+  <p class="lead"><b>برنامه</b> برگزار می‌شود و تمام می‌شود؛ شش ماه بعد عددهای شکاف همان است که بود. <b>تحول</b> نقش و آرایش آدم‌ها را عوض می‌کند؛ می‌ماند و خودش کنشگر می‌سازد.</p>
+  <div class="card" style="padding:12px 14px"><table class="cmp"><tr><th>برنامه</th><th>تحول</th></tr><tr><td>برگزاری ۱۰۰ جلسهٔ سخنرانی</td><td>روحانی از «سخنران مراسم» به «امام محله» تبدیل می‌شود</td></tr><tr><td>برگزاری جشنوارهٔ قرآنی</td><td>شبکهٔ معلمان قرآنی مجاهد تبیین شکل می‌گیرد</td></tr><tr><td>افزایش اعزام مبلغ</td><td>نوجوانان مخاطب هیئت، نانورسانهٔ تبیینی می‌شوند</td></tr></table></div>
+  <div class="instr" style="margin-top:16px"><span>✓</span><p style="margin:0">${p.type?`انتخاب شما: <b>${p.type}</b>. برای عوض کردن، حرکت دیگری را باز کنید.`:'روی هر حرکت بزنید تا توضیحش باز شود؛ بعد یکی از پیشنهادها یا «ایدهٔ خودم را می‌نویسم» را بزنید.'}</p></div>
+  <p class="lead" style="margin:14px 0 6px">آرایش نیروها با <b>شش حرکت</b> عوض می‌شود. هر حرکت یکی از سه راه پر کردن شکاف را جلو می‌برد. حرکتی را انتخاب کنید که شکاف بزرگ‌تر شهرستان شما را هدف می‌گیرد.</p>
+  ${['inv','new','aud'].map(w=>`<div class="waygrp ${WAYS[w].c}"><div class="wg-h"><b>${WAYS[w].t}</b>${wayN[w]?`<span>${wayN[w]}</span>`:''}</div><div class="stack">${MOVES.map((m,i)=>m.way===w?mv(m,i):'').join('')}</div></div>`).join('')}
+  <div class="note" style="margin-top:14px">همهٔ راه‌ها به <b>دعوت</b> می‌رسد. هر حرکتی که انتخاب کنید، کسی باید آدم‌ها را دعوت کند و کنارشان بماند تا خودشان دعوت‌کنندهٔ بعدی شوند.</div>`}};
+
+function planSteps(i){const p=()=>P(i),pre=`p${i}.`,tag=S.data.plans.length>1?` · طرح ${FA(i+1)}`:'',bp=`plans.${i}.`;
+ const NOMOVE=t=>`<div class="eyebrow">${t}${tag}</div><h1>هنوز معلوم نیست طرح شما از چه جنسی است</h1>
+  <p class="lead">هر طرح تحول با یکی از <b>شش حرکت</b> شروع می‌شود؛ یعنی اول باید بگویید می‌خواهید چه تغییری در آرایش نیروها بدهید. مثلاً:</p>
+  <div class="card stack" style="margin-bottom:14px"><div class="cand"><span><b>فعال‌سازی ظرفیت</b><small>نیرویی که هست و در تبیین بی‌کار مانده، به کار می‌افتد؛ مثل معلمان پرورشی.</small></span></div><div class="cand"><span><b>فعال‌سازی مخاطب</b><small>مخاطبِ تماشاگر خودش کنشگر می‌شود؛ مثل نوجوانان هیئت.</small></span></div><div class="cand"><span><b>افزودن نیروی جدید</b><small>نیرویی که امروز در آرایش نیست وارد می‌شود؛ مثل رانندگان تاکسی.</small></span></div></div>
+  <p class="hint" style="margin:0 0 12px">در صفحهٔ «شش حرکت» روی هر حرکت بزنید تا توضیح و پیشنهادهای شهرستان خودتان باز شود، بعد یکی را «انتخاب» کنید. پس از آن به همین صفحه برمی‌گردید.</p>
+  <button class="btn pr" data-go="moves@${i}">رفتن به شش حرکت و انتخاب</button>`;
+ const EB=t=>`<div class="eyebrow">${t}${tag}${MV[p().type]?' · '+MV[p().type].t:''}</div>`;
+ return [
+ {id:'shift@'+i,part:3,pi:i,t:'جملهٔ تحول',done:()=>has(p().title)&&has(p().force)&&has(p().to),render:()=>{const m=MV[p().type];if(!m)return NOMOVE('بخش ۴: طرح تحول');
+  return `${EB('بخش ۴: طرح تحول')}<h1>طرح شما در یک جمله</h1>${p().revise?`<div class="w8" style="margin-bottom:12px">آزمون گفت طرح هنوز «برنامه» است. جمله را طوری بازنویسی کنید که نقش یک گروه از آدم‌ها عوض شود و بعد از شما بماند؛ سپس دوباره به پرسش‌های آزمون پاسخ بدهید.</div>`:''}
+  <p class="lead">چه کسی، از چه نقشی، به چه نقشی؟ جاهای خالی را پر کنید تا جملهٔ تحول ساخته شود.</p>
+  <div class="card stack">${inp(bp+'force',{label:m.f,req:true,list:'forceList',ph:m.ph[0]})}${m.f2?inp(bp+'force2',{label:m.f2,req:true,list:'forceList',ph:m.ph[3]}):''}${inp(bp+'from',{label:m.from,ph:m.ph[1]})}${inp(bp+'to',{label:m.to,req:true,ph:m.ph[2]})}
+   <div class="sentence" data-live="sentence"><small>جملهٔ تحول</small><p>${esc(sentence(p())||'…')}</p></div>
+   ${inp(bp+'title',{label:'نام کوتاه طرح',req:true,ph:'مثلاً معلمان پرورشی، پاسخ‌گوی پرسش‌های دانش‌آموزان'})}</div>
+  ${ex('جملهٔ خوب چه ویژگی‌ای دارد؟','در جملهٔ خوب <b>نقش یک گروه از آدم‌ها</b> عوض می‌شود، نه اینکه رویدادی برگزار شود. «برگزاری دورهٔ ضمن خدمت برای معلمان» برنامه است؛ «معلمان پرورشی پاسخ‌گوی پرسش‌های دانش‌آموزان مدرسهٔ خودشان می‌شوند» تحول است.')}`}},
+ {id:'ba@'+i,part:3,pi:i,t:'سهم از شکاف',done:()=>has(p().afterA)||has(p().afterM),render:()=>{const f=findForce(p().force),m=MV[p().type];if(!m)return NOMOVE('بخش ۴: طرح تحول');return `
+  ${EB('بخش ۴: طرح تحول')}<h1>این طرح چقدر از شکاف را پر می‌کند؟</h1>
+  <p class="lead">برای «${esc(p().force||'نیروی طرح')}» بنویسید امروز چند نفر در جهاد تبیین فعال‌اند و حرفشان به چند نفر می‌رسد، و شش ماه بعد از اجرای طرح چند نفر.${f?' عددهای امروز از بخش ۲ آمده است.':''}</p>
+  <div class="card stack"><div class="ba"><span></span><span class="hd">امروز</span><span class="hd">شش ماه بعد</span>
+   <span class="rl">کنشگر تبیینی</span>${inp(bp+'baseA',{n:true,ph:'۰',al:'کنشگر تبیینی امروز'})}${inp(bp+'afterA',{n:true,ph:'۰',al:'کنشگر تبیینی شش ماه بعد'})}
+   <span class="rl">مخاطب</span>${inp(bp+'baseM',{n:true,ph:'۰',al:'مخاطب امروز'})}${inp(bp+'afterM',{n:true,ph:'۰',al:'مخاطب شش ماه بعد'})}</div>
+   ${f&&m&&m.way==='inv'&&!isAct(f)?`<p class="hint" style="margin:0">«${esc(f.name)}» امروز ${FA(tA(f))} کنشگر فرهنگی دارد؛ هر کدام که در تبیین فعال شود، یک دعوت موفق است.</p>`:''}
+   <div data-live="impact">${LIVE.impact()}</div></div>`}},
+ {id:'cost@'+i,part:3,pi:i,t:'هزینه',done:()=>planCost(p())>0&&has(p().fund),render:()=>{const tot=p().costMode==='کل';if(!MV[p().type])return NOMOVE('بخش ۴: طرح تحول');return `
+  ${EB('بخش ۴: طرح تحول')}<h1>این طرح چقدر خرج دارد؟</h1>
+  <p class="lead">هزینهٔ شش ماه را به میلیون تومان و تقریبی بنویسید. ردیف‌هایی را که خرج ندارند خالی بگذارید؛ جمع خودش حساب می‌شود. وقت نیروهای اداره را حساب نکنید.</p>
+  <div class="card stack">${tot?inp(bp+'cost',{label:'کل هزینه (میلیون تومان)',n:true,big:true,req:true,ph:'مثلاً ۸۰'}):`<div class="costs">${COSTS.map(([k,l,ph])=>`<label for="${fid(bp+'costs.'+k)}">${l}</label>${inp(bp+'costs.'+k,{n:true,ph:ph||'۰',al:l})}`).join('')}</div>`}
+   <button type="button" class="link" data-seg="${bp}costMode" data-v="کل" style="justify-self:start">${tot?'ریز هزینه‌ها را می‌نویسم':'ریز هزینه‌ها را نمی‌دانم؛ فقط مبلغ کل را می‌نویسم'}</button>
+   ${seg(bp+'fund',FUND,{label:'از کجا تأمین می‌شود؟'})}
+   ${inp(bp+'costFor',{label:'بیشتر هزینه صرف چه می‌شود؟',opt:true,ph:'مثلاً دوره‌ی آموزشی دو روزه و بستهٔ محتوا'})}
+   <div data-live="cost">${LIVE.cost()}</div></div>
+  <p class="hint" style="margin-top:12px">تحول‌های خوب اغلب ارزان‌اند؛ چون به‌جای ساختن چیز تازه، آدم‌ها و مکان‌های موجود را در جای مؤثرتری می‌نشانند. کمبودها با اتصال جبران می‌شود، نه با بودجه.</p>`}},
+ {id:'test@'+i,part:3,pi:i,t:'تحول یا برنامه؟',done:()=>verdict(p())==='تحول',render:()=>{const t=p().test,Q=[['stays','اگر پیگیری اداره تمام شود، این تغییر سر پا می‌ماند؟','برنامه با تمام شدن پول و پیگیری تمام می‌شود؛ تحول می‌ماند.','چه چیزی بعد از شما می‌ماند؟ یک هسته با مسئول مشخص، یک قرار ثابت هفتگی، یا یک نقش رسمی که به عهدهٔ خود آن نیرو است. همین را در جملهٔ تحول بنویسید.'],['role','نقش یا جایگاه یک گروه از آدم‌ها عوض می‌شود، نه اینکه فقط رویدادی برگزار شود؟','برگزاری جلسه برنامه است؛ عوض شدن نقش کسی که جلسه را می‌گرداند تحول است.','به‌جای «برگزاری …»، بنویسید چه کسانی، چه کاری را که امروز نمی‌کنند، از این به بعد انجام می‌دهند.'],['grows','خودش کنشگر تازه می‌سازد؟','تحول خوب بعد از شما هم آدم به میدان می‌آورد.','در طرح، چه کسی «مربی» می‌شود؟ یعنی کسی که خودش کنشگر تازه دعوت و همراهی می‌کند. اگر کسی نیست، یک نفر را برای این نقش در نظر بگیرید.']],v=verdict(p()),bad=Q.filter(([k])=>t[k]==='هنوز نه');if(!MV[p().type])return NOMOVE('بخش ۴: طرح تحول');return `
+  ${EB('بخش ۴: طرح تحول')}<h1>طرح شما تحول است یا برنامه؟</h1>
+  <p class="lead">سه پرسش کوتاه. صادقانه جواب بدهید؛ اگر طرح هنوز برنامه است، همین‌جا اصلاحش می‌کنیم.</p>
+  <div class="stack">${Q.map(([k,q,h])=>`<div class="yn"><b>${q}</b><span>${h}</span>${seg(`plans.${i}.test.${k}`,['بله','هنوز نه'])}</div>`).join('')}
+  ${v==='برنامه'?`<div class="verdict bad"><b>این طرح هنوز «برنامه» است</b><p>برنامه هم کار خوبی است، اما شکاف را پر نمی‌کند؛ با تمام شدن پول و پیگیری، عددها به جای اول برمی‌گردد. پیش از ادامه، یا طرح را اصلاح کنید یا حرکت دیگری انتخاب کنید.</p>
+   ${bad.map(([,q,,fix])=>`<div class="fix"><small>${q}</small>${fix}</div>`).join('')}
+   <div class="row-btn"><button class="btn pr sm" data-revise="${i}">اصلاح جملهٔ تحول</button><button class="btn se sm" data-go="moves@${i}">انتخاب حرکت دیگر</button></div></div>`:v==='تحول'?`<div class="verdict good"><b>طرح شما تحول است.</b><p>در صفحهٔ بعد، طرح را با عددهای خودش می‌سنجیم.</p></div>`:''}</div>`}},
+ {id:'check@'+i,part:3,pi:i,t:'سنجش طرح',done:()=>p().keep==='نگه می‌دارم'&&verdict(p())==='تحول',render:()=>{const pp=p(),g=gap(),im=planImpact(pp),sp=planSplit(pp),cost=planCost(pp),v=verdict(pp),O=opportunities();
+  if(!MV[pp.type])return NOMOVE('بخش ۴: طرح تحول');
+  const row=(st,l,val,note)=>`<div class="sc ${st}"><i></i><div><span>${l}</span><b>${val}</b>${note?`<small>${note}</small>`:''}</div></div>`;
+  const alts=MOVES.flatMap((m,mi)=>(O[m.t]||[]).map(x=>({...x,m,mi}))).filter(x=>x.f!==pp.force&&x.pa>0).sort((a,b)=>b.pa-a.pa).slice(0,3);
+  return `${EB('بخش ۴: طرح تحول')}<h1>طرح را بسنجید</h1>
+  <p class="lead">هر طرح باید بگوید چند نفر را به کنشگری نزدیک می‌کند و حرف را به کدام جمعیت تازه می‌رساند. این کارنامهٔ طرح شماست.</p>
+  <div class="card stack">
+   ${row(v==='تحول'?'ok':v?'no':'mid','نوع طرح',v||'آزمون تحول پاسخ داده نشده',v==='برنامه'?'<button class="link" data-go="test@'+i+'">برگشت به آزمون تحول</button>':'')}
+   ${row(im.dA?im.ofGapA>=1?'ok':'mid':'no','کنشگر تبیینی تازه',im.dA?`${FA(im.dA)} نفر، ${FA(im.ofGapA,1)}٪ از شکاف`:'صفر',im.dA&&im.ofTgtA?`${FA(im.ofTgtA,1)}٪ از راه تا هدف دو سال آینده`:im.dA?'':'طرحی که کنشگر تبیینی اضافه نکند، شکاف را پر نمی‌کند.')}
+   ${row(sp.inv?'ok':g.aI?'mid':'ok','دعوت از کنشگران فعلی',sp.inv?`${FA(sp.inv)} نفر`:'هیچ',sp.inv?'':g.aI?`${FA(g.aI)} کنشگر فرهنگی در شهرستان منتظر دعوت‌اند و این طرح سراغشان نمی‌رود.`:'')}
+   ${row(sp.fresh?'ok':'mid','کنشگر تازه از بیرون دایرهٔ آشنا',sp.fresh?`${FA(sp.fresh)} نفر`:'هیچ',sp.fresh?'':'راه رسیدن به ده درصد از بیرون دایرهٔ آشنا می‌گذرد.')}
+   ${row(planDelta(pp).dM?'ok':'mid','مخاطب تازه',planDelta(pp).dM?`${FA(planDelta(pp).dM)} نفر، ${FA(im.ofGapM,1)}٪ از شکاف مخاطب`:'هیچ')}
+   ${row(cost&&im.dA?'ok':'mid','هزینهٔ هر کنشگر تبیینی تازه',cost&&im.dA?money(perHead(cost,im.dA)):cost?'کنشگری اضافه نمی‌شود':'هزینه نوشته نشده',cost&&planDelta(pp).dM?`هر مخاطب تازه: ${money(perHead(cost,planDelta(pp).dM))}`:'')}
+  </div>
+  ${alts.length?`<div class="card stack" style="margin-top:12px"><b>عددهای شهرستان شما این‌ها را هم پیشنهاد می‌کند</b><div class="hint">اگر یکی از این‌ها بزرگ‌تر از طرح فعلی است، می‌توانید طرح را عوض کنید یا آن را طرح دوم کنید.</div>
+   ${alts.map(x=>`<div class="cand"><span>${esc(x.m.t)}: ${esc(x.f)}<small>${esc(x.why)}</small></span><button type="button" class="btn se sm" data-alt="${x.mi}" data-f="${esc(x.f)}">طرح تازه</button></div>`).join('')}</div>`:''}
+  <div class="card stack" style="margin-top:12px"><b>تصمیم شما دربارهٔ این طرح</b>${choices(bp+'keep',[['نگه می‌دارم','طرح درست انتخاب شده و عددهایش واقعی است.'],['اصلاحش می‌کنم','جمله یا عددها را بازبینی می‌کنم.'],['عوضش می‌کنم','حرکت یا نیروی دیگری را انتخاب می‌کنم.']])}
+   ${pp.keep==='اصلاحش می‌کنم'?`<div class="row-btn"><button class="btn se sm" data-go="shift@${i}">جملهٔ تحول</button><button class="btn se sm" data-go="ba@${i}">عددها</button><button class="btn se sm" data-go="cost@${i}">هزینه</button></div>`:pp.keep==='عوضش می‌کنم'?`<div class="row-btn"><button class="btn pr sm" data-go="moves@${i}">رفتن به شش حرکت</button></div>`:''}</div>`}},
+ {id:'run@'+i,part:4,pi:i,t:'اجرا در یک نگاه',done:()=>{const r=p().run||{};return has(r.lead)&&has(r.s1)&&has(r.s3)&&has(r.risk)},render:()=>{if(!MV[p().type])return NOMOVE('بخش ۵: اجرا');const r=p().run||{},me=[S.user.name,S.user.role].filter(Boolean).join('، '),d=planDelta(p()),sup=p().sup||{};return `
+  ${EB('بخش ۵: اجرا')}<h1>اجرای طرح در یک نگاه</h1>
+  <p class="lead">فقط آنچه برای شروع لازم است: چه کسی پیگیری می‌کند، در پایان هر مرحله چه چیزی سر جایش است، و چه چیزی ممکن است کار را زمین بزند.</p>
+  <div class="card stack">${inp(bp+'run.lead',{label:'راهبر طرح',req:true,ph:'نام و سمت کسی که شخصاً پیگیری می‌کند',after:''})}
+   ${me&&!has(r.lead)?`<div class="sugg"><button type="button" data-append="${bp}run.lead" data-v="${esc(me)}">خودم</button></div>`:''}
+   ${inp(bp+'run.exec',{label:'مجریان',opt:true,ph:'مثلاً معاون پرورشی آموزش‌وپرورش و دو معلم پیشگام'})}
+   <div class="fld"><label for="${fid(bp+'q')}">شروع طرح</label><select id="${fid(bp+'q')}" data-p="${bp}q">${QUARTERS.map((q,j)=>`<option${QUARTERS[planQ(p(),i)]===q?' selected':''}>${q}</option>`).join('')}</select><span class="hint">هر سه ماه یک طرح تازه؛ طرح ${FA(i+1)} به‌طور پیش‌فرض ${QUARTERS[Math.min(i,7)]} شروع می‌شود.</span></div></div>
+  <div class="card stack" style="margin-top:12px"><div><b>شش ماه، سه مرحله</b><div class="hint">برای هر مرحله یک جمله: در پایانش چه چیزی محقق شده است؟${d.dA?` مرحلهٔ آخر باید به <b>${FA(d.dA)} کنشگر تبیینی تازه</b> برسد.`:''}</div></div>
+   ${STAGES.map((st,j)=>`<div class="stg"><span class="sn">${FA(j+1)}</span>${area(bp+'run.s'+(j+1),{label:`${st[1]} · ${st[0]}`,rows:2,ph:st[4],req:j!==1})}</div>`).join('')}</div>
+  <div class="card stack" style="margin-top:12px">${inp(bp+'run.risk',{label:'مهم‌ترین چیزی که ممکن است طرح را زمین بزند',req:true,ph:'مثلاً همراهی نکردن مدیران مدارس'})}${inp(bp+'run.fix',{label:'اگر پیش آمد، چه می‌کنید؟',opt:true})}
+   <div class="chips">${RISK_EX.map(x=>`<button type="button" data-seg="${bp}run.risk" data-v="${esc(x)}">${x}</button>`).join('')}</div></div>
+  <div class="card stack" style="margin-top:12px"><b>از اداره‌کل و ستاد چه کمکی لازم دارید؟</b><div class="seg pick">${SUP.map(([k,l])=>`<button type="button" data-seg="${bp}sup.${k}.on" data-v="1" aria-pressed="${!!(sup[k]&&sup[k].on)}">${l}</button>`).join('')}</div>
+   ${inp(bp+'run.ask',{label:'دقیقاً چه کمکی؟',opt:true})}</div>`}}
+ ]}
+const STEP_END={id:'review',part:4,t:'مرور و ارسال',done:()=>!!S.submittedAt,render:()=>{const ms=missing(),im=allImpact(),g=gap();return `
+  <div class="eyebrow">پایان</div><h1>${S.submittedAt?'بوم‌ها ارسال شده است':'مرور و ارسال'}</h1>
+  ${g.pop?`<div class="card stack" style="margin-bottom:12px"><b>کار شهرستان ${esc(S.user.county||'')} در سه جمله</b><div class="ways">
+   <div class="w1"><b>${FA(g.aI)} کنشگر فرهنگی را به جهاد تبیین دعوت کنید</b><span>مشعل‌های خاموش: هستند و کار فرهنگی می‌کنند، اما هنوز در تبیین نیستند.</span></div>
+   <div class="w2"><b>${FA(g.aNew)} کنشگر تازه به میدان بیاورید</b><span>مشعل‌های تازه: حتی اگر همهٔ نیروهای امروز فعال شوند، این‌قدر کم داریم.</span></div>
+   <div class="w3"><b>حرف را به ${FA(g.gapM)} نفر دیگر برسانید</b><span>جاهای تاریک: مردمی که امروز هیچ نیرویی به آن‌ها نمی‌رسد.</span></div></div></div>`:''}
+  ${im.dA||im.dM?`<div class="card gapcard g-plan"><h3>سهم طرح‌های شما از شکاف</h3>
+   <div class="gapline"><b>${FA(im.dA)}</b><span>کنشگر تبیینی تازه، یعنی ${FA(im.ofGapA,1)}٪ از شکاف ${FA(g.gapA)} نفری</span></div>${dots(g.aShare,g.ta?g.ta*10:0,g.needA?im.dA/g.needA*100:0)}
+   <div class="legend"><span><i style="background:var(--green)"></i>کنشگر تبیینی امروز</span><span><i style="background:var(--amber)"></i>با طرح‌های شما</span><span><i style="box-shadow:inset 0 0 0 2px var(--peri)"></i>هدف دو سال آینده</span></div>
+   <p class="hint" style="margin:0">برای پر کردن بخش بزرگ‌تری از شکاف، می‌توانید طرح تحول دیگری هم اضافه کنید.</p></div>`:''}
+  ${roadmapHTML()}
+  <div class="card stack" style="margin-top:12px"><b>طرح‌های تحول</b>${S.data.plans.map((p,i)=>{const pi=planImpact(p);return `<div class="plancard"><div style="flex:1;min-width:0"><b>${FA(i+1)}. ${esc(p.title||'طرح بدون عنوان')}</b><span>${esc(p.type||'حرکت انتخاب نشده')}${verdict(p)?` · ${verdict(p)==='تحول'?'تحول':'هنوز برنامه'}`:''}${pi.dA?` · ${FA(pi.dA)} کنشگر تبیینی تازه (${FA(pi.ofGapA,1)}٪ از شکاف)`:''}${planCost(p)&&pi.dA?` · هر نفر ${money(perHead(planCost(p),pi.dA))}`:''}</span></div><button class="btn se sm" data-goplan="${i}">ویرایش</button>${S.data.plans.length>1?delBtn('plans',i):''}</div>`}).join('')}
+</div>
+  ${S.submittedAt?'<div class="note" style="margin-top:12px">بوم‌ها ارسال شده است و دستیار حرف نو بازخوردش را همین‌جا می‌گذارد. هنوز می‌توانید اصلاحشان کنید؛ تغییرات خودکار ذخیره می‌شود.</div>':ms.length?`<div class="card stack" style="margin-top:12px"><b>پیش از ارسال، این‌ها مانده است</b><div class="miss">${ms.map(s=>`<button data-go="${s.id}"><span>${PARTS[s.part]}${s.pi!=null&&S.data.plans.length>1?` · طرح ${FA(s.pi+1)}`:''}: ${s.t}</span><span class="link">تکمیل ←</span></button>`).join('')}</div></div>`:'<div class="note" style="margin-top:12px"><b>همه چیز کامل است.</b> بوم‌ها را بفرستید تا دستیار حرف نو بازخوردش را بدهد.</div>'}
+  <button class="btn se wide" data-view="bom" style="margin-top:12px">${I.grid} دیدن بوم کامل</button>`}};
+
+function roadmapHTML(){const g=gap(),ps=S.data.plans,slots=QUARTERS.map(()=>[]);ps.forEach((p,i)=>slots[planQ(p,i)].push({p,i}));
+ const ok=ps.filter(p=>planDelta(p).dA>0),avg=ok.length?ok.reduce((a,p)=>a+planDelta(p).dA,0)/ok.length:0,proj=Math.round(avg*QUARTERS.length),need=g.tgtA>g.aT?g.tgtA-g.aT:g.gapA;
+ return `<div class="card stack" style="margin-top:12px"><b>نقشهٔ راه دو ساله: هر سه ماه یک طرح تحول</b>
+  <div class="hint">هر طرح شش ماه طول می‌کشد؛ پس از سه ماه، وقتی طرح قبلی پا گرفت، طرح بعدی شروع می‌شود و دو طرح هم‌زمان پیش می‌روند. اگر توانش را دارید، در یک فصل دو طرح را با هم شروع کنید.</div>
+  <div class="road">${QUARTERS.map((q,j)=>`<div class="q${slots[j].length?' on':''}"><small>${q}</small>${slots[j].length?slots[j].map(({p,i})=>`<button type="button" data-goplan="${i}">${FA(i+1)}. ${esc(p.title||p.type||'طرح بی‌نام')}</button>`).join(''):`<span>${j<ps.length+1?'طرح بعدی':'—'}</span>`}</div>`).join('')}</div>
+  ${avg?`<div class="impact"><div class="row"><b>${FA(proj)}</b><span>کنشگر تبیینی تازه تا دو سال دیگر، اگر هر سه ماه یک طرح هم‌اندازهٔ طرح‌های امروزتان آغاز کنید${need?`؛ یعنی <b style="font-size:16px">${FA(Math.min(proj/need*100,999),0)}٪</b> از ${g.tgtA>g.aT?'راه تا هدف دو ساله':'شکاف'}`:''}.</span></div></div>`:''}
+  ${avg&&need&&proj<need?`<p class="hint" style="margin:0">با این آهنگ به هدف نمی‌رسیم. برای نزدیک شدن، طرح‌ها را بزرگ‌تر کنید یا در هر فصل بیش از یک طرح آغاز کنید؛ دعوت از ${FA(g.aI)} کنشگر منتظر دعوت، سریع‌ترین راه است.</p>`:''}
+  <button type="button" class="add" data-addplan>+ طرح تحول سه ماه بعد</button></div>`}
+function steps(){const out=[...STORY,...STEPS_A];S.data.plans.forEach((p,i)=>{out.push({...STEP_B,id:'moves@'+i,pi:i});out.push(...planSteps(i))});out.push(STEP_END);return out}
+function missing(){return steps().filter(s=>s.id!=='review'&&!/^why/.test(s.id)&&!s.done())}
+function partProg(k){const ss=steps().filter(s=>s.part===k&&s.id!=='review');return ss.length?ss.filter(s=>s.done()).length/ss.length*100:0}
+
+/* live bits */
+const W8=t=>`<div class="w8">${t}</div>`;
+function fwarn(f){const w=[];if(!isP(f)&&num(f.aa)>300)w.push('کنشگرِ هر واحد بیش از ۳۰۰ نفر است؛ میانگین یک واحد را بنویسید، نه جمع همه.');if(num(f.mm)>20000)w.push('مخاطبِ هر واحد خیلی زیاد است؛ میانگین یک واحد را بنویسید.');if(isP(f)&&num(f.mm)>5000)w.push('مخاطبِ هر نفر بیش از ۵ هزار است؛ اگر صفحهٔ مجازی پرمخاطب دارد درست است، وگرنه بررسی کنید.');const g=gap();if(g.pop&&tM(f)>g.pop)w.push('مخاطبان این نیرو از کل جمعیت شهرستان بیشتر شده است؛ عددها را بررسی کنید.');return w.map(W8).join('')}
+const fDone=f=>has(f.st)&&has(f.n)&&(isP(f)||has(f.aa))&&has(f.mm);
+function ftot(f){const n=num(f.n);if(!n)return '<span class="hint">تعداد را بنویسید تا جمع حساب شود.</span>';return isP(f)?`<span class="ta">${FA(n)} نفر = <b>${FA(tA(f))} کنشگر</b></span><span class="tm">${FA(n)} × ${FA(num(f.mm))} = <b>${FA(tM(f))} مخاطب</b></span>${fwarn(f)}`:`<span class="ta">${FA(n)} × ${FA(num(f.aa),1)} = <b>${FA(tA(f))} کنشگر</b></span><span class="tm">${FA(n)} × ${FA(num(f.mm))} = <b>${FA(tM(f))} مخاطب</b></span>${fwarn(f)}`}
+function pickerHTML(){const names=S.data.forces.map(f=>f.name),custom=S.data.forces.filter(f=>has(f.name)&&!FORCE_EX.includes(f.name));
+ return `${CATS.map(([t,k,items])=>`<div class="cat"><div class="cat-h">${t} <span class="kind">${k==='p'?'افراد':'مجموعه‌ها'}</span></div><div class="seg pick">${items.map(x=>`<button type="button" data-togforce="${esc(x)}" aria-pressed="${names.includes(x)}">${names.includes(x)?'✓ ':'+ '}${x}</button>`).join('')}</div></div>`).join('')}${custom.length?`<div class="cat"><div class="cat-h">نیروهایی که خودتان افزوده‌اید</div><div class="seg pick">${custom.map(f=>`<button type="button" data-togforce="${esc(f.name)}" aria-pressed="true">✓ ${esc(f.name)}</button>`).join('')}</div></div>`:''}<div class="cat"><div class="cat-h">نیرویی که در فهرست نیست</div><input id="newforce" placeholder="مثلاً شورای راهبری بانوان" aria-label="نام نیروی تازه"><div class="g2"><button type="button" class="btn se sm" data-addcustom="g">افزودن به‌عنوان مجموعه</button><button type="button" class="btn se sm" data-addcustom="p">افزودن به‌عنوان افراد</button></div><span class="hint">مجموعه یعنی واحدهایی مثل هیئت یا کانون که هر کدام چند کنشگر دارند. افراد یعنی آدم‌هایی مثل معلم یا مداح که هر نفرشان یک کنشگر است.</span></div>`}
+function northOn(s){if(!has(S.data.ta)||!has(S.data.tm)||!num(S.data.pop))return false;const ss=steps(),gi=ss.findIndex(x=>x.id==='gap');return ss.findIndex(x=>x.id===s.id)>=gi}
+const LIVE={
+ north:()=>{const g=gap(),im=allImpact(),k=g.tgtA>g.aT?Math.min(im.dA/(g.tgtA-g.aT)*100,100):0;return `<button type="button" class="north-in" data-go="gap" aria-label="ستارهٔ قطبی؛ برای تغییر هدف بزنید"><span class="ns">★</span><span class="nt"><small>ستارهٔ قطبی · هدف تا پاییز ۱۴۰۷</small><b>${FA(g.tgtA)} کنشگر تبیینی <i>(${FA(g.ta,1)}٪)</i> · پیام به ${FA(g.tgtM)} نفر <i>(${FA(g.tm,1)}٪)</i></b>${im.dA?`<span class="nbar"><span style="width:${Math.max(k,1.5)}%"></span></span><small>طرح‌های شما: ${FA(im.dA)} کنشگر تازه، ${FA(k,1)}٪ از راه</small>`:'<small>امروز: '+FA(g.aT)+' کنشگر تبیینی · برای تغییر هدف بزنید</small>'}</span></button>`},
+ need:()=>{const g=gap();return g.pop?`<div class="needs"><div class="need n-act"><div class="nk">کنشگر لازم</div><div class="v">${FA(g.needA)}</div><div class="hint">۱۰٪ جمعیت</div></div><div class="need n-aud"><div class="nk">مخاطب لازم</div><div class="v">${FA(g.needM)}</div><div class="hint">همهٔ مردم</div></div></div><p class="hint" style="margin:0">در قدم‌های بعد می‌بینیم امروز چقدر از این عددها را داریم.</p>${g.pop<5000?W8('جمعیت کمتر از ۵ هزار نفر است؛ عدد را بررسی کنید. جمعیت کل شهرستان را بنویسید، نه یک محله.'):g.pop>6000000?W8('این عدد از جمعیت بزرگ‌ترین شهرستان‌های کشور هم بیشتر است؛ بررسی کنید.'):''}`:''},
+ pickcount:()=>{const n=forces().length;return n?`${FA(n)} نیرو انتخاب شده است.${n<3?' دست‌کم سه نیرو انتخاب کنید.':''}`:'دست‌کم سه نیرو انتخاب کنید.'},
+ tally:()=>{const g=gap();if(!forces().length)return '';return `<div class="tally"><div class="ta"><span class="sm">کنشگر فرهنگی تا اینجا</span><b>${FA(g.a)}</b>${g.needA?`<span class="sm">از ${FA(g.needA)} لازم</span>`:''}</div><div class="tm"><span class="sm">مخاطب تا اینجا</span><b>${FA(g.m)}</b>${g.needM?`<span class="sm">از ${FA(g.needM)}</span>`:''}</div></div>`},
+ sentence:()=>`<small>جملهٔ تحول</small><p>${esc(sentence(P(S.pi))||'…')}</p>`,
+ impact:()=>{const p=P(S.pi),im=planImpact(p),g=gap();if(!im.dA&&!im.dM)return '<div class="hint">عدد شش ماه بعد را بنویسید تا سهم طرح از شکاف را ببینید.</div>';
+  const sp=planSplit(p),f=findForce(p.force),ww=[];if(num(p.afterA)&&num(p.afterA)<num(p.baseA))ww.push('عدد شش ماه بعد از عدد امروز کمتر است.');if(im.dA>g.gapA&&g.gapA)ww.push('افزایش کنشگر از کل شکاف شهرستان بیشتر است؛ عددها را بررسی کنید.');if(g.pop&&num(p.afterM)>g.pop)ww.push('مخاطب شش ماه بعد از جمعیت شهرستان بیشتر است.');if(im.dA&&im.dM&&im.dM/im.dA>500)ww.push(`هر کنشگر تازه به‌طور میانگین به ${FA(Math.round(im.dM/im.dA))} نفر می‌رسد؛ اگر واقعی نیست، بازبینی کنید.`);
+  return `${ww.map(W8).join('')}<div class="impact"><div class="row"><b>${FA(im.dA)}</b><span>کنشگر تبیینی تازه، یعنی <b style="font-size:16px">${FA(im.ofGapA,1)}٪</b> از شکاف ${FA(g.gapA)} نفری${im.ofTgtA?` و ${FA(im.ofTgtA,1)}٪ از راه تا هدف دو ساله`:''}</span></div>${im.dA?`<div class="split"><span class="s-inv">${FA(sp.inv)} دعوت از کنشگران فعلی</span><span class="s-new">${FA(sp.fresh)} کنشگر تازه</span></div>`:''}${im.dM?`<div class="row"><b>${FA(im.dM)}</b><span>مخاطب تازه، یعنی <b style="font-size:16px">${FA(im.ofGapM,1)}٪</b> از شکاف مخاطب</span></div>`:''}${dots(g.aShare,g.ta?g.ta*10:0,g.needA?im.dA/g.needA*100:0)}</div>`},
+ cost:()=>{const p=P(S.pi),c=planCost(p),d=planDelta(p);if(!c)return '';return `${c>100000?W8('هزینه بیش از ۱۰۰ میلیارد تومان شده است؛ مبلغ‌ها به میلیون تومان است، بررسی کنید.'):''}<div class="impact"><div class="row"><span>جمع هزینه:</span><b style="font-size:19px">${money(c)}</b></div><div class="row"><b>${d.dA?money(perHead(c,d.dA)):'—'}</b><span>برای هر کنشگر تبیینی تازه</span></div>${d.dM?`<div class="row"><b style="font-size:19px">${money(perHead(c,d.dM))}</b><span>برای هر مخاطب تازه</span></div>`:''}${d.dA?'':'<span class="hint">عدد کنشگر شش ماه بعد را در صفحهٔ قبل بنویسید تا هزینهٔ هر نفر حساب شود.</span>'}</div>`},
+ counter:()=>{const n=String(P(S.pi).detail||'').trim().length;return n>=250?`<span style="color:var(--green-600)">حدود ${FA(Math.round(n/75))} سطر</span>`:`حدود ${FA(Math.round(n/75))} سطر · دست‌کم ۴ سطر`}
+};
+
+/* =====================================================================
+   نمای بوم: همان سه بوم کاغذی، پرشده
+   ===================================================================== */
+function kbox(title,val,go,cls=''){const v=has(val)?val:'';return `<button class="k ${cls}" data-go="${go}"><small>${title}</small><div class="kv${v?'':' empty'}">${v||'—'}</div></button>`}
+function bomHTML(){const g=gap(),fs=forces(),U=S.user,ps=S.data.plans;
+ const cb=(on,l)=>`<span class="cb${on?' on':''}"><i></i><span>${l}</span></span>`;
+ const val=v=>has(v)?`<span class="pen">${esc(v)}</span>`:'<span class="blank"></span>';
+ const date=(()=>{try{return new Intl.DateTimeFormat('fa-IR-u-ca-persian',{year:'numeric',month:'2-digit',day:'2-digit'}).format(S.submittedAt?new Date(S.submittedAt):new Date())}catch(e){return ''}})();
+ const head=(t)=>`<div class="bh"><h2>${t}</h2><p>از مجموعه بوم نقشه تحول نیروهای مجاهد تبیین</p><svg viewBox="0 0 120 16" aria-hidden="true"><path d="M2 8h40M78 8h40" stroke="currentColor" stroke-width="1.2"/><path d="M60 2c-6 0-8 6-14 6s-4-5 0-5M60 2c6 0 8 6 14 6s4-5 0-5M60 14c-6 0-8-6-14-6M60 14c6 0 8-6 14-6" fill="none" stroke="currentColor" stroke-width="1.2"/><circle cx="60" cy="8" r="2.2" fill="currentColor"/></svg></div>`;
+ const info=`<div class="binfo" data-go="pop"><div class="bt">اطلاعات تکمیل‌کنندهٔ بوم</div><div class="b2c"><div><small>نام و نام خانوادگی</small>${val(U.name)}<small>شمارهٔ تماس</small>${val(FD(U.phone||''))}<small>تاریخ تکمیل</small>${val(date)}</div><div><small>حوزهٔ مسئولیت</small><div class="kvl">استان: ${val(U.province||'خراسان رضوی')}</div><div class="kvl">شهرستان: ${val(U.county)}</div><small>نقش</small>${cb(/مدیرکل|مدیر کل/.test(U.role||''),'مدیرکل تبلیغات اسلامی استان')}${cb(/معاون/.test(U.role||''),'معاون فرهنگی تبلیغات اسلامی استان')}${cb(!/مدیرکل|مدیر کل|معاون/.test(U.role||''),'مدیر تبلیغات اسلامی شهرستان')}</div></div></div>`;
+ const sec=(n,t,sub,go,body,cls='')=>`<section class="bsec ${cls}" data-go="${go}"><h3><span>${n}</span>${t}</h3>${sub?`<p class="bsub">${sub}</p>`:''}${body}</section>`;
+ const tbl=(cols,rows)=>`<table class="bt-t"><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
+ const foot=`<div class="bfoot">${LOGO}</div>`;
+ const sheet=(body)=>`<div class="sheetbox"><div class="sheet">${body}${foot}</div></div>`;
+
+ // ---- بوم ۱
+ const frows=fs.map(f=>`<tr><td class="nm">${esc(f.name)}</td><td class="n">${FA(num(f.n))}</td><td class="st">${STATUS.map(([x])=>cb(f.st===x,x)).join('')}</td><td class="n">${FA(tA(f))}</td><td class="n">${FA(tM(f))}</td><td class="sm">${isP(f)?`هر نفر ${FA(num(f.mm))} مخاطب`:`هر واحد ${FA(num(f.aa),1)} کنشگر و ${FA(num(f.mm))} مخاطب`}</td></tr>`);
+ while(frows.length<8)frows.push('<tr><td>&nbsp;</td><td></td><td class="st">'+STATUS.map(([x])=>cb(false,x)).join('')+'</td><td></td><td></td><td></td></tr>');
+ const pairs=S.data.pairs.filter(x=>has(x.a)&&has(x.b));const prow=pairs.map(x=>`<tr><td><span class="pen">${esc(x.a)}</span> و <span class="pen">${esc(x.b)}</span></td><td class="st">${['زیاد','متوسط','کم','هیچ'].map(l=>cb(x.lv===l,l)).join('')}</td></tr>`);
+ while(prow.length<3)prow.push(`<tr><td>&nbsp;</td><td class="st">${['زیاد','متوسط','کم','هیچ'].map(l=>cb(false,l)).join('')}</td></tr>`);
+ const pct=(a,b)=>b?FA(a/b*100,a/b<.01?2:1)+'٪':'—';
+ const b1=sheet(`${head('تصویر آرایش موجود')}<div class="bgrid">
+  <div class="col">${info}
+   ${sec('۱','نیروهای مجاهد تبیین در شهرستان شما','وضعیت نیروهای فعال فرهنگی شهرستان. کنشگران و مخاطبان هر نیرو از ضرب تعداد در میانگین هر واحد به دست آمده است.','forces',tbl(['عنوان نیرو','تعداد','وضعیت فعالیت در عرصهٔ جهاد تبیین','کنشگران','مخاطبان','توضیحات'],frows)+`<div class="btot"><span>جمع کنشگران فرهنگی: <b>${FA(g.a)}</b></span><span>در تبیین فعال: <b>${FA(g.aT)}</b></span><span>منتظر دعوت: <b>${FA(g.aI)}</b></span><span>جمع مخاطبان: <b>${FA(g.m)}</b></span></div>`)}</div>
+  <div class="col">
+   ${sec('۲','وضعیت ارتباط بین نیروها','کدام نیروها با یکدیگر ارتباط دارند؟','links',tbl(['ارتباط','میزان همکاری'],prow)+`<div class="bline"><small>ارزیابی کلی انسجام نیروها</small>${[['شبکهٔ منسجم','نیروها هماهنگ و مرتبط فعالیت می‌کنند'],['همکاری موردی','گاهی همکاری هست، اما ساختارمند نیست'],['پراکنده','هر نیرو مستقل و جدا از دیگران فعالیت می‌کند']].map(([x,d])=>cb(S.data.cohesion===x,`<b>${x}</b> (${d})`)).join('')}</div>`)}
+   ${sec('۳','فاصله با وضع مطلوب','','gap',`<p class="bq">امام شهید (رضوان‌الله‌علیه) مخاطبان جهاد تبیین را همهٔ مردم ایران می‌دانستند. منطق گام دوم این است که کشوری با هشت تا ده میلیون مجاهد تبیین، در جنگ تبلیغاتی بیمه می‌شود.</p><p class="bsub">بنابراین وضع مطلوب در شهرستان شما: <b>۱۰٪ جمعیت کنشگر جهاد تبیین</b> و <b>۱۰۰٪ جمعیت مخاطب فعالیت‌های تبیینی</b>. جمعیت شهرستان: <span class="pen">${FA(g.pop)}</span> نفر.</p>
+    ${tbl(['','تعداد امروز','سهم از جمعیت','لازم','هدف دو سال آینده'],[`<tr><th class="rh">کنشگر جهاد تبیین</th><td class="n">${FA(g.aT)}</td><td class="n">${pct(g.aT,g.pop)}</td><td class="n">${FA(g.needA)}</td><td class="n">${has(S.data.ta)?FA(g.ta,1)+'٪ ('+FA(g.tgtA)+' نفر)':''}</td></tr>`,`<tr><th class="rh">مخاطب تحت پوشش</th><td class="n">${FA(g.m)}</td><td class="n">${pct(g.m,g.pop)}</td><td class="n">${FA(g.needM)}</td><td class="n">${has(S.data.tm)?FA(g.tm,1)+'٪ ('+FA(g.tgtM)+' نفر)':''}</td></tr>`])}
+    <div class="bgap"><span class="w1">${FA(g.aI)} کنشگر فرهنگی منتظر دعوت</span><span class="w2">${FA(g.aNew)} کنشگر تازه لازم</span><span class="w3">${FA(g.gapM)} نفر بی‌پوشش</span></div>
+    <div class="bline"><small>مخاطبان بی‌پوشش</small>${S.data.uncovered.length?`<span class="pen">${esc(S.data.uncovered.join('، '))}</span>`:'<span class="blank"></span>'}</div>`)}
+   ${sec('۴','جمع‌بندی وضع موجود','نقاط قوت، نقاط ضعف و خلأهای اصلی','summary',[['نقاط قوت','strong'],['نقاط ضعف','weak'],['خلأهای اصلی','gaps']].map(([l,k])=>`<div class="bline"><small>${l}</small>${val(S.data.summary[k])}</div>`).join(''))}
+  </div></div>`);
+
+ // ---- بوم ۲ و ۳ برای هر طرح
+ const plans=ps.map((p,i)=>{const im=planImpact(p),sp=planSplit(p),d=planDelta(p),r=p.run||{},v=verdict(p),c=planCost(p),tag=ps.length>1?` (طرح ${FA(i+1)})`:'',t=p.test||{};
+  const b2=sheet(`${head('طرح تحول'+tag)}<div class="bgrid">
+   <div class="col">${info}
+    ${sec('۱','نوع تحول','برای تغییر در آرایش نیروهای مجاهد تبیین ۶ نوع تحول را می‌توان دنبال کرد؛ ایدهٔ شما به کدام نزدیک‌تر است؟','moves@'+i,['inv','new','aud'].map(w=>`<div class="bway"><small>${WAYS[w].t}</small>${MOVES.filter(m=>m.way===w).map(m=>`<div class="bmove${p.type===m.t?' on':''}">${cb(p.type===m.t,`<b>${m.t}:</b> ${m.d}`)}</div>`).join('')}</div>`).join(''))}</div>
+   <div class="col">
+    ${sec('۲','آشنایی با طرح تحول','','shift@'+i,`<div class="bline"><small>الف) نام طرح</small>${val(p.title)}</div>
+     <small class="bl">ب) تصویر قبل و بعد از تحول</small>${tbl(['وضعیت قبل از تحول','وضعیت پس از تحول'],[`<tr><td class="tall">${has(p.from)?`<span class="pen">${esc(p.force||'')}: ${esc(p.from)}</span>`:''}${has(p.baseA)?`<div class="pen sm">${FA(num(p.baseA))} کنشگر تبیینی · ${FA(num(p.baseM))} مخاطب</div>`:''}</td><td class="tall">${has(p.to)?`<span class="pen">${esc(p.to)}</span>`:''}${has(p.afterA)?`<div class="pen sm">${FA(num(p.afterA))} کنشگر تبیینی · ${FA(num(p.afterM))} مخاطب (شش ماه بعد)</div>`:''}</td></tr>`])}
+     <div class="bline"><small>ج) خلاصهٔ طرح در یک جمله</small>${val(sentence(p))}</div>`)}
+    ${sec('۳','سهم از شکاف و هزینه','','ba@'+i,`${tbl(['','افزایش','سهم از شکاف','هزینهٔ هر نفر'],[`<tr><th class="rh">کنشگر تبیینی</th><td class="n">${FA(d.dA)}</td><td class="n">${FA(im.ofGapA,1)}٪</td><td class="n">${c&&d.dA?money(perHead(c,d.dA)):''}</td></tr>`,`<tr><th class="rh">مخاطب</th><td class="n">${FA(d.dM)}</td><td class="n">${FA(im.ofGapM,1)}٪</td><td class="n">${c&&d.dM?money(perHead(c,d.dM)):''}</td></tr>`])}
+     <div class="bgap"><span class="w1">${FA(sp.inv)} دعوت از کنشگران فعلی</span><span class="w2">${FA(sp.fresh)} کنشگر تازه</span>${im.ofTgtA?`<span class="w4">${FA(im.ofTgtA,1)}٪ از راه تا هدف دو ساله</span>`:''}</div>
+     <div class="bline" data-go="cost@${i}"><small>هزینهٔ شش ماه</small>${c?`<span class="pen">${money(c)}${p.fund?'، '+esc(p.fund):''}</span>${p.costMode!=='کل'?`<div class="pen sm">${COSTS.filter(([k])=>num((p.costs||{})[k])).map(([k,l])=>`${l}: ${FA(num(p.costs[k]))}`).join(' · ')} (میلیون تومان)</div>`:''}`:'<span class="blank"></span>'}</div>`)}
+    ${sec('۴','تحول یا برنامه؟','','test@'+i,`${[['stays','اگر پیگیری اداره تمام شود، تغییر سر پا می‌ماند؟'],['role','نقش یا جایگاه یک گروه از آدم‌ها عوض می‌شود؟'],['grows','خودش کنشگر تازه می‌سازد؟']].map(([k,q])=>`<div class="byn"><span>${q}</span>${cb(t[k]==='بله','بله')}${cb(t[k]==='هنوز نه','هنوز نه')}</div>`).join('')}
+     <div class="bverdict ${v==='تحول'?'ok':v?'no':''}">${v==='تحول'?'نتیجه: این طرح تحول است.':v==='برنامه'?'نتیجه: این طرح هنوز برنامه است و باید اصلاح شود.':'نتیجه: —'}${p.keep?` · تصمیم پس از سنجش: <b>${esc(p.keep)}</b>`:''}</div>`)}
+   </div></div>`);
+  const sup=SUP.filter(([k])=>p.sup&&p.sup[k]&&p.sup[k].on);
+  const b3=sheet(`${head('برنامهٔ اجرایی'+tag)}<div class="bgrid">
+   <div class="col">${info}
+    ${sec('۱','عنوان طرح تحول مرتبط','','run@'+i,`<div class="bline">${val(p.title)}</div><div class="bline"><small>شروع طرح</small><span class="pen">${QUARTERS[planQ(p,i)]}</span></div>`)}
+    ${sec('۲','مراحل اجرا','در پایان هر مرحله چه چیزی محقق شده است؟','run@'+i,STAGES.map((st,j)=>`<div class="bstage"><div class="bst-h"><b>مرحلهٔ ${['اول','دوم','سوم'][j]}: ${st[0]}</b><span>${st[1]}</span></div>${val(r['s'+(j+1)])}</div>`).join(''))}</div>
+   <div class="col">
+    ${sec('۳','ساختار اجرایی','','run@'+i,tbl(['نقش','مسئول'],[`<tr><th class="rh">راهبر طرح</th><td>${val(r.lead)}</td></tr>`,`<tr><th class="rh">مجری / مجریان</th><td>${val(r.exec)}</td></tr>`]))}
+    ${sec('۴','تحلیل ریسک','','run@'+i,tbl(['مهم‌ترین مانع احتمالی','راهکار پیشنهادی'],[`<tr><td>${val(r.risk)}</td><td>${val(r.fix)}</td></tr>`]))}
+    ${sec('۵','شاخص‌های موفقیت','از عددهای طرح؛ کمّی و قابل سنجش.','ba@'+i,tbl(['شاخص','امروز','شش ماه بعد'],[`<tr><td>کنشگر تبیینیِ ${esc(p.force||'نیروی طرح')}</td><td class="n">${FA(num(p.baseA))}</td><td class="n">${FA(num(p.afterA))}</td></tr>`,`<tr><td>مخاطبِ ${esc(p.force||'نیروی طرح')}</td><td class="n">${FA(num(p.baseM))}</td><td class="n">${FA(num(p.afterM))}</td></tr>`]))}
+    ${sec('۶','حمایت مورد نیاز از اداره‌کل و ستاد','','run@'+i,tbl(['نوع حمایت','لازم است؟'],SUP.map(([k,l])=>`<tr><td>${l}</td><td>${cb(!!(p.sup&&p.sup[k]&&p.sup[k].on),'بله')}</td></tr>`))+(has(r.ask)?`<div class="bline"><small>شرح</small>${val(r.ask)}</div>`:''))}
+   </div></div>`);
+  return b2+b3}).join('');
+ const mob=innerWidth<760;
+ return `<div class="viewbar">${READONLY?`<a class="back" href="./" style="text-decoration:none">→ بازگشت به داشبورد</a><span>${esc(U.name||'')} · ${S.submittedAt?'ارسال‌شده':'هنوز ارسال نشده'}</span>`:`<button type="button" class="back" data-view="step">→ بازگشت به تکمیل بوم</button><span>نمای بوم</span>`}</div><div class="bomwrap"><div class="bom-h"><div><h1>بوم‌های شهرستان ${esc(U.county||'')}</h1>${READONLY?'':'<p class="hint" style="margin:4px 0 0">روی هر بخش بزنید تا به همان سؤال بروید.</p>'}</div><div class="row-btn">${mob?`<button class="btn se sm" data-bomprint>${S.bomPrint?'نمای گوشی':'نمای چاپی A4'}</button>`:`<button class="btn se sm" data-bomzoom>${S.bomZoom?'جا دادن در صفحه':'اندازهٔ واقعی'}</button>`}<button class="btn se sm" data-print>چاپ یا PDF</button></div></div>${b1}${plans}</div>`}
+function fitSheets(){const fluid=innerWidth<760&&!S.bomPrint;$$('.sheetbox').forEach(b=>{const sh=b.firstElementChild;if(!sh)return;b.classList.toggle('fluid',fluid);if(fluid){sh.style.transform='';b.style.height='auto';return}const k=S.bomZoom?1:Math.min(1,b.clientWidth/1400);sh.style.transform=`scale(${k})`;b.style.height=sh.offsetHeight*k+'px';b.classList.toggle('zoom',!!S.bomZoom)})}
+window.addEventListener('resize',()=>{if(S.view==='bom')fitSheets()});
+
+/* =====================================================================
+   بازخورد
+   ===================================================================== */
+function fbHTML(){const fb=S.feedback;if(!fb)return `<div class="viewbar"><button type="button" class="back" data-view="step">→ بازگشت به تکمیل بوم</button><span>بازخورد</span></div><div class="wrap"><div class="eyebrow">بازخورد دستیار حرف نو</div><h1 style="font-size:24px">هنوز بازخوردی نرسیده است</h1><p class="lead">${S.submittedAt?'بوم‌های شما ارسال شده است. دستیار حرف نو آن‌ها را می‌خواند و بازخوردش همین‌جا نمایش داده می‌شود.':'پس از ارسال بوم‌ها، بازخورد دستیار حرف نو همین‌جا نمایش داده می‌شود.'}</p><button class="btn se" data-view="step">بازگشت</button></div>`;
+ const sc=fb.scores||{},lst=a=>a&&a.length?`<ul class="lst">${a.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'—';
+ return `<div class="viewbar"><button type="button" class="back" data-view="step">→ بازگشت به تکمیل بوم</button><span>بازخورد</span></div><div class="wrap"><div class="eyebrow">بازخورد دستیار حرف نو</div><h1 style="font-size:24px">بازخورد بوم‌های شما</h1><div class="gap16">
+ <div class="score">${[['b1','آرایش موجود'],['b2','طرح تحول'],['b3','برنامهٔ اجرایی']].map(([k,l])=>`<div><b>${sc[k]!=null?FA(sc[k]):'—'}</b><small>${l} (از ۱۰)</small></div>`).join('')}</div>
+ <div class="card"><b>جمع‌بندی</b><p style="margin:6px 0 0;white-space:pre-line">${esc(fb.summary||'')}</p></div>
+ <div class="card"><b style="color:var(--green-600)">نقاط قوت</b>${lst(fb.strengths)}</div><div class="card"><b style="color:var(--amber-ink)">جای کار</b>${lst(fb.gaps)}</div><div class="card"><b style="color:var(--peri)">پیشنهاد برای گام بعد</b>${lst(fb.suggestions)}</div>
+ ${fb.message?`<div class="card"><b>یادداشت پایانی</b><p style="margin:6px 0 0;white-space:pre-line">${esc(fb.message)}</p></div>`:''}
+ <button class="btn se" data-view="step">بازگشت به بوم‌ها</button></div></div>`}
+
+/* =====================================================================
+   نمایش و ناوبری
+   ===================================================================== */
+function shell(){if(READONLY)return `<header class="bar"><div class="bar-in">${LOGO}<span class="sp"></span><span class="pill" style="font-size:12.5px">نمای مدیر کل · فقط خواندنی</span></div></header><div id="main"></div>`;return `
+ <header class="bar"><div class="bar-in">${LOGO}<span class="sp"></span><span class="save ok" id="save"><i></i><span>ذخیره شد</span></span>
+  <button class="tb" data-view="bom" id="tbBom" aria-pressed="${S.view==='bom'}">${I.grid}<span class="lbl">بوم کامل</span></button>
+  <button class="tb" data-view="fb" aria-pressed="${S.view==='fb'}">${I.msg}<span class="lbl">بازخورد</span>${S.feedback&&!S.data.meta.fbSeen?'<i style="width:8px;height:8px;border-radius:50%;background:var(--crimson)"></i>':''}</button>
+  <button class="av" data-menu aria-label="حساب کاربری">${esc(String(S.user.name||'؟').trim()[0]||'؟')}</button></div></header>
+ <div id="main"></div>
+ <datalist id="forceEx">${FORCE_EX.map(f=>`<option value="${f}">`).join('')}</datalist><datalist id="forceList"></datalist>`}
+function cur(){const ss=steps();let i=ss.findIndex(s=>s.id===S.step);if(i<0)i=0;return{ss,i,s:ss[i]}}
+function render(){
+ {const j=$('#jump');if(j)j.hidden=true}
+ $$('.bar .tb').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===S.view));
+ const m=$('#main');
+ if(S.view==='bom'){m.innerHTML=bomHTML();fitSheets();if(document.fonts)document.fonts.ready.then(fitSheets);window.scrollTo(0,0);return}
+ if(S.view==='fb'){m.innerHTML=fbHTML();if(S.feedback&&!S.data.meta.fbSeen){S.data.meta.fbSeen=1;schedule();app()}window.scrollTo(0,0);return}
+ const {ss,i,s}=cur();S.step=s.id;if(s.pi!=null)S.pi=s.pi;
+ const k=s.part;
+ const ns=northOn(s)?`<div class="north" data-live="north">${LIVE.north()}</div>`:'';
+ m.innerHTML=`<div class="rail"><div class="parts">${PARTS.map((t,j)=>`<button class="part${j===k?' cur':''}" data-part="${j}"><div class="ln"><i style="width:${partProg(j)}%"></i></div><span>${FA(j+1)}. ${t}</span></button>`).join('')}</div></div>${ns}
+ <main class="wrap"><div class="step" id="step">${s.render()}</div></main>
+ <nav class="nav"><div class="nav-in">${i>0?`<button class="btn se" data-nav="-1" aria-label="قبلی">→</button>`:''}<button class="pos" data-list style="background:none;border:0">${I.list.replace('<svg','<svg style="width:15px;height:15px;vertical-align:-3px"')} ${FA(i+1)} از ${FA(ss.length)}</button>${s.id==='review'?(S.submittedAt?`<button class="btn pr" data-view="bom">نمای بوم</button>`:`<button class="btn pr" data-submit ${missing().length?'disabled':''}>ارسال بوم‌ها</button>`):`<button class="btn pr" data-nav="1">${nextLabel(ss,i)} ←</button>`}</div></nav>`;
+ fillLists();S.data.meta.step=S.step;guide();}
+function nextLabel(ss,i){const a=ss[i],b=ss[i+1];if(!b)return 'بعدی';if(b.part!==a.part)return `ادامه: ${PARTS[b.part]}`;if(b.id==='review')return 'مرور و ارسال';return 'بعدی'}
+function go(id,scroll=true){S.view='step';S.step=id;const s=steps().find(x=>x.id===id);if(s&&s.pi!=null)S.pi=s.pi;onEnter(id);render();if(scroll)window.scrollTo({top:0,behavior:'smooth'});schedule(true)}
+function onEnter(id){const [base,pi]=id.split('@');const p=pi!=null?P(+pi):null;
+ if(id==='links'&&!S.data.pairs.length)S.data.pairs=[{}];
+ if(id==='forces')S.fopen=new Set(S.data.forces.map((f,i)=>fDone(f)?-1:i).filter(i=>i>=0));
+ if(base==='ba'&&p){const f=findForce(p.force);if(f&&!has(p.baseA)&&!has(p.baseM)){p.baseA=String(tAT(f));p.baseM=String(tM(f))}}
+ }
+function fillLists(){const fl=$('#forceList');if(fl)fl.innerHTML=forces().map(f=>`<option value="${esc(f.name)}">`).join('')}
+function live(){$$('[data-live]').forEach(el=>{const f=LIVE[el.dataset.live];if(f)el.innerHTML=f()});$$('[data-ftot]').forEach(el=>{const f=S.data.forces[+el.dataset.ftot];if(f)el.innerHTML=ftot(f)});const sb=$('[data-submit]');if(sb)sb.disabled=missing().length>0;guide();
+ $$('.part').forEach((b,j)=>{const i=b.querySelector('.ln i');if(i)i.style.width=partProg(j)+'%'})}
+/* ---------- راهنمای قدم‌به‌قدم: مورد بعدی نبض می‌زند ---------- */
+let GT=null;
+function guideTarget(s){const st=$('#step');if(!st||!s)return null;const q=x=>st.querySelector(x);const [b,pi]=s.id.split('@');const p=pi!=null?P(+pi):null;const E=x=>!has(get(x));
+ const inp=x=>q(`[data-p="${x}"]`),sg=x=>{const e=q(`[data-seg="${x}"]`);return e?e.closest('.seg,.choices'):null};
+ if(b!=='review'&&s.done())return $('[data-nav="1"]');
+ switch(b){
+  case 'pop':return inp('pop');
+  case 'pick':return q('[data-togforce][aria-pressed="false"]');
+  case 'forces':{const fs=S.data.forces;for(let k=0;k<fs.length;k++){const f=fs[k];if(!has(f.name))continue;if(!has(f.st))return sg(`forces.${k}.st`);if(!has(f.n))return inp(`forces.${k}.n`);if(!isP(f)&&!has(f.aa))return inp(`forces.${k}.aa`);if(!has(f.mm))return inp(`forces.${k}.mm`)}return q('[data-togforce][aria-pressed="false"]')}
+  case 'links':return sg('cohesion');
+  case 'gap':if(!num(S.data.pop))return q('[data-go="pop"]');return E('ta')?inp('ta'):inp('tm');
+  case 'uncovered':return q('[data-tog="uncovered"]');
+  case 'summary':return ['strong','weak','gaps'].map(k=>'summary.'+k).filter(E).map(inp)[0]||null;
+  case 'moves':{const o=q('.move.open [data-pick][data-f]')||q('.move.open [data-pick]');if(o)return o;const c=q('.move .cnt:not(.z)');return c?c.closest('.mh'):q('.move .mh')}
+  case 'shift':{if(!MV[p.type])return q('[data-go^="moves"]');for(const k of ['force','force2','to','title']){const el=inp(`plans.${pi}.${k}`);if(el&&!has(el.value))return el}return null}
+  case 'ba':if(!MV[p.type])return q('[data-go^="moves"]');return inp(`plans.${pi}.afterA`);
+  case 'cost':if(!MV[p.type])return q('[data-go^="moves"]');return planCost(p)>0?sg(`plans.${pi}.fund`):(p.costMode==='کل'?inp(`plans.${pi}.cost`):inp(`plans.${pi}.costs.train`));
+  case 'test':{if(!MV[p.type])return q('[data-go^="moves"]');if(verdict(p)==='برنامه')return q(`.verdict [data-revise]`);for(const k of ['stays','role','grows'])if(!has(p.test[k]))return sg(`plans.${pi}.test.${k}`);return null}
+  case 'check':if(!MV[p.type])return q('[data-go^="moves"]');if(verdict(p)==='برنامه')return q(`[data-go="test@${pi}"]`);if(p.keep==='اصلاحش می‌کنم'||p.keep==='عوضش می‌کنم')return q('.row-btn [data-go]');return sg(`plans.${pi}.keep`);
+  case 'run':{if(!MV[p.type])return q('[data-go^="moves"]');const r=p.run||{};for(const k of ['lead','s1','s3','risk'])if(!has(r[k]))return inp(`plans.${pi}.run.${k}`);return null}
+  case 'review':return S.submittedAt?null:(q('.miss button')||$('[data-submit]'));
+ }return null}
+function guide(){$$('.pulse').forEach(e=>e.classList.remove('pulse'));GT=null;if(S.view!=='step'){checkJump();return}let t=null;try{t=guideTarget(cur().s)}catch(e){}if(t){t.classList.add('pulse');GT=t}checkJump()}
+function checkJump(){const j=$('#jump');if(!j)return;const t=GT;if(S.view!=='step'||!t||!document.body.contains(t)||t.closest('.nav')){j.hidden=true;return}const r=t.getBoundingClientRect(),vh=innerHeight,below=r.top>vh-110,above=r.bottom<140;j.hidden=!(below||above);j.innerHTML=`<span>${t.matches('input,textarea,select')?'خانهٔ بعدی برای پر کردن':'گزینهٔ بعدی'}</span><b>${below?'↓':'↑'}</b>`}
+let jumpRaf=0;window.addEventListener('scroll',()=>{if(jumpRaf)return;jumpRaf=requestAnimationFrame(()=>{jumpRaf=0;checkJump();const n=$('.north');if(n){if(scrollY>260)n.classList.add('compact');else if(scrollY<60)n.classList.remove('compact')}})},{passive:true});
+function rerender(){const y=window.scrollY;const st=$('#step');if(!st)return render();const s=cur().s;st.innerHTML=s.render();fillLists();live();window.scrollTo(0,y);guide()}
+function listHTML(){const ss=steps(),{i}=cur();let h='',lp=-1,lpi=-2;ss.forEach((s,j)=>{if(s.part!==lp||((s.pi??-1)!==lpi&&s.part>=2)){h+=`<h4>${s.id==="review"?"پایان":PARTS[s.part]}${s.pi!=null&&S.data.plans.length>1?` · طرح ${FA(s.pi+1)}`:''}</h4>`;lp=s.part;lpi=s.pi??-1}h+=`<button class="${j===i?'cur':''}" data-go="${s.id}"><span class="d${s.done()?' on':''}">${s.done()?'✓':''}</span>${s.t}</button>`});
+ return `<div class="scrim" data-close></div><div class="modal-wrap" data-close><div class="modal" role="dialog" aria-modal="true" aria-label="همهٔ مراحل"><h2>همهٔ مراحل</h2><div class="list">${h}</div></div></div>`}
+
+/* =====================================================================
+   ذخیره
+   ===================================================================== */
+/* ---------- شبکه: مهلت، تلاش دوباره، نسخهٔ محلی، نشست ---------- */
+class NetErr extends Error{constructor(m,code,body){super(m);this.code=code;this.body=body}}
+async function req(url,opt={},ms=15000){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);let r;
+ try{r=await fetch(url,{credentials:'same-origin',...opt,signal:c.signal})}catch(e){throw new NetErr(navigator.onLine===false?'اینترنت قطع است.':'سرور پاسخ نداد؛ اتصال را بررسی کنید.','offline')}finally{clearTimeout(t)}
+ const j=await r.json().catch(()=>({}));
+ if(r.status===401)throw new NetErr(j.error||'نشست شما تمام شده است؛ دوباره وارد شوید.','auth',j);
+ if(r.status===409)throw new NetErr(j.error||'این بوم روی دستگاه دیگری تغییر کرده است.','conflict',j);
+ if(r.status===429)throw new NetErr(j.error||'تلاش‌ها زیاد بود؛ چند دقیقهٔ دیگر دوباره امتحان کنید.','rate',j);
+ if(r.status===413)throw new NetErr('حجم داده بیش از حد مجاز است.','big',j);
+ if(!r.ok)throw new NetErr(j.error||'خطای سرور؛ چند لحظهٔ دیگر دوباره تلاش کنید.','server',j);
+ return j}
+const JH={'Content-Type':'application/json'};
+const server={
+ async me(){try{return await req('api/me')}catch(e){if(e.code==='auth')return null;throw e}},
+ async login(ph,pw){await req('api/login',{method:'POST',headers:JH,body:JSON.stringify({phone:normPhone(ph),password:toEn(pw)})});return this.me()},
+ async save(d,rev,force){return req('api/form',{method:'PUT',headers:JH,body:JSON.stringify({data:d,rev,force:!!force})})},
+ async submit(){return (await req('api/form/submit',{method:'POST'})).submittedAt},
+ async password(a,b){await req('api/password',{method:'POST',headers:JH,body:JSON.stringify({current:toEn(a),next:toEn(b)})})},
+ async logout(){await req('api/logout',{method:'POST'}).catch(()=>{})}
+};
+let API=server,DEMO=false,READONLY=false,saveT=null,saving=false,again=false,dirty=false,retryT=null,retryN=0,blocked=false;
+function status(c,t){const s=$('#save');if(!s)return;s.className='save '+c;s.lastElementChild.textContent=t}
+/* نسخهٔ محلی: هر تغییر بی‌درنگ روی همین دستگاه هم نگه داشته می‌شود تا با قطع اینترنت یا بستن صفحه از دست نرود */
+const LKEY=()=>'harfeno-local-'+(S.user&&S.user.phone||'x');
+function localPut(){if(READONLY||!S.user)return;try{localStorage.setItem(LKEY(),JSON.stringify({data:S.data,at:Date.now(),rev:S.rev||0,dirty}))}catch(e){}}
+function localGet(){try{return JSON.parse(localStorage.getItem(LKEY())||'null')}catch(e){return null}}
+function localClean(){try{const x=localGet();if(x){x.dirty=false;localStorage.setItem(LKEY(),JSON.stringify(x))}}catch(e){}}
+async function flush(force){clearTimeout(saveT);saveT=null;clearTimeout(retryT);if(blocked)return;if(saving){again=true;return}
+ if(!dirty&&!force)return;saving=true;again=false;status('busy','در حال ذخیره…');
+ try{const r=await API.save(S.data,S.rev,force===true);if(r&&r.rev!=null)S.rev=r.rev;dirty=false;retryN=0;localClean();status('ok','ذخیره شد');netBanner()}
+ catch(e){const c=e.code;
+  if(c==='auth'){blocked=true;status('err','نشست تمام شد');saving=false;return reLogin()}
+  if(c==='conflict'){blocked=true;saving=false;status('err','تعارض نسخه');return conflict(e.body||{})}
+  retryN++;const wait=[3,6,15,30,60][Math.min(retryN-1,4)];
+  status('err',c==='offline'?'آفلاین؛ روی همین دستگاه نگه داشته شد':'ذخیره نشد؛ دوباره تلاش می‌کنیم');
+  netBanner(c==='offline'?(navigator.onLine===false?'اینترنت قطع است. نگران نباشید؛ هر چه می‌نویسید روی همین دستگاه نگه داشته می‌شود و با وصل شدن خودکار ذخیره می‌شود.':`به سرور وصل نمی‌شویم. نگران نباشید؛ هر چه می‌نویسید روی همین دستگاه نگه داشته می‌شود و ${FA(wait)} ثانیهٔ دیگر خودکار دوباره تلاش می‌کنیم.`):`ذخیره روی سرور انجام نشد. ${FA(wait)} ثانیهٔ دیگر خودکار دوباره تلاش می‌کنیم.`);
+  retryT=setTimeout(()=>flush(),wait*1000)}
+ saving=false;if(again)flush()}
+function schedule(quiet){dirty=true;localPut();if(!quiet)status('busy','در حال ذخیره…');clearTimeout(saveT);saveT=setTimeout(flush,800)}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&dirty)flush()});
+window.addEventListener('online',()=>{netBanner();if(dirty){retryN=0;flush()}});
+window.addEventListener('offline',()=>netBanner('اینترنت قطع است. نگران نباشید؛ هر چه می‌نویسید روی همین دستگاه نگه داشته می‌شود و با وصل شدن خودکار ذخیره می‌شود.'));
+window.addEventListener('beforeunload',e=>{if(dirty&&!READONLY){localPut();e.preventDefault();e.returnValue=''}});
+function netBanner(t){let b=$('#net');if(!t){if(b)b.remove();return}if(!b){b=document.createElement('div');b.id='net';b.className='net';b.setAttribute('role','status');document.body.appendChild(b)}b.innerHTML=`<span>${esc(t)}</span>${navigator.onLine!==false?'<button type="button" data-retry>الان تلاش کن</button>':''}`}
+function reLogin(){$('#layer').innerHTML=`<div class="scrim"></div><div class="modal-wrap"><form class="modal" id="rlf"><h2>نشست شما تمام شده است</h2><p class="hint" style="margin:0 0 12px">برای امنیت، پس از مدتی بی‌کاری از حساب خارج می‌شوید. رمز را دوباره بزنید؛ هر چه نوشته‌اید سر جایش است و پس از ورود ذخیره می‌شود.</p><div class="fld"><label for="rlp">رمز</label><div class="pw"><input id="rlp" type="password" autocomplete="current-password"><button type="button" data-eye="rlp" aria-label="نمایش رمز">${I.eye}</button></div></div><div class="err" id="rle" role="alert"></div><button class="btn pr wide" type="submit" style="margin-top:12px">ورود و ذخیره</button></form></div>`;document.body.style.overflow='hidden';
+ $('#rlf').onsubmit=async ev=>{ev.preventDefault();const b=ev.target.querySelector('[type=submit]');b.disabled=true;$('#rle').textContent='';try{await API.login(S.user.phone,$('#rlp').value);blocked=false;closeLayer();await flush(true);toast('دوباره وارد شدید و تغییرات ذخیره شد.')}catch(e){$('#rle').textContent=e.message;b.disabled=false}}}
+function conflict(body){const when=body.updatedAt?new Date(body.updatedAt).toLocaleString('fa-IR'):'';$('#layer').innerHTML=`<div class="scrim"></div><div class="modal-wrap"><div class="modal"><h2>این بوم جای دیگری هم تغییر کرده است</h2><p class="hint" style="margin:0 0 14px">نسخهٔ روی سرور ${when?`در ${esc(when)} `:''}از دستگاه یا مرورگر دیگری ذخیره شده و با نسخهٔ این دستگاه فرق دارد. کدام را نگه داریم؟</p><div class="stack"><button class="btn pr wide" data-keep="mine">نسخهٔ همین دستگاه را نگه دار</button><button class="btn se wide" data-keep="server">نسخهٔ روی سرور را بیاور</button></div></div></div>`;document.body.style.overflow='hidden'}
+window.addEventListener('error',e=>{console.error(e.error||e.message);if(!READONLY)localPut();toast('خطایی پیش آمد؛ داده‌های شما روی همین دستگاه محفوظ است. اگر تکرار شد، صفحه را تازه کنید.')});
+window.addEventListener('unhandledrejection',e=>{console.error(e.reason);if(!READONLY)localPut()});
+
+/* =====================================================================
+   رویدادها
+   ===================================================================== */
+function toast(t,act){const el=$('#toast');el.innerHTML=`<span>${esc(t)}</span>${act?`<button id="ta">${act[0]}</button>`:''}`;el.hidden=false;if(act)$('#ta').onclick=()=>{act[1]();el.hidden=true};clearTimeout(el._t);el._t=setTimeout(()=>el.hidden=true,act?5000:2500)}
+const closeLayer=()=>{$('#layer').innerHTML='';document.body.style.overflow=''};
+document.addEventListener('input',e=>{const p=e.target.dataset&&e.target.dataset.p;if(!p||e.target.tagName==='SELECT')return;set(p,e.target.value);schedule();live();if(/^forces\.\d+\.name$/.test(p))fillLists()});
+document.addEventListener('change',e=>{const el=e.target;if(el.dataset.chk){set(el.dataset.chk,el.checked);schedule();rerender();return}if(el.tagName==='SELECT'&&el.dataset.p){set(el.dataset.p,el.value);schedule();rerender()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('#menu')?.remove();closeLayer()}if(e.key==='Enter'&&e.target.id==='unc'){e.preventDefault();$('[data-addunc]').click()}if(e.key==='Enter'&&e.target.id==='newforce'){e.preventDefault();$('[data-addcustom="g"]').click()}});
+document.addEventListener('click',async e=>{
+ if(S.view==='bom'&&!READONLY&&!e.target.closest('button')){const z=e.target.closest('[data-go]');if(z){go(z.dataset.go);return}}
+ if($('#menu')&&!e.target.closest('#menu,[data-menu]'))$('#menu').remove();
+ if(e.target.matches('[data-close]')){closeLayer();return}
+ const t=e.target.closest('button');if(!t)return;const d=t.dataset;
+ if(d.menu!==undefined){if($('#menu'))return $('#menu').remove();const m=document.createElement('div');m.className='menu';m.id='menu';m.innerHTML=`<div class="who"><b>${esc(S.user.name||'')}</b><span>${esc(S.user.county||'')} · ${FD(S.user.phone||'')}</span></div><button data-pw>${I.key}تغییر رمز</button><button data-intro>${I.list}راهنما</button><button id="logout">${I.out}خروج</button>`;$('.bar').appendChild(m);return}
+ if(d.view){S.view=(S.view===d.view&&t.classList.contains('tb'))?'step':d.view;render();return}
+ if(d.go){closeLayer();go(d.go);return}
+ if(d.nav){const {ss,i}=cur(),j=Math.min(Math.max(i+ +d.nav,0),ss.length-1);go(ss[j].id);return}
+ if(d.part){const p=+d.part,ss=steps(),pi=S.pi||0;const s=ss.find(x=>x.part===p&&(p<2||x.pi===pi||x.pi==null))||ss.find(x=>x.part===p);if(s)go(s.id);return}
+ if(d.list!==undefined){$('#layer').innerHTML=listHTML();document.body.style.overflow='hidden';return}
+ if(d.seg){set(d.seg,get(d.seg)===d.v?'':d.v);schedule();rerender();return}
+ if(d.tog){const a=[...(get(d.tog)||[])],k=a.indexOf(d.v);k>=0?a.splice(k,1):a.push(d.v);set(d.tog,a);schedule();rerender();return}
+ if(d.addunc!==undefined){const v=$('#unc').value.trim();if(v&&!S.data.uncovered.includes(v)){S.data.uncovered.push(v);schedule();rerender()}return}
+ if(d.add){const a=get(d.add)||[];a.push(d.add==='forces'?{id:uid()}:{});set(d.add,a);schedule();rerender();setTimeout(()=>{const its=$$('#step .item, #step .act');const l=its[its.length-1];if(l){l.scrollIntoView({behavior:'smooth',block:'center'});l.querySelector('input,select')?.focus({preventScroll:true})}},50);return}
+ if(d.togforce){const k=S.data.forces.findIndex(x=>x.name===d.togforce);if(k<0){S.data.forces.push({id:uid(),name:d.togforce,kind:KIND[d.togforce]||'g'});S.fopen&&S.fopen.add(S.data.forces.length-1)}else{const it=S.data.forces[k];S.data.forces.splice(k,1);if(has(it.n)||has(it.st))toast(`«${it.name}» از فهرست برداشته شد.`,['بازگرداندن',()=>{S.data.forces.splice(k,0,it);schedule();rerender()}])}schedule();rerender();return}
+ if(d.addcustom){const v=$('#newforce').value.trim();if(!v){$('#newforce').focus();return}if(!S.data.forces.some(x=>x.name===v)){S.data.forces.push({id:uid(),name:v,kind:d.addcustom});schedule();rerender();toast(`«${v}» اضافه شد.`)}return}
+ if(d.kind){S.data.forces[+d.kind].kind=d.v;schedule();rerender();return}
+ if(d.addforce){let k=S.data.forces.findIndex(x=>x.name===d.addforce);if(k<0){S.data.forces.push({id:uid(),name:d.addforce});k=S.data.forces.length-1;schedule();rerender()}setTimeout(()=>{const c=$('#force-'+k);if(c){c.scrollIntoView({behavior:'smooth',block:'center'});c.style.boxShadow='0 0 0 2px var(--green)';setTimeout(()=>c.style.boxShadow='',1200)}},40);return}
+ if(d.addrisk){const p=P(+d.pl),r=p.risks.find(x=>!has(x.risk));if(r)r.risk=d.addrisk;else p.risks.push({risk:d.addrisk});schedule();rerender();return}
+ if(d.del){const a=get(d.del),k=+d.i,it=a[k];a.splice(k,1);if(d.del==='plans'){S.pi=0;schedule();render();toast('طرح حذف شد.',['بازگرداندن',()=>{a.splice(k,0,it);schedule();render()}]);return}schedule();rerender();if(it&&Object.entries(it).some(([x,v])=>x!=='id'&&has(v)))toast('حذف شد.',['بازگرداندن',()=>{a.splice(k,0,it);schedule();rerender()}]);return}
+ if(d.append){const c=String(get(d.append)||'').trim();set(d.append,c?c+(d.sep||' ')+d.v:d.v);schedule();rerender();return}
+ if(d.show==='mreal'){S.showMreal=1;$('#mreal').hidden=false;t.remove();return}
+ if(d.move){const i=+d.move;S.openMove=S.openMove===i?-2:i;rerender();return}
+ if(d.pick){const m=MOVES[+d.pick],p=P(S.pi);if(p.type!==m.t||(d.f&&p.force!==d.f)){p.type=m.t;if(d.f){p.force=d.f;p.force2=d.f2||''}p.baseA='';p.baseM='';p.keep='';p.test={}}S.openMove=null;schedule();go('shift@'+S.pi);return}
+ if(d.alt){const m=MOVES[+d.alt],np=newPlan();np.type=m.t;np.force=d.f;S.data.plans.push(np);S.pi=S.data.plans.length-1;schedule();toast('طرح تازه اضافه شد.');go('shift@'+S.pi);return}
+ if(d.bomprint!==undefined){S.bomPrint=!S.bomPrint;render();return}
+ if(d.bomzoom!==undefined){S.bomZoom=!S.bomZoom;render();return}
+ if(d.print!==undefined){S.bomZoom=false;S.bomPrint=true;render();setTimeout(()=>window.print(),300);return}
+ if(d.retry!==undefined){retryN=0;flush(true);return}
+ if(d.keep){blocked=false;closeLayer();if(d.keep==='mine'){await flush(true);toast('نسخهٔ همین دستگاه ذخیره شد.')}else{const me=await API.me().catch(()=>null);if(me){S.data=normalize(me.data);S.rev=me.rev;dirty=false;localClean();app();toast('نسخهٔ روی سرور آمد.')}}return}
+ if(d.jump!==undefined){if(GT){GT.scrollIntoView({behavior:'smooth',block:'center'});if(GT.matches('input,textarea'))setTimeout(()=>GT.focus({preventScroll:true}),350)}return}
+ if(d.revise!==undefined){const p=P(+d.revise);Object.keys(p.test||{}).forEach(k=>{if(p.test[k]==='هنوز نه')p.test[k]=''});p.revise=1;schedule();go('shift@'+d.revise);return}
+ if(d.openforce!==undefined){(S.fopen=S.fopen||new Set()).add(+d.openforce);rerender();setTimeout(()=>{const c=$('#force-'+d.openforce);if(c){c.scrollIntoView({behavior:'smooth',block:'center'});c.querySelector('input')?.focus({preventScroll:true})}},60);return}
+ if(d.goplan){go('shift@'+d.goplan);return}
+ if(d.addplan!==undefined){S.data.plans.push(newPlan());S.pi=S.data.plans.length-1;S.openMove=null;schedule();go('moves@'+S.pi);return}
+ if(d.submit!==undefined){if(missing().length||t.disabled)return;t.disabled=true;const tx=t.textContent;t.textContent='در حال ارسال…';try{if(dirty)await flush(true);if(dirty)throw new Error('تغییرات هنوز ذخیره نشده است. پس از وصل شدن اینترنت دوباره بزنید.');S.submittedAt=await API.submit();render();toast('بوم‌ها ارسال شد.')}catch(err){t.disabled=false;t.textContent=tx;toast(err.code==='offline'?'اینترنت قطع است؛ بوم‌ها روی همین دستگاه محفوظ است. پس از وصل شدن دوباره بزنید.':err.message)}return}
+ if(d.pw!==undefined){$('#menu')?.remove();showPw();return}
+ if(d.intro!==undefined){$('#menu')?.remove();showIntro();return}
+ if(d.eye){const i=document.getElementById(d.eye);i.type=i.type==='password'?'text':'password';return}
+ if(d.closeIntro!==undefined){closeLayer();S.data.meta.intro=1;schedule(true);return}
+ if(t.id==='logout'){$('#menu')?.remove();if(dirty)await flush(true);if(dirty&&!confirm2())return;if(!dirty){try{localStorage.removeItem(LKEY())}catch(e){}}await API.logout();S.user=null;start();return}
+});
+
+function showIntro(){$('#layer').innerHTML=`<div class="scrim"></div><div class="modal-wrap"><div class="modal intro" role="dialog" aria-modal="true" aria-labelledby="ih" style="max-width:560px"><img class="motif" src="motifs/ferferi-4-green.png" alt="">
+ <div class="eyebrow">نقشهٔ هزار مشعل · بوم تحول آرایش نیروهای مجاهد تبیین</div><h2 id="ih" style="font-size:24px;line-height:1.5">باید آرایش جنگی بگیریم</h2>
+ <p style="margin:0;color:var(--ink-2)">میان آنچه شهرستان لازم دارد، یعنی ۱۰٪ مردم کنشگر و همهٔ مردم مخاطب، و آنچه امروز داریم، شکافی جدی هست. این بوم‌ها برای این است که:</p>
+ <div class="path"><div><span>۱</span><div><b>چرا</b><small>چرا همهٔ مردم مخاطب‌اند و چرا به ده درصد کنشگر نیاز داریم؛ راهبرد هزار مشعل.</small></div></div><div><span>۲</span><div><b>شکاف</b><small>نیروهای امروز را بنویسید تا معلوم شود چند کنشگر منتظر دعوت‌اند، چند کنشگر تازه لازم است و حرف به چند نفر نمی‌رسد.</small></div></div><div><span>۳</span><div><b>شش حرکت</b><small>تحول در آرایش نیروها یعنی چه و در شهرستان شما از کجا شروع می‌شود.</small></div></div><div><span>۴</span><div><b>طرح تحول</b><small>طرح را بچینید، هزینه‌اش را بنویسید، بسنجید که تحول است یا برنامه، و اگر لازم شد اصلاح یا عوضش کنید.</small></div></div><div><span>۵</span><div><b>اجرا</b><small>راهبر، سه مرحلهٔ شش ماه، مهم‌ترین مانع و کمکی که لازم دارید. هر سه ماه یک طرح تازه.</small></div></div></div>
+ <p class="hint" style="margin:0 0 14px">حدود ۴۵ دقیقه. هر تغییر خودکار ذخیره می‌شود و می‌توانید در چند نوبت پر کنید.</p>
+ <button class="btn pr wide" data-close-intro>شروع</button></div></div>`;document.body.style.overflow='hidden'}
+function showPw(first){$('#layer').innerHTML=`<div class="scrim" data-close></div><div class="modal-wrap"><form class="modal" id="pwf"><h2>${first?'رمز موقت را عوض کنید':'تغییر رمز'}</h2><p class="hint" style="margin:0 0 12px">${first?'رمزی که اداره‌کل فرستاده موقت است. برای امنیت، یک رمز تازه که فقط خودتان می‌دانید بگذارید؛ دست‌کم ۶ نویسه.':'رمز تازه دست‌کم ۶ نویسه باشد.'}</p><div class="stack"><div class="fld"><label for="pw0">رمز فعلی</label><div class="pw"><input id="pw0" type="password" autocomplete="current-password"><button type="button" data-eye="pw0" aria-label="نمایش رمز">${I.eye}</button></div></div><div class="fld"><label for="pw1">رمز تازه</label><div class="pw"><input id="pw1" type="password" autocomplete="new-password"><button type="button" data-eye="pw1" aria-label="نمایش رمز">${I.eye}</button></div></div><div class="err" id="pwe"></div><div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn se sm" onclick="closeLayer()">${first?'بعداً':'انصراف'}</button><button class="btn pr sm">ذخیره</button></div></div></form></div>`;
+ $('#pwf').onsubmit=async e=>{e.preventDefault();if(toEn($('#pw1').value).length<6)return $('#pwe').textContent='رمز تازه دست‌کم ۶ نویسه باشد.';try{await API.password($('#pw0').value,$('#pw1').value);closeLayer();toast('رمز تازه ذخیره شد.')}catch(err){$('#pwe').textContent=err.message}}}
+
+/* =====================================================================
+   ورود و راه‌اندازی
+   ===================================================================== */
+function loginHTML(){return `<div class="auth"><aside class="auth-brand"><img class="motif" src="motifs/ferferi-3-sky.png" alt="">${LOGO}<div class="eyebrow" style="margin-top:14px">نقشهٔ هزار مشعل · بوم تحول آرایش نیروهای مجاهد تبیین</div><h2>باید آرایش جنگی بگیریم</h2><p>شکاف کنشگر و مخاطب شهرستانتان را ببینید و دست‌کم یک طرح تحول برای پر کردن آن بچینید.</p></aside>
+ <main class="auth-form"><form id="lf" novalidate><div><h1>ورود</h1><p class="lead" style="margin:0">با شمارهٔ همراه و رمزی که اداره‌کل برایتان فرستاده.</p></div>
+ <div class="fld"><label for="ph">شمارهٔ همراه</label><input id="ph" class="ltr" type="tel" inputmode="tel" autocomplete="username" placeholder="۰۹۱۲ ۰۰۰ ۰۰۰۰"></div>
+ <div class="fld"><label for="pwd">رمز</label><div class="pw"><input id="pwd" type="password" autocomplete="current-password"><button type="button" data-eye="pwd" aria-label="نمایش رمز">${I.eye}</button></div></div>
+ <div class="err" id="le" role="alert"></div><button class="btn pr wide" type="submit">ورود</button>
+ <p class="help">رمز ندارید یا فراموش کرده‌اید؟ با معاونت فرهنگی اداره‌کل تبلیغات اسلامی استان تماس بگیرید.</p></form></main></div>`}
+function confirm2(){toast('هنوز تغییراتی ذخیره نشده است. پس از وصل شدن اینترنت دوباره خروج را بزنید.');return false}
+function failPage(msg){$('#app').innerHTML=`<div class="wrap" style="padding-top:60px;text-align:center">${LOGO}<h1 style="font-size:22px">به سرور وصل نشدیم</h1><p class="lead">${esc(msg)} اگر قبلاً روی این دستگاه چیزی نوشته‌اید، محفوظ است.</p><button class="btn pr" onclick="location.reload()">دوباره تلاش کن</button></div>`}
+/* نمای فقط‌خواندنی برای مدیر کل: /admin/view?u=شناسه */
+async function startAdminView(){const id=new URLSearchParams(location.search).get('u');READONLY=true;
+ try{const me=await req('api/admin/users/'+encodeURIComponent(id||'')+'/form');S.user=me.user;S.data=normalize(me.data);S.feedback=me.feedback||null;S.submittedAt=me.submittedAt||null;S.view='bom';S.pi=0;document.title='بوم '+(me.user.county||'')+' · نقشهٔ هزار مشعل';$('#app').innerHTML=shell();render()}
+ catch(e){$('#app').innerHTML=`<div class="wrap" style="padding-top:60px;text-align:center">${LOGO}<h1 style="font-size:22px">${e.code==='auth'?'اول وارد داشبورد شوید':'این بوم باز نشد'}</h1><p class="lead">${esc(e.message)}</p><a class="btn pr" href="./">رفتن به داشبورد</a></div>`}}
+async function start(){if(/\/admin\/view\/?$/.test(location.pathname))return startAdminView();
+ let me=null;try{me=await server.me();API=server}catch(e){return failPage(e.message)}
+ if(!me){closeLayer();$('#app').innerHTML=loginHTML();$('#lf').onsubmit=async ev=>{ev.preventDefault();const ph=normPhone($('#ph').value),pw=$('#pwd').value;$('#le').textContent='';
+  if(!/^09\d{9}$/.test(ph))return $('#le').textContent='شمارهٔ همراه را کامل وارد کنید؛ مثلاً ۰۹۱۲۳۴۵۶۷۸۹.';if(!pw)return $('#le').textContent='رمز را وارد کنید.';
+  const b=ev.target.querySelector('[type=submit]');b.disabled=true;b.textContent='در حال ورود…';try{boot(await API.login(ph,pw))}catch(err){$('#le').textContent=err.message;b.disabled=false;b.textContent='ورود'}};return}
+ boot(me)}
+function boot(me){S.user=me.user;S.rev=me.rev||0;const loc=localGet();const srvAt=me.updatedAt?Date.parse(me.updatedAt):0;const useLocal=loc&&loc.dirty&&loc.data&&loc.at>srvAt;S.data=normalize(useLocal?loc.data:me.data);if(useLocal){dirty=true;setTimeout(()=>{toast('تغییراتی که دفعهٔ قبل ذخیره نشده بود، از همین دستگاه بازیابی شد.');flush()},600)}S.feedback=me.feedback||null;S.submittedAt=me.submittedAt||null;S.view='step';S.step=S.data.meta.step||'why1';S.pi=0;app();if(me.user.mustChange&&!sessionStorageGet('pwAsked')){sessionStorageSet('pwAsked','1');setTimeout(()=>showPw(true),400)}}
+function sessionStorageGet(k){try{return sessionStorage.getItem(k)}catch(e){return null}}
+function sessionStorageSet(k,v){try{sessionStorage.setItem(k,v)}catch(e){}}
+function app(){$('#app').innerHTML=shell();render()}
+
+start();
+</script>

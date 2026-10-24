@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>داشبورد نقشهٔ هزار مشعل</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#30345a">
+<style>
+@font-face{font-family:"Ravagh";src:url("fonts/RavaghFaNum-Regular.woff") format("woff");font-weight:400;font-display:swap}
+@font-face{font-family:"Ravagh";src:url("fonts/RavaghFaNum-Medium.woff") format("woff");font-weight:500;font-display:swap}
+@font-face{font-family:"Ravagh";src:url("fonts/RavaghFaNum-SemiBold.woff") format("woff");font-weight:600;font-display:swap}
+@font-face{font-family:"Ravagh";src:url("fonts/RavaghFaNum-Bold.woff") format("woff");font-weight:700;font-display:swap}
+@font-face{font-family:"Ravagh";src:url("fonts/RavaghFaNum-ExtraBold.woff") format("woff");font-weight:800;font-display:swap}
+:root{
+  color-scheme:light;
+  --bg:#fff;--sunken:#f4f5f8;--ink:#30345a;--ink-2:#555a7d;--muted:#81859f;--line:#eaeaea;--line-2:#dcdee7;
+  --green:#2fb57c;--green-600:#23905f;--green-100:#e3f5ec;
+  --peri:#6e7fd9;--peri-100:#eceffb;--amber:#e8ae30;--amber-100:#fcf3de;--amber-ink:#87610f;--crimson:#db2a58;--crimson-100:#fbe5ec;--sky:#40bbe7;--sky-100:#e2f4fb;--sky-ink:#13739d;
+  --focus:0 0 0 3px rgba(110,127,217,.35);--sh1:0 1px 2px rgba(48,52,90,.05),0 2px 8px rgba(48,52,90,.05);--sh4:0 24px 64px rgba(48,52,90,.24);
+  --font:"Ravagh","Vazirmatn","Segoe UI",Tahoma,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{background:var(--sunken)}
+body{margin:0;color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.85;direction:rtl;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:none;box-shadow:var(--focus)}
+[hidden]{display:none!important}
+a{color:var(--green-600)}
+.logo{height:28px;width:auto;display:block}
+.bar{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.bar-in{max-width:1240px;margin:0 auto;padding:0 16px;height:58px;display:flex;align-items:center;gap:12px}
+.bar-in .ttl{font-weight:800;font-size:15px;white-space:nowrap}
+.sp{flex:1}
+.tabs{max-width:1240px;margin:0 auto;padding:10px 16px 0;display:flex;gap:6px;overflow-x:auto}
+.tabs button{border:1px solid var(--line-2);background:var(--bg);border-radius:999px;padding:6px 16px;font-weight:700;font-size:14px;white-space:nowrap}
+.tabs button[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.wrap{max-width:1240px;margin:0 auto;padding:16px 16px 80px}
+h1{font-size:24px;line-height:1.5;margin:4px 0 4px}
+h2{font-size:18px;margin:0 0 6px}
+.lead{color:var(--ink-2);margin:0 0 16px}
+.hint{font-size:13px;color:var(--muted)}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:16px 18px;box-shadow:var(--sh1)}
+.stack{display:grid;gap:12px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media(max-width:860px){.grid2{grid-template-columns:1fr}}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:999px;border:1px solid transparent;padding:0 18px;height:42px;font-weight:700;font-size:14px;white-space:nowrap;text-decoration:none}
+.btn.pr{background:var(--green);color:#fff}.btn.pr:hover{background:var(--green-600)}
+.btn.se{background:var(--bg);border-color:var(--line-2);color:var(--ink)}.btn.se:hover{background:var(--sunken)}
+.btn.dk{background:var(--ink);color:#fff}
+.btn.sm{height:34px;padding:0 13px;font-size:13px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.link{background:none;border:0;padding:0;color:var(--green-600);font-weight:700;font-size:13.5px}
+.fld{display:grid;gap:4px}
+.fld label{font-size:13.5px;font-weight:700}
+input,select,textarea{width:100%;border:1.5px solid var(--line-2);border-radius:12px;background:var(--bg);padding:9px 12px;font-size:15px}
+input:focus,select:focus,textarea:focus{border-color:var(--peri);outline:none;box-shadow:var(--focus)}
+textarea{resize:vertical;line-height:1.9}
+.ltr{direction:ltr;text-align:left}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.err{color:var(--crimson);font-size:13.5px;min-height:1px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--bg);border:1px solid var(--line);border-radius:18px;padding:12px 14px}
+.kpi small{display:block;font-size:12.5px;color:var(--muted);font-weight:700}
+.kpi b{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.5}
+.kpi span{display:block;font-size:12.5px;color:var(--ink-2);line-height:1.7}
+.kpi.g b{color:var(--green-600)}.kpi.a b{color:var(--amber-ink)}.kpi.c b{color:var(--crimson)}.kpi.s b{color:var(--sky-ink)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.toolbar input{max-width:260px}.toolbar select{width:auto}
+.pill{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:1px 10px;background:var(--sunken);white-space:nowrap}
+.pill.g{background:var(--green-100);color:var(--green-600)}.pill.a{background:var(--amber-100);color:var(--amber-ink)}.pill.c{background:var(--crimson-100);color:#a3173f}.pill.p{background:var(--peri-100);color:var(--peri)}.pill.s{background:var(--sky-100);color:var(--sky-ink)}
+table.t{width:100%;border-collapse:separate;border-spacing:0;background:var(--bg);border:1px solid var(--line);border-radius:18px;overflow:hidden;font-size:14px}
+table.t th{background:var(--sunken);font-size:12.5px;color:var(--ink-2);text-align:right;padding:9px 10px;font-weight:700;white-space:nowrap}
+table.t td{padding:10px;border-top:1px solid var(--line);vertical-align:middle}
+table.t tr:hover td{background:#fafbff}
+.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+.prog{height:6px;background:var(--line-2);border-radius:999px;overflow:hidden;min-width:70px}
+.prog i{display:block;height:100%;background:var(--green);border-radius:999px}
+.sub{display:block;font-size:12px;color:var(--muted)}
+.cards{display:none}
+@media(max-width:860px){table.t.resp{display:none}.cards{display:grid;gap:10px}}
+.ccard{background:var(--bg);border:1px solid var(--line);border-radius:18px;padding:14px;display:grid;gap:8px}
+.ccard .h{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.ccard .h b{font-size:16px}
+.ccard .m{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:12.5px;color:var(--ink-2)}
+.ccard .m b{display:block;font-size:15px;color:var(--ink)}
+.empty{text-align:center;padding:30px;color:var(--muted)}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:14px;padding:10px 16px;font-size:14px;z-index:90;box-shadow:var(--sh4);max-width:92vw}
+.scrim{position:fixed;inset:0;background:rgba(32,34,60,.45);z-index:70}
+.modal-wrap{position:fixed;inset:0;z-index:71;display:grid;place-items:center;padding:16px;overflow:auto}
+.modal{background:var(--bg);border-radius:22px;padding:20px;width:100%;max-width:520px;box-shadow:var(--sh4);display:grid;gap:12px}
+.modal h3{margin:0;font-size:19px}
+.cred{background:var(--sunken);border-radius:14px;padding:12px 14px;font-size:14.5px;line-height:2;white-space:pre-line}
+.cred b{font-size:18px;letter-spacing:.05em}
+.auth{min-height:100vh;display:grid;place-items:center;padding:20px}
+.auth .card{width:100%;max-width:400px;padding:26px;display:grid;gap:14px}
+.steps3{display:grid;gap:14px}
+.fbl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:14px;align-items:start}
+@media(max-width:960px){.fbl{grid-template-columns:1fr}}
+.fbitem{display:flex;align-items:center;gap:8px;justify-content:space-between;padding:9px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);text-align:right;width:100%}
+.fbitem[aria-current="true"]{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
+.fbitem b{font-size:14.5px}
+.scores{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mono{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;direction:ltr;text-align:left}
+.note{background:var(--sky-100);border-radius:14px;padding:10px 14px;font-size:13.5px;color:var(--ink-2)}
+.warn{background:var(--amber-100);border-radius:14px;padding:10px 14px;font-size:13.5px;color:#7a5810}
+.bars{display:grid;gap:6px}
+.barrow{display:grid;grid-template-columns:120px 1fr 70px;gap:8px;align-items:center;font-size:13px}
+.barrow .bt{height:10px;background:var(--sunken);border-radius:999px;overflow:hidden;position:relative}
+.barrow .bt i{position:absolute;inset-block:0;right:0;border-radius:999px}
+.menu{position:absolute;top:52px;left:16px;background:var(--bg);border:1px solid var(--line);border-radius:16px;box-shadow:var(--sh4);padding:6px;display:grid;min-width:180px;z-index:40}
+.menu button{background:none;border:0;text-align:right;padding:8px 12px;border-radius:10px}
+.menu button:hover{background:var(--sunken)}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast" hidden></div>
+<div id="layer"></div>
+<script>
+'use strict';
+const LOGO=`<svg class="logo" viewBox="230 190 860 260" role="img" aria-label="حرف نو"><path fill="#2FB57C" d="M949.88,198.4c-60.97,0-110.4,49.43-110.4,110.4v122.79h53.25l-.36-51.98v-72.02c0-31.82,25.79-57.61,57.61-57.61s57.61,25.79,57.61,57.61v72.02h-64.99l-23.94,51.98h141.62v-122.79c0-60.97-49.43-110.4-110.4-110.4Z"/><g fill="#30345A"><path d="M597.3,249.76c-35.63,0-64.62,28.99-64.62,64.62,0,14.11,4.56,27.17,12.27,37.81h-21.72c-18.71,0-33.93-15.22-33.93-33.93v-48.31c0-7.39-5.99-13.37-13.37-13.37s-13.37,5.99-13.37,13.37v48.31c0,33.46,27.22,60.68,60.68,60.68h71.94c.71.02,1.42.05,2.14.05,35.63,0,64.62-28.99,64.62-64.62s-28.99-64.62-64.62-64.62ZM597.3,352.25c-20.88,0-37.87-16.99-37.87-37.87s16.99-37.87,37.87-37.87,37.87,16.99,37.87,37.87-16.99,37.87-37.87,37.87Z"/><path d="M432.21,256.84c-7.39,0-13.37,5.99-13.37,13.37v48.31c0,18.71-15.22,33.93-33.93,33.93h-26.11c7.71-10.64,12.27-23.7,12.27-37.81,0-35.63-28.99-64.62-64.62-64.62s-64.62,28.99-64.62,64.62,28.99,64.62,64.62,64.62c.72,0,1.43-.03,2.14-.05h2.14l-15.1,33.78c-3.26,6.63-.52,14.64,6.11,17.9,1.9.93,3.91,1.37,5.89,1.37,4.94,0,9.69-2.75,12.01-7.48l20.89-45.58h44.38c33.46,0,60.68-27.22,60.68-60.68v-48.31c0-7.39-5.99-13.37-13.37-13.37ZM268.58,314.64c0-20.88,16.99-37.87,37.87-37.87s37.87,16.99,37.87,37.87-16.41,37.24-36.8,37.81h-2.14c-20.38-.57-36.8-17.29-36.8-37.81Z"/><path d="M742.28,250.02h-34.03c-7.39,0-13.37,5.99-13.37,13.37s5.99,13.37,13.37,13.37h34.03c20.88,0,37.87,16.99,37.87,37.87s-16.99,37.87-37.87,37.87h-55.55c-5.27,0-9.82,3.06-12,7.49-.38.55-.73,1.11-1.03,1.73l-23.36,51.06c-3.24,6.64-.5,14.65,6.14,17.89,1.89.93,3.89,1.36,5.87,1.36,4.95,0,9.71-2.76,12.03-7.5l20.81-45,47.1-.28c35.63,0,64.62-28.99,64.62-64.62s-28.99-64.62-64.62-64.62Z"/><circle cx="388.89" cy="217.39" r="19.27"/><circle cx="597.47" cy="217.39" r="19.27"/></g></svg>`;
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const FA=(n,d=0)=>{const x=Number(n)||0;return x.toLocaleString('fa-IR',{maximumFractionDigits:d,minimumFractionDigits:0})};
+const FD=s=>String(s??'').replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+const toEn=s=>String(s??'').replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+const when=t=>{if(!t)return '—';try{const d=new Date(t),diff=(Date.now()-d)/1000;if(diff<90)return 'همین الان';if(diff<3600)return FA(Math.round(diff/60))+' دقیقه پیش';if(diff<86400)return FA(Math.round(diff/3600))+' ساعت پیش';return new Intl.DateTimeFormat('fa-IR-u-ca-persian',{month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'}).format(d)}catch(e){return '—'}};
+const money=v=>v>=1000?FA(v/1000,1)+' میلیارد':v>=1?FA(v,v<10?1:0)+' میلیون':v>0?FA(Math.round(v*1000))+' هزار':'۰';
+
+/* ---------- شبکه ---------- */
+class NetErr extends Error{constructor(m,code,body){super(m);this.code=code;this.body=body}}
+async function req(url,opt={},ms=30000){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);let r;
+ try{r=await fetch(url,{credentials:'same-origin',...opt,signal:c.signal})}catch(e){throw new NetErr(navigator.onLine===false?'اینترنت قطع است.':'سرور پاسخ نداد؛ اتصال را بررسی کنید.','offline')}finally{clearTimeout(t)}
+ const j=await r.json().catch(()=>({}));
+ if(r.status===401){if(!url.endsWith('/login'))showLogin('نشست شما تمام شده است؛ دوباره وارد شوید.');throw new NetErr(j.error||'وارد نشده‌اید.','auth')}
+ if(!r.ok)throw new NetErr(j.error||'خطای سرور.','server',j);
+ return j}
+const JH={'Content-Type':'application/json'};
+const api={
+ me:()=>req('api/admin/me'),
+ login:(u,p)=>req('api/admin/login',{method:'POST',headers:JH,body:JSON.stringify({username:u,password:p})}),
+ logout:()=>req('api/admin/logout',{method:'POST'}),
+ password:(a,b)=>req('api/admin/password',{method:'POST',headers:JH,body:JSON.stringify({current:a,next:b})}),
+ users:()=>req('api/admin/users'),
+ create:o=>req('api/admin/users',{method:'POST',headers:JH,body:JSON.stringify(o)}),
+ importUsers:rows=>req('api/admin/users/import',{method:'POST',headers:JH,body:JSON.stringify({rows})}),
+ patch:(id,o)=>req('api/admin/users/'+id,{method:'PATCH',headers:JH,body:JSON.stringify(o)}),
+ reset:id=>req('api/admin/users/'+id+'/reset-password',{method:'POST'}),
+ form:id=>req('api/admin/users/'+id+'/form'),
+ saveFb:(id,draft)=>req('api/admin/users/'+id+'/feedback',{method:'PUT',headers:JH,body:JSON.stringify({draft})}),
+ publish:id=>req('api/admin/users/'+id+'/feedback/publish',{method:'POST'}),
+ unpublish:id=>req('api/admin/users/'+id+'/feedback/unpublish',{method:'POST'}),
+ analyze:id=>req('api/admin/users/'+id+'/analyze',{method:'POST'},200000),
+ importFb:text=>req('api/admin/feedback/import',{method:'POST',headers:JH,body:JSON.stringify({text})},60000)
+};
+
+/* ---------- وضعیت ---------- */
+const S={me:null,users:[],tab:'counties',q:'',filter:'all',sort:'updated',fbSel:null,fbForm:null,loading:false};
+function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(el._t);el._t=setTimeout(()=>el.hidden=true,3200)}
+function closeLayer(){$('#layer').innerHTML='';document.body.style.overflow=''}
+function modal(html){$('#layer').innerHTML=`<div class="scrim" data-close></div><div class="modal-wrap"><div class="modal">${html}</div></div>`;document.body.style.overflow='hidden'}
+const statusOf=u=>!u.active?['غیرفعال','']:u.submittedAt?(u.editedAfterSubmit?['ارسال‌شده، ویرایش بعد از ارسال','a']:['ارسال‌شده','g']):u.updatedAt?['در حال تکمیل','p']:['شروع‌نشده','c'];
+const siteUrl=()=>(S.me&&S.me.publicUrl)||location.origin+'/';
+
+/* ---------- ورود ---------- */
+function showLogin(msg){closeLayer();$('#app').innerHTML=`<div class="auth"><form class="card" id="lf"><div>${LOGO}<h1 style="margin-top:12px">داشبورد مدیر کل</h1><p class="lead" style="margin:0">نقشهٔ هزار مشعل · بوم تحول آرایش نیروهای مجاهد تبیین</p></div>
+ <div class="fld"><label for="u">نام کاربری</label><input id="u" class="ltr" autocomplete="username" autocapitalize="off"></div>
+ <div class="fld"><label for="p">رمز</label><input id="p" type="password" class="ltr" autocomplete="current-password"></div>
+ <div class="err" id="le">${esc(msg||'')}</div><button class="btn pr" type="submit">ورود</button></form></div>`;
+ $('#lf').onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector('[type=submit]');b.disabled=true;$('#le').textContent='';
+  try{await api.login($('#u').value.trim(),$('#p').value);await boot()}catch(err){$('#le').textContent=err.message;b.disabled=false}};
+ setTimeout(()=>$('#u')&&$('#u').focus(),50)}
+
+async function boot(){try{S.me=await api.me()}catch(e){if(e.code==='auth')return showLogin();$('#app').innerHTML=`<div class="auth"><div class="card"><h2>به سرور وصل نشدیم</h2><p class="lead">${esc(e.message)}</p><button class="btn pr" onclick="location.reload()">دوباره تلاش کن</button></div></div>`;return}
+ shell();await load()}
+async function load(){S.loading=true;try{S.users=(await api.users()).users}catch(e){if(e.code!=='auth')toast(e.message)}S.loading=false;render()}
+
+function shell(){$('#app').innerHTML=`<header class="bar"><div class="bar-in">${LOGO}<span class="ttl">داشبورد مدیر کل</span><span class="sp"></span><button class="btn se sm" data-refresh title="به‌روزرسانی">↻ به‌روزرسانی</button><button class="btn se sm" data-menu>${esc(S.me.user.name)} ▾</button></div></header>
+ <nav class="tabs" role="tablist">${[['counties','شهرستان‌ها'],['users','مدیران و رمزها'],['feedback','تحلیل و بازخورد']].map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${S.tab===k}">${l}</button>`).join('')}</nav>
+ <main class="wrap" id="main"></main>`}
+function render(){$$('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===S.tab));const m=$('#main');if(!m)return;
+ m.innerHTML=S.tab==='counties'?countiesHTML():S.tab==='users'?usersHTML():feedbackHTML();if(S.tab==='feedback')bindFb()}
+
+/* ---------- شهرستان‌ها ---------- */
+function countiesHTML(){const us=S.users.filter(u=>u.active);
+ if(!S.users.length)return `<h1>شهرستان‌ها</h1><div class="card empty">هنوز هیچ مدیری تعریف نشده است. از بخش «مدیران و رمزها» مدیران شهرستان‌ها را اضافه کنید.<div style="margin-top:12px"><button class="btn pr" data-tab="users">افزودن مدیران</button></div></div>`;
+ const sum=k=>us.reduce((a,u)=>a+(u.metrics.gap[k]||0),0),tot=k=>us.reduce((a,u)=>a+(u.metrics.totals[k]||0),0);
+ const started=us.filter(u=>u.updatedAt).length,sub=us.filter(u=>u.submittedAt).length,pub=us.filter(u=>u.feedback.published).length;
+ const aT=sum('aT'),needA=sum('needA'),aI=sum('aI'),aNew=sum('aNew'),gapM=sum('gapM'),dA=tot('dA'),inv=tot('invited'),cost=tot('cost'),tgt=sum('tgtA');
+ let rows=us.filter(u=>{const st=statusOf(u)[0];if(S.filter==='none'&&u.updatedAt)return false;if(S.filter==='progress'&&(!u.updatedAt||u.submittedAt))return false;if(S.filter==='submitted'&&!u.submittedAt)return false;if(S.filter==='nofb'&&(!u.submittedAt||u.feedback.published))return false;const q=S.q.trim();return !q||(u.county+' '+u.name+' '+u.phone).includes(toEn(q))||(u.county+' '+u.name).includes(q)});
+ const sorters={updated:(a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''),progress:(a,b)=>b.metrics.progress-a.metrics.progress,gap:(a,b)=>b.metrics.gap.gapA-a.metrics.gap.gapA,name:(a,b)=>a.county.localeCompare(b.county,'fa')};
+ rows.sort(sorters[S.sort]);
+ const planCell=u=>{const ps=u.metrics.plans;if(!ps.length||!ps[0].type)return '<span class="sub">طرحی نیست</span>';return ps.map(p=>`<div>${esc(p.type)}${p.verdict?` <span class="pill ${p.verdict==='تحول'?'g':'c'}">${p.verdict}</span>`:''}<span class="sub">${esc(p.force)}${p.dA?` · +${FA(p.dA)} کنشگر`:''}</span></div>`).join('')};
+ const share=u=>{const g=u.metrics.gap;return g.needA?`${FA(g.aT)} <span class="sub">از ${FA(g.needA)} (${FA(g.aT/g.needA*100,1)}٪)</span>`:'—'};
+ const act=u=>`<div class="row"><a class="btn se sm" href="view?u=${encodeURIComponent(u.id)}" target="_blank" rel="noopener">بوم</a><button class="btn se sm" data-fbopen="${u.id}">بازخورد</button></div>`;
+ return `<h1>شهرستان‌ها</h1><p class="lead">وضعیت پر شدن بوم‌ها و شکاف کنشگر و مخاطب در شهرستان‌ها. عددها مستقیم از بوم‌های مدیران حساب می‌شود.</p>
+ <div class="kpis">
+  <div class="kpi"><small>مدیران فعال</small><b>${FA(us.length)}</b><span>${FA(started)} شروع کرده · ${FA(sub)} ارسال کرده</span></div>
+  <div class="kpi g"><small>کنشگر تبیینی امروز</small><b>${FA(aT)}</b><span>از ${FA(needA)} لازم (${needA?FA(aT/needA*100,1):'۰'}٪)</span></div>
+  <div class="kpi"><small>منتظر دعوت</small><b>${FA(aI)}</b><span>کنشگر فرهنگی که هنوز در تبیین نیست</span></div>
+  <div class="kpi c"><small>کنشگر تازهٔ لازم</small><b>${FA(aNew)}</b><span>حتی اگر همهٔ نیروها فعال شوند</span></div>
+  <div class="kpi s"><small>مخاطب بی‌پوشش</small><b>${FA(gapM)}</b><span>نفر</span></div>
+  <div class="kpi a"><small>اثر طرح‌های تحول</small><b>${FA(dA)}</b><span>کنشگر تبیینی تازه؛ ${FA(inv)} نفر از دعوت</span><span>هدف دو ساله: ${FA(tgt)}</span></div>
+  <div class="kpi"><small>هزینهٔ طرح‌ها</small><b style="font-size:20px">${money(cost)} <small style="display:inline;font-size:13px">تومان</small></b><span>بازخورد منتشرشده: ${FA(pub)}</span></div>
+ </div>
+ <div class="toolbar"><input type="search" id="q" placeholder="جست‌وجوی شهرستان، مدیر یا شماره" value="${esc(S.q)}">
+  <select id="flt">${[['all','همه'],['none','شروع‌نشده'],['progress','در حال تکمیل'],['submitted','ارسال‌شده'],['nofb','ارسال‌شده، بی‌بازخورد']].map(([k,l])=>`<option value="${k}"${S.filter===k?' selected':''}>${l}</option>`).join('')}</select>
+  <select id="srt">${[['updated','آخرین تغییر'],['progress','بیشترین پیشرفت'],['gap','بزرگ‌ترین شکاف'],['name','نام شهرستان']].map(([k,l])=>`<option value="${k}"${S.sort===k?' selected':''}>مرتب: ${l}</option>`).join('')}</select>
+  <span class="hint">${FA(rows.length)} شهرستان</span></div>
+ ${rows.length?`<table class="t resp"><thead><tr><th>شهرستان</th><th>وضعیت</th><th>پیشرفت</th><th>کنشگر تبیینی</th><th>منتظر دعوت</th><th>طرح‌ها</th><th>سهم از هدف دوساله</th><th>آخرین تغییر</th><th></th></tr></thead><tbody>
+ ${rows.map(u=>{const [st,c]=statusOf(u),m=u.metrics,tg=m.plans.reduce((a,p)=>a+(p.ofTgtA||0),0);return `<tr><td><b>${esc(u.county)}</b><span class="sub">${esc(u.name)}</span></td><td><span class="pill ${c}">${st}</span>${u.feedback.published?'<span class="sub">بازخورد منتشر شد</span>':u.feedback.draft?'<span class="sub">پیش‌نویس بازخورد</span>':''}</td>
+  <td><div class="prog"><i style="width:${m.progress}%"></i></div><span class="sub">${FA(m.progress)}٪</span></td><td class="n">${share(u)}</td><td class="n">${FA(m.gap.aI)}</td><td>${planCell(u)}</td><td class="n">${tg?FA(tg,1)+'٪':'—'}</td><td class="n">${when(u.updatedAt)}</td><td>${act(u)}</td></tr>`}).join('')}</tbody></table>
+ <div class="cards">${rows.map(u=>{const [st,c]=statusOf(u),m=u.metrics;return `<div class="ccard"><div class="h"><div><b>${esc(u.county)}</b><span class="sub">${esc(u.name)} · ${when(u.updatedAt)}</span></div><span class="pill ${c}">${st}</span></div>
+  <div class="prog"><i style="width:${m.progress}%"></i></div>
+  <div class="m"><div><b>${FA(m.gap.aT)}</b>کنشگر تبیینی</div><div><b>${FA(m.gap.aI)}</b>منتظر دعوت</div><div><b>${FA(m.plansCount&&m.plans[0].type?m.plansCount:0)}</b>طرح</div></div>${act(u)}</div>`}).join('')}</div>`
+ :'<div class="card empty">موردی با این جست‌وجو نیست.</div>'}`}
+
+/* ---------- مدیران ---------- */
+function usersHTML(){const list=[...S.users].sort((a,b)=>a.county.localeCompare(b.county,'fa'));
+ return `<h1>مدیران و رمزها</h1><p class="lead">برای هر شهرستان یک مدیر با شمارهٔ همراه تعریف کنید. رمز موقت ۸ رقمی ساخته و فقط یک بار نشان داده می‌شود؛ مدیر در اولین ورود تشویق می‌شود آن را عوض کند.</p>
+ <div class="grid2">
+  <form class="card stack" id="addf"><h2>افزودن یک مدیر</h2>
+   <div class="grid2" style="gap:10px"><div class="fld"><label for="a_name">نام و نام خانوادگی</label><input id="a_name" required></div><div class="fld"><label for="a_phone">شمارهٔ همراه</label><input id="a_phone" class="ltr" inputmode="tel" placeholder="09xxxxxxxxx" required></div>
+   <div class="fld"><label for="a_county">شهرستان</label><input id="a_county" required></div><div class="fld"><label for="a_prov">استان</label><input id="a_prov" value="خراسان رضوی"></div></div>
+   <div class="fld"><label for="a_title">سمت</label><input id="a_title" value="مدیر تبلیغات اسلامی شهرستان"></div>
+   <div class="err" id="adde"></div><div><button class="btn pr" type="submit">ساختن و دیدن رمز</button></div></form>
+  <div class="card stack"><h2>افزودن گروهی با فایل CSV یا اکسل</h2>
+   <p class="hint" style="margin:0">در اکسل ستون‌های <b>نام، موبایل، شهرستان، استان، سمت</b> را بسازید و با «ذخیره به‌صورت CSV» ذخیره کنید؛ یا ردیف‌ها را از اکسل کپی و این‌جا جای‌گذاری کنید. ستون‌های استان و سمت اختیاری است.</p>
+   <textarea id="csv" rows="5" placeholder="نام,موبایل,شهرستان&#10;علی رضایی,09151234567,نیشابور"></textarea>
+   <div class="row"><label class="btn se sm" style="cursor:pointer">انتخاب فایل<input type="file" id="csvf" accept=".csv,.txt,text/csv" hidden></label><button class="btn dk sm" data-import>ساختن همهٔ مدیران</button><span class="hint" id="csvinfo"></span></div></div>
+ </div>
+ <h2 style="margin-top:22px">فهرست مدیران (${FA(list.length)})</h2>
+ ${list.length?`<div class="cards">${list.map(u=>`<div class="ccard"><div class="h"><div><b>${esc(u.county)}</b><span class="sub">${esc(u.name)} · ${FD(u.phone)}</span><span class="sub">آخرین ورود: ${when(u.lastLoginAt)}</span></div>${u.active?'<span class="pill g">فعال</span>':'<span class="pill">غیرفعال</span>'}</div><div class="row"><button class="btn se sm" data-reset="${u.id}">رمز تازه</button><button class="btn se sm" data-edit="${u.id}">ویرایش</button><button class="btn se sm" data-toggle="${u.id}">${u.active?'غیرفعال کن':'فعال کن'}</button></div></div>`).join('')}</div><table class="t resp"><thead><tr><th>شهرستان</th><th>مدیر</th><th>شمارهٔ همراه</th><th>آخرین ورود</th><th>وضعیت</th><th></th></tr></thead><tbody>${list.map(u=>`<tr><td><b>${esc(u.county)}</b><span class="sub">${esc(u.province)}</span></td><td>${esc(u.name)}<span class="sub">${esc(u.role)}</span></td><td class="n">${FD(u.phone)}</td><td class="n">${when(u.lastLoginAt)}</td><td>${u.active?'<span class="pill g">فعال</span>':'<span class="pill">غیرفعال</span>'}</td>
+  <td><div class="row"><button class="btn se sm" data-reset="${u.id}">رمز تازه</button><button class="btn se sm" data-edit="${u.id}">ویرایش</button><button class="btn se sm" data-toggle="${u.id}">${u.active?'غیرفعال کن':'فعال کن'}</button></div></td></tr>`).join('')}</tbody></table>`:'<div class="card empty">هنوز مدیری تعریف نشده است.</div>'}`}
+
+function credText(u,pw){return `سلام ${u.name} عزیز\nبوم «نقشهٔ هزار مشعل» شهرستان ${u.county} آمادهٔ تکمیل است.\nنشانی: ${siteUrl()}\nشمارهٔ همراه: ${u.phone}\nرمز موقت: ${pw}\nپس از ورود، رمز را عوض کنید.`}
+function showCreds(items,errors){const one=items.length===1;errors=errors||[];
+ modal(`<h3>${one?'رمز ساخته شد':FA(items.length)+' مدیر ساخته شد'}</h3><p class="hint" style="margin:0">این رمزها فقط همین یک بار نشان داده می‌شوند. ${one?'متن زیر را برای مدیر بفرستید.':'فایل رمزها را بردارید و برای هر مدیر بفرستید؛ بعد فایل را پاک کنید.'}</p>
+  ${one?`<div class="cred" id="credt">${esc(credText(items[0].user,items[0].password))}</div>`:`<div class="cred" style="max-height:260px;overflow:auto">${items.map(x=>`${esc(x.user.county)} · ${FD(x.user.phone)} · <b>${FD(x.password)}</b>`).join('\n')}</div>`}
+  ${errors.length?`<div class="warn"><b>${FA(errors.length)} ردیف ساخته نشد:</b><br>${errors.map(x=>`ردیف ${FA(x.row)}: ${esc(x.error)}`).join('<br>')}</div>`:''}
+  <div class="row">${one?'<button class="btn pr" data-copycred>کپی متن پیام</button>':'<button class="btn pr" data-dlcred>دانلود فایل رمزها</button>'}<button class="btn se" data-close>بستن</button></div>`);
+ S._creds=items}
+
+function parseCsv(txt){const rows=[];let row=[],cur='',q=false;txt=String(txt||'').replace(/^﻿/,'');
+ for(let i=0;i<txt.length;i++){const c=txt[i];if(q){if(c==='"'&&txt[i+1]==='"'){cur+='"';i++}else if(c==='"')q=false;else cur+=c}else if(c==='"')q=true;else if(c===','||c==='،'||c==='\t'||c===';'){row.push(cur);cur=''}else if(c==='\n'||c==='\r'){if(c==='\r'&&txt[i+1]==='\n')i++;row.push(cur);rows.push(row);row=[];cur=''}else cur+=c}
+ if(cur||row.length){row.push(cur);rows.push(row)}
+ const r=rows.filter(x=>x.some(y=>y.trim()));if(!r.length)return [];
+ const head=r[0].map(h=>h.trim().toLowerCase());const names={name:['name','نام','نام و نام خانوادگی'],phone:['phone','موبایل','شماره','شمارهٔ همراه','شماره همراه','تلفن همراه'],county:['county','شهرستان'],province:['province','استان'],title:['title','سمت']};
+ const idx=Object.fromEntries(Object.entries(names).map(([k,v])=>[k,head.findIndex(h=>v.includes(h))]));const hasHead=idx.phone>=0;
+ const order=['name','phone','county','province','title'];
+ return (hasHead?r.slice(1):r).map(x=>Object.fromEntries(order.map((k,j)=>{const i=hasHead?idx[k]:j;return [k,i>=0?(x[i]||'').trim():'']}))).filter(o=>o.phone||o.name)}
+
+/* ---------- تحلیل و بازخورد ---------- */
+function feedbackHTML(){const us=S.users.filter(u=>u.active).sort((a,b)=>a.county.localeCompare(b.county,'fa'));const sub=us.filter(u=>u.submittedAt).length;
+ const drafts=us.filter(u=>u.feedback.draft&&(!u.feedback.published||(u.feedback.draftAt&&u.feedback.publishedAt&&u.feedback.draftAt>u.feedback.publishedAt))).length;
+ return `<h1>تحلیل و بازخورد</h1><p class="lead">بوم‌ها را برای تحلیل به Claude بدهید، خروجی را این‌جا بارگذاری کنید، بازبینی کنید و برای هر مدیر منتشر کنید. مدیر بازخورد را در بخش «بازخورد» سایت خودش می‌بیند.</p>
+ <div class="grid2">
+  <div class="card stack"><h2>۱. بستهٔ تحلیل را بردارید</h2><p class="hint" style="margin:0">بسته شامل دستورالعمل تحلیل، عددهای محاسبه‌شده و دادهٔ کامل هر بوم است.</p>
+   <div class="row"><a class="btn pr" href="api/admin/export?submitted=1" download>بوم‌های ارسال‌شده (${FA(sub)})</a><a class="btn se" href="api/admin/export" download>همهٔ بوم‌ها (${FA(us.length)})</a></div>
+   <div class="note">فایل را در یک گفت‌وگوی تازه با Claude بارگذاری کنید و بنویسید:<div class="cred" style="margin-top:6px;background:#fff" id="prompt">طبق دستورالعمل داخل این فایل، بوم هر شهرستان را تحلیل کن و فقط آرایهٔ JSON خروجی را بده.</div><button class="link" data-copyprompt style="margin-top:6px">کپی این جمله</button></div>
+   ${S.me.aiEnabled?'<div class="note">تحلیل خودکار روی سرور فعال است: در بخش ۳ برای هر شهرستان دکمهٔ «پیش‌نویس با Claude» را بزنید.</div>':''}</div>
+  <div class="card stack"><h2>۲. خروجی Claude را وارد کنید</h2><p class="hint" style="margin:0">پاسخ Claude را همان‌طور که هست جای‌گذاری کنید یا فایلش را انتخاب کنید. بازخوردها به‌صورت <b>پیش‌نویس</b> ذخیره می‌شوند و تا انتشار شما، مدیران آن‌ها را نمی‌بینند.</p>
+   <textarea id="fbtext" rows="6" class="mono" placeholder='[{"userId":"...","scores":{"b1":7,"b2":6,"b3":8},"summary":"...","strengths":[],"gaps":[],"suggestions":[]}]'></textarea>
+   <div class="row"><label class="btn se sm" style="cursor:pointer">انتخاب فایل<input type="file" id="fbfile" accept=".json,.txt" hidden></label><button class="btn dk sm" data-fbimport>واردکردن</button></div><div id="fbres"></div></div>
+ </div>
+ <div class="card" style="margin-top:14px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">۳. بازبینی و انتشار</h2>${drafts?`<button class="btn se sm" data-pubpending>انتشار همهٔ پیش‌نویس‌های تازه (${FA(drafts)})</button>`:''}</div>
+  <div class="fbl" style="margin-top:12px"><div class="stack" style="gap:6px;max-height:640px;overflow:auto">${us.length?us.map(u=>{const f=u.feedback,st=f.published?(f.draftAt&&f.publishedAt&&f.draftAt>f.publishedAt?['منتشرشده؛ پیش‌نویس تازه','a']:['منتشرشده','g']):f.draft?['پیش‌نویس','p']:['بدون بازخورد',''];return `<button class="fbitem" data-fbsel="${u.id}" aria-current="${S.fbSel===u.id}"><span><b>${esc(u.county)}</b><span class="sub">${esc(u.name)} · ${u.submittedAt?'ارسال‌شده':'ارسال‌نشده'}</span></span><span class="pill ${st[1]}">${st[0]}</span></button>`}).join(''):'<div class="empty">مدیری نیست.</div>'}</div>
+  <div id="fbed">${S.fbSel?'<div class="empty">در حال بارگذاری…</div>':'<div class="empty">یک شهرستان را از فهرست انتخاب کنید.</div>'}</div></div></div>`}
+
+function fbEditorHTML(u,form){const d=form.feedbackDraft||form.feedback||{scores:{}},sc=d.scores||{},pub=!!form.feedback;const m=form.metrics,g=m.gap;
+ const ta=(id,l,v,rows=4,h='')=>`<div class="fld"><label for="${id}">${l}</label>${h?`<span class="hint">${h}</span>`:''}<textarea id="${id}" rows="${rows}">${esc(Array.isArray(v)?v.join('\n'):v||'')}</textarea></div>`;
+ return `<div class="stack"><div class="row" style="justify-content:space-between"><div><b style="font-size:17px">${esc(u.county)}</b><span class="sub">${esc(u.name)} · ${pub?'منتشرشده '+when(form.feedbackAt):form.feedbackDraft?'پیش‌نویس '+when(form.feedbackDraftAt):'هنوز بازخوردی ندارد'}</span></div><a class="btn se sm" href="view?u=${encodeURIComponent(u.id)}" target="_blank" rel="noopener">دیدن بوم</a></div>
+  <div class="note">کنشگر تبیینی ${FA(g.aT)} از ${FA(g.needA)} · منتظر دعوت ${FA(g.aI)} · مخاطب بی‌پوشش ${FA(g.gapM)} · طرح‌ها: ${m.plans.filter(p=>p.type).map(p=>`${esc(p.type)} (${p.verdict||'بی‌آزمون'}${p.dA?'، +'+FA(p.dA):''})`).join('، ')||'—'} · پیشرفت ${FA(m.progress)}٪</div>
+  ${S.me.aiEnabled?`<div><button class="btn dk sm" data-ai="${u.id}">پیش‌نویس با Claude</button> <span class="hint">پیش‌نویس فعلی جایگزین می‌شود.</span></div>`:''}
+  <div class="scores">${[['b1','آرایش موجود'],['b2','طرح تحول'],['b3','برنامهٔ اجرایی']].map(([k,l])=>`<div class="fld"><label for="sc_${k}">${l} (از ۱۰)</label><input id="sc_${k}" inputmode="decimal" value="${sc[k]!=null?FA(sc[k],1):''}"></div>`).join('')}</div>
+  ${ta('f_sum','جمع‌بندی',d.summary,4)}${ta('f_str','نقاط قوت',d.strengths,3,'هر سطر یک مورد')}${ta('f_gap','جای کار',d.gaps,3,'هر سطر یک مورد')}${ta('f_sug','پیشنهاد برای گام بعد',d.suggestions,3,'هر سطر یک مورد')}${ta('f_msg','یادداشت پایانی (اختیاری)',d.message,2)}
+  <div class="row"><button class="btn se" data-fbsave="${u.id}">ذخیرهٔ پیش‌نویس</button><button class="btn pr" data-fbpub="${u.id}">ذخیره و انتشار برای مدیر</button>${pub?`<button class="btn se" data-fbunpub="${u.id}">برداشتن از انتشار</button>`:''}</div></div>`}
+function readFb(){const n=id=>{const v=toEn($(id).value).trim();return v===''?null:Number(v)};const L=id=>$(id).value.split('\n').map(s=>s.trim()).filter(Boolean);
+ return {scores:{b1:n('#sc_b1'),b2:n('#sc_b2'),b3:n('#sc_b3')},summary:$('#f_sum').value.trim(),strengths:L('#f_str'),gaps:L('#f_gap'),suggestions:L('#f_sug'),message:$('#f_msg').value.trim()}}
+async function openFb(id){S.fbSel=id;S.fbForm=null;S.tab='feedback';render();window.scrollTo&&$('#fbed')&&innerWidth<960&&$('#fbed').scrollIntoView({behavior:'smooth',block:'start'});
+ try{const f=await api.form(id);if(S.fbSel!==id)return;S.fbForm=f;const u=S.users.find(x=>x.id===id),el=$('#fbed');if(u&&el)el.innerHTML=fbEditorHTML(u,f)}catch(e){toast(e.message)}}
+function bindFb(){if(S.fbSel&&S.fbForm&&S.fbForm.user.id===S.fbSel){const u=S.users.find(x=>x.id===S.fbSel),el=$('#fbed');if(u&&el)el.innerHTML=fbEditorHTML(u,S.fbForm)}}
+
+/* ---------- رویدادها ---------- */
+document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;const p=e.target.selectionStart;render();const q=$('#q');q.focus();q.setSelectionRange(p,p)}});
+document.addEventListener('change',async e=>{const t=e.target;
+ if(t.id==='flt'){S.filter=t.value;render()}if(t.id==='srt'){S.sort=t.value;render()}
+ if(t.id==='csvf'&&t.files[0]){$('#csv').value=await t.files[0].text();$('#csvinfo').textContent=FA(parseCsv($('#csv').value).length)+' ردیف خوانده شد.'}
+ if(t.id==='fbfile'&&t.files[0]){$('#fbtext').value=await t.files[0].text()}});
+document.addEventListener('submit',async e=>{if(e.target.id!=='addf')return;e.preventDefault();const b=e.target.querySelector('[type=submit]');b.disabled=true;$('#adde').textContent='';
+ try{const r=await api.create({name:$('#a_name').value,phone:$('#a_phone').value,county:$('#a_county').value,province:$('#a_prov').value,title:$('#a_title').value});await load();showCreds([r])}catch(err){$('#adde').textContent=err.message}b.disabled=false});
+document.addEventListener('click',async e=>{
+ if(!e.target.closest('.menu,[data-menu]'))$('.menu')?.remove();
+ if(e.target.matches('[data-close]')){closeLayer();return}
+ const t=e.target.closest('button,a');if(!t)return;const d=t.dataset;
+ if(d.tab){S.tab=d.tab;render();window.scrollTo(0,0);return}
+ if(d.refresh!==undefined){await load();toast('به‌روز شد.');return}
+ if(d.menu!==undefined){if($('.menu'))return $('.menu').remove();const m=document.createElement('div');m.className='menu';m.innerHTML='<button data-adminpw>تغییر رمز من</button><button data-logout>خروج</button>';$('.bar').appendChild(m);return}
+ if(d.logout!==undefined){await api.logout().catch(()=>{});showLogin();return}
+ if(d.adminpw!==undefined){modal(`<h3>تغییر رمز مدیر کل</h3><div class="fld"><label>رمز فعلی</label><input type="password" id="pw0" class="ltr"></div><div class="fld"><label>رمز تازه (دست‌کم ۱۰ نویسه)</label><input type="password" id="pw1" class="ltr"></div><div class="err" id="pwe"></div><div class="row"><button class="btn pr" data-pwsave>ذخیره</button><button class="btn se" data-close>انصراف</button></div>`);return}
+ if(d.pwsave!==undefined){try{await api.password($('#pw0').value,$('#pw1').value);closeLayer();toast('رمز تازه ذخیره شد.')}catch(err){$('#pwe').textContent=err.message}return}
+ if(d.fbopen){openFb(d.fbopen);return}
+ if(d.fbsel){openFb(d.fbsel);return}
+ if(d.reset){const u=S.users.find(x=>x.id===d.reset);modal(`<h3>رمز تازه برای ${esc(u.county)}</h3><p style="margin:0">رمز فعلی ${esc(u.name)} از کار می‌افتد و از همهٔ دستگاه‌ها خارج می‌شود.</p><div class="row"><button class="btn pr" data-resetok="${u.id}">ساختن رمز تازه</button><button class="btn se" data-close>انصراف</button></div>`);return}
+ if(d.resetok){try{const r=await api.reset(d.resetok);showCreds([r])}catch(err){toast(err.message)}return}
+ if(d.toggle){const u=S.users.find(x=>x.id===d.toggle);try{await api.patch(u.id,{active:!u.active});await load();toast(u.active?'غیرفعال شد.':'فعال شد.')}catch(err){toast(err.message)}return}
+ if(d.edit){const u=S.users.find(x=>x.id===d.edit);modal(`<h3>ویرایش مدیر</h3><div class="fld"><label>نام</label><input id="e_name" value="${esc(u.name)}"></div><div class="fld"><label>شمارهٔ همراه</label><input id="e_phone" class="ltr" value="${esc(u.phone)}"></div><div class="fld"><label>شهرستان</label><input id="e_county" value="${esc(u.county)}"></div><div class="fld"><label>استان</label><input id="e_prov" value="${esc(u.province)}"></div><div class="fld"><label>سمت</label><input id="e_title" value="${esc(u.role)}"></div><div class="err" id="ee"></div><div class="row"><button class="btn pr" data-editok="${u.id}">ذخیره</button><button class="btn se" data-close>انصراف</button></div>`);return}
+ if(d.editok){try{await api.patch(d.editok,{name:$('#e_name').value,phone:$('#e_phone').value,county:$('#e_county').value,province:$('#e_prov').value,title:$('#e_title').value});closeLayer();await load();toast('ذخیره شد.')}catch(err){$('#ee').textContent=err.message}return}
+ if(d.import!==undefined){const rows=parseCsv($('#csv').value);if(!rows.length)return toast('ردیفی برای ساختن نیست.');t.disabled=true;
+  try{const r=await api.importUsers(rows);await load();if(r.created.length){showCreds(r.created,r.errors);$('#csv').value=''}else if(r.errors.length){modal(`<h3>هیچ مدیری ساخته نشد</h3><div class="cred">${esc(r.errors.map(x=>`ردیف ${FA(x.row)}: ${x.error}`).join('\n'))}</div><button class="btn se" data-close>بستن</button>`)}}catch(err){toast(err.message)}t.disabled=false;return}
+ if(d.copycred!==undefined){try{await navigator.clipboard.writeText($('#credt').innerText);toast('کپی شد.')}catch(err){toast('کپی نشد؛ متن را انتخاب و کپی کنید.')}return}
+ if(d.dlcred!==undefined){const csv='﻿شهرستان,نام,شمارهٔ همراه,رمز موقت,متن پیام\n'+S._creds.map(x=>[x.user.county,x.user.name,x.user.phone,x.password,credText(x.user,x.password).replace(/\n/g,' | ')].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='harfeno-passwords.csv';a.click();return}
+ if(d.copyprompt!==undefined){try{await navigator.clipboard.writeText($('#prompt').innerText);toast('کپی شد.')}catch(err){toast('کپی نشد.')}return}
+ if(d.fbimport!==undefined){const txt=$('#fbtext').value.trim();if(!txt)return toast('اول خروجی Claude را جای‌گذاری کنید.');t.disabled=true;
+  try{const r=await api.importFb(txt);await load();$('#fbres').innerHTML=`<div class="note">${FA(r.matched.length)} بازخورد به‌صورت پیش‌نویس ذخیره شد${r.matched.length?': '+r.matched.map(x=>esc(x.county)).join('، '):''}.</div>${r.unmatched.length?`<div class="warn">${FA(r.unmatched.length)} مورد با هیچ مدیری جور نشد: ${r.unmatched.map(x=>esc(x.county||('ردیف '+FA(x.idx+1)))).join('، ')}</div>`:''}`}catch(err){$('#fbres').innerHTML=`<div class="warn">${esc(err.message)}</div>`}t.disabled=false;return}
+ if(d.fbsave||d.fbpub){const id=d.fbsave||d.fbpub;t.disabled=true;try{await api.saveFb(id,readFb());if(d.fbpub){await api.publish(id);toast('بازخورد برای مدیر منتشر شد.')}else toast('پیش‌نویس ذخیره شد.');await load();S.fbForm=null;openFb(id)}catch(err){toast(err.message)}t.disabled=false;return}
+ if(d.fbunpub){try{await api.unpublish(d.fbunpub);await load();S.fbForm=null;openFb(d.fbunpub);toast('از انتشار برداشته شد.')}catch(err){toast(err.message)}return}
+ if(d.ai){t.disabled=true;t.textContent='در حال تحلیل… (تا چند دقیقه)';try{await api.analyze(d.ai);await load();S.fbForm=null;openFb(d.ai);toast('پیش‌نویس Claude آماده شد؛ بازبینی و منتشر کنید.')}catch(err){toast(err.message);t.disabled=false;t.textContent='پیش‌نویس با Claude'}return}
+ if(d.pubpending!==undefined){const ids=S.users.filter(u=>u.active&&u.feedback.draft&&(!u.feedback.published||(u.feedback.draftAt>u.feedback.publishedAt))).map(u=>u.id);
+  modal(`<h3>انتشار ${FA(ids.length)} بازخورد</h3><p style="margin:0">همهٔ پیش‌نویس‌های تازه برای مدیرانشان منتشر می‌شود. مطمئن هستید همه را بازبینی کرده‌اید؟</p><div class="row"><button class="btn pr" data-pubok>انتشار همه</button><button class="btn se" data-close>انصراف</button></div>`);S._pub=ids;return}
+ if(d.pubok!==undefined){t.disabled=true;let n=0;for(const id of S._pub){try{await api.publish(id);n++}catch(err){}}closeLayer();await load();toast(FA(n)+' بازخورد منتشر شد.');return}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLayer();$('.menu')?.remove()}});
+boot();
+</script>
+</body>
+</html>

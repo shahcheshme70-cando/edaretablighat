@@ -1,0 +1,8 @@
+.git
+data
+.env
+node_modules
+test
+docs
+*.log
+*-passwords.csv

@@ -1,0 +1,17 @@
+{
+  "name": "harfeno-hezar-mashal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "نقشهٔ هزار مشعل: سایت مدیران تبلیغات اسلامی شهرستان برای بوم تحول آرایش نیروهای مجاهد تبیین، و داشبورد مدیر کل",
+  "license": "UNLICENSED",
+  "main": "server/index.js",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node server/index.js",
+    "test": "node --test test/*.test.js",
+    "create-admin": "node server/cli.js create-admin",
+    "add-director": "node server/cli.js add-director",
+    "import-directors": "node server/cli.js import-directors",
+    "cli": "node server/cli.js"
+  }
+}

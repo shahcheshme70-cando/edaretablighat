@@ -1,0 +1,24 @@
+# /etc/systemd/system/harfeno.service
+[Unit]
+Description=Harfeno - Naghshe Hezar Mashal
+After=network.target
+
+[Service]
+Type=simple
+User=harfeno
+Group=harfeno
+WorkingDirectory=/opt/harfeno
+EnvironmentFile=/opt/harfeno/.env
+ExecStart=/usr/bin/node server/index.js
+Restart=always
+RestartSec=3
+# سخت‌گیری امنیتی
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/harfeno
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
