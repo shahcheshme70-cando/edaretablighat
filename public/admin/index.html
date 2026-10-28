@@ -158,20 +158,27 @@ const api={
  publish:id=>req('api/admin/users/'+id+'/feedback/publish',{method:'POST'}),
  unpublish:id=>req('api/admin/users/'+id+'/feedback/unpublish',{method:'POST'}),
  analyze:id=>req('api/admin/users/'+id+'/analyze',{method:'POST'},200000),
- importFb:text=>req('api/admin/feedback/import',{method:'POST',headers:JH,body:JSON.stringify({text})},60000)
+ importFb:text=>req('api/admin/feedback/import',{method:'POST',headers:JH,body:JSON.stringify({text})},60000),
+ viewers:()=>req('api/admin/viewers'),
+ createViewer:o=>req('api/admin/viewers',{method:'POST',headers:JH,body:JSON.stringify(o)}),
+ patchViewer:(id,o)=>req('api/admin/viewers/'+id,{method:'PATCH',headers:JH,body:JSON.stringify(o)}),
+ resetViewer:id=>req('api/admin/viewers/'+id+'/reset-password',{method:'POST'})
 };
 
 /* ---------- وضعیت ---------- */
-const S={me:null,users:[],tab:'counties',q:'',filter:'all',sort:'updated',fbSel:null,fbForm:null,loading:false};
+const S={me:null,users:[],viewers:[],tab:'counties',q:'',filter:'all',sort:'updated',fbSel:null,fbForm:null,loading:false};
 function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(el._t);el._t=setTimeout(()=>el.hidden=true,3200)}
 function closeLayer(){$('#layer').innerHTML='';document.body.style.overflow=''}
 function modal(html){$('#layer').innerHTML=`<div class="scrim" data-close></div><div class="modal-wrap"><div class="modal">${html}</div></div>`;document.body.style.overflow='hidden'}
 const statusOf=u=>!u.active?['غیرفعال','']:u.submittedAt?(u.editedAfterSubmit?['ارسال‌شده، ویرایش بعد از ارسال','a']:['ارسال‌شده','g']):u.updatedAt?['در حال تکمیل','p']:['شروع‌نشده','c'];
 const siteUrl=()=>(S.me&&S.me.publicUrl)||location.origin+'/';
+const dashUrl=()=>new URL('./',location.href).href;
+/* حساب مدیرکل: فقط دیدن */
+const V=()=>!!(S.me&&S.me.access==='view');
 
 /* ---------- ورود ---------- */
 function showLogin(msg){closeLayer();$('#app').innerHTML=`<div class="auth"><form class="card" id="lf"><div>${LOGO}<h1 style="margin-top:12px">داشبورد ستاد</h1><p class="lead" style="margin:0">نقشهٔ هزار مشعل · بوم تحول آرایش نیروهای مجاهد تبیین</p></div>
- <div class="fld"><label for="u">نام کاربری</label><input id="u" class="ltr" autocomplete="username" autocapitalize="off"></div>
+ <div class="fld"><label for="u">نام کاربری یا شمارهٔ همراه</label><input id="u" class="ltr" autocomplete="username" autocapitalize="off"><span class="hint">حساب مدیرکل با شمارهٔ همراه وارد می‌شود.</span></div>
  <div class="fld"><label for="p">رمز</label><input id="p" type="password" class="ltr" autocomplete="current-password"></div>
  <div class="err" id="le">${esc(msg||'')}</div><button class="btn pr" type="submit">ورود</button></form></div>`;
  $('#lf').onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector('[type=submit]');b.disabled=true;$('#le').textContent='';
@@ -179,18 +186,18 @@ function showLogin(msg){closeLayer();$('#app').innerHTML=`<div class="auth"><for
  setTimeout(()=>$('#u')&&$('#u').focus(),50)}
 
 async function boot(){try{S.me=await api.me()}catch(e){if(e.code==='auth')return showLogin();$('#app').innerHTML=`<div class="auth"><div class="card"><h2>به سرور وصل نشدیم</h2><p class="lead">${esc(e.message)}</p><button class="btn pr" onclick="location.reload()">دوباره تلاش کن</button></div></div>`;return}
- shell();await load()}
-async function load(){S.loading=true;try{S.users=(await api.users()).users}catch(e){if(e.code!=='auth')toast(e.message)}S.loading=false;render()}
+ shell();await load();if(V()&&S.me.user.mustChange)pwModal(true)}
+async function load(){S.loading=true;try{const [u,v]=await Promise.all([api.users(),V()?null:api.viewers()]);S.users=u.users;S.viewers=v?v.viewers:[]}catch(e){if(e.code!=='auth')toast(e.message)}S.loading=false;render()}
 
-function shell(){$('#app').innerHTML=`<header class="bar"><div class="bar-in">${LOGO}<span class="ttl">داشبورد ستاد</span><span class="sp"></span><button class="btn se sm" data-refresh title="به‌روزرسانی" aria-label="به‌روزرسانی">↻<span class="rtx"> به‌روزرسانی</span></button><button class="btn se sm uname" data-menu><span>${esc(S.me.user.name)}</span> ▾</button></div></header>
- <nav class="tabs" role="tablist">${[['counties','شهرستان‌ها'],['users','مدیران و رمزها'],['feedback','تحلیل و بازخورد']].map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${S.tab===k}">${l}</button>`).join('')}</nav>
+function shell(){$('#app').innerHTML=`<header class="bar"><div class="bar-in">${LOGO}<span class="ttl">${V()?'داشبورد مدیرکل':'داشبورد ستاد'}</span><span class="sp"></span><button class="btn se sm" data-refresh title="به‌روزرسانی" aria-label="به‌روزرسانی">↻<span class="rtx"> به‌روزرسانی</span></button><button class="btn se sm uname" data-menu><span>${esc(S.me.user.name)}</span> ▾</button></div></header>
+ ${V()?'':`<nav class="tabs" role="tablist">${[['counties','شهرستان‌ها'],['users','مدیران و رمزها'],['feedback','تحلیل و بازخورد']].map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${S.tab===k}">${l}</button>`).join('')}</nav>`}
  <main class="wrap" id="main"></main>`}
-function render(){$$('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===S.tab));const m=$('#main');if(!m)return;
+function render(){if(V())S.tab='counties';$$('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===S.tab));const m=$('#main');if(!m)return;
  m.innerHTML=S.tab==='counties'?countiesHTML():S.tab==='users'?usersHTML():feedbackHTML();if(S.tab==='feedback')bindFb()}
 
 /* ---------- شهرستان‌ها ---------- */
 function countiesHTML(){const us=S.users.filter(u=>u.active);
- if(!S.users.length)return `<h1>شهرستان‌ها</h1><div class="card empty">هنوز هیچ مدیری تعریف نشده است. از بخش «مدیران و رمزها» مدیران شهرستان‌ها را اضافه کنید.<div style="margin-top:12px"><button class="btn pr" data-tab="users">افزودن مدیران</button></div></div>`;
+ if(!S.users.length)return V()?`<h1>شهرستان‌ها</h1><div class="card empty">هنوز شهرستانی تعریف نشده است. پس از آنکه ستاد مدیران شهرستان‌ها را تعریف کند، بوم‌هایشان این‌جا دیده می‌شود.</div>`:`<h1>شهرستان‌ها</h1><div class="card empty">هنوز هیچ مدیری تعریف نشده است. از بخش «مدیران و رمزها» مدیران شهرستان‌ها را اضافه کنید.<div style="margin-top:12px"><button class="btn pr" data-tab="users">افزودن مدیران</button></div></div>`;
  const sum=k=>us.reduce((a,u)=>a+(u.metrics.gap[k]||0),0),tot=k=>us.reduce((a,u)=>a+(u.metrics.totals[k]||0),0);
  const started=us.filter(u=>u.updatedAt).length,sub=us.filter(u=>u.submittedAt).length,pub=us.filter(u=>u.feedback.published).length;
  const aT=sum('aT'),needA=sum('needA'),aI=sum('aI'),aNew=sum('aNew'),gapM=sum('gapM'),dA=tot('dA'),inv=tot('invited'),cost=tot('cost'),tgt=sum('tgtA');
@@ -199,8 +206,8 @@ function countiesHTML(){const us=S.users.filter(u=>u.active);
  rows.sort(sorters[S.sort]);
  const planCell=u=>{const ps=u.metrics.plans;if(!ps.length||!ps[0].type)return '<span class="sub">طرحی نیست</span>';return ps.map(p=>`<div>${esc(p.type)}${p.verdict?` <span class="pill ${p.verdict==='تحول'?'g':'c'}">${p.verdict}</span>`:''}<span class="sub">${esc(p.force)}${p.dA?` · +${FA(p.dA)} کنشگر`:''}</span></div>`).join('')};
  const share=u=>{const g=u.metrics.gap;return g.needA?`${FA(g.aT)} <span class="sub">از ${FA(g.needA)} (${FA(g.aT/g.needA*100,1)}٪)</span>`:'—'};
- const act=u=>`<div class="row"><a class="btn se sm" href="view?u=${encodeURIComponent(u.id)}" target="_blank" rel="noopener">بوم</a><button class="btn se sm" data-fbopen="${u.id}">بازخورد</button></div>`;
- return `<h1>شهرستان‌ها</h1><p class="lead">وضعیت پر شدن بوم‌ها و شکاف کنشگر و مخاطب در شهرستان‌ها. عددها مستقیم از بوم‌های مدیران حساب می‌شود.</p>
+ const act=u=>`<div class="row"><a class="btn se sm" href="view?u=${encodeURIComponent(u.id)}" target="_blank" rel="noopener">${V()?'دیدن بوم':'بوم'}</a>${V()?'':`<button class="btn se sm" data-fbopen="${u.id}">بازخورد</button>`}</div>`;
+ return `<h1>شهرستان‌ها${V()&&S.me.user.province?` · استان ${esc(S.me.user.province)}`:''}</h1><p class="lead">وضعیت پر شدن بوم‌ها و شکاف کنشگر و مخاطب در شهرستان‌ها. عددها مستقیم از بوم‌های مدیران حساب می‌شود.${V()?' با دکمهٔ «دیدن بوم» بوم کامل هر شهرستان و بازخورد منتشرشدهٔ ستاد را می‌بینید. این حساب فقط برای دیدن است و چیزی را تغییر نمی‌دهد.':''}</p>
  <div class="kpis">
   <div class="kpi"><small>مدیران فعال</small><b>${FA(us.length)}</b><span>${FA(started)} شروع کرده · ${FA(sub)} ارسال کرده</span></div>
   <div class="kpi g"><small>کنشگر تبیینی امروز</small><b>${FA(aT)}</b><span>از ${FA(needA)} لازم (${needA?FA(aT/needA*100,1):'۰'}٪)</span></div>
@@ -238,11 +245,24 @@ function usersHTML(){const list=[...S.users].sort((a,b)=>a.county.localeCompare(
  </div>
  <h2 style="margin-top:22px">فهرست مدیران (${FA(list.length)})</h2>
  ${list.length?`<div class="cards">${list.map(u=>`<div class="ccard"><div class="h"><div><b>${esc(u.county)}</b><span class="sub">${esc(u.name)} · ${FD(u.phone)}</span><span class="sub">آخرین ورود: ${when(u.lastLoginAt)}</span></div>${u.active?'<span class="pill g">فعال</span>':'<span class="pill">غیرفعال</span>'}</div><div class="row"><button class="btn se sm" data-reset="${u.id}">رمز تازه</button><button class="btn se sm" data-edit="${u.id}">ویرایش</button><button class="btn se sm" data-toggle="${u.id}">${u.active?'غیرفعال کن':'فعال کن'}</button></div></div>`).join('')}</div><table class="t resp"><thead><tr><th>شهرستان</th><th>مدیر</th><th>شمارهٔ همراه</th><th>آخرین ورود</th><th>وضعیت</th><th></th></tr></thead><tbody>${list.map(u=>`<tr><td><b>${esc(u.county)}</b><span class="sub">${esc(u.province)}</span></td><td>${esc(u.name)}<span class="sub">${esc(u.role)}</span></td><td class="n">${FD(u.phone)}</td><td class="n">${when(u.lastLoginAt)}</td><td>${u.active?'<span class="pill g">فعال</span>':'<span class="pill">غیرفعال</span>'}</td>
-  <td><div class="row"><button class="btn se sm" data-reset="${u.id}">رمز تازه</button><button class="btn se sm" data-edit="${u.id}">ویرایش</button><button class="btn se sm" data-toggle="${u.id}">${u.active?'غیرفعال کن':'فعال کن'}</button></div></td></tr>`).join('')}</tbody></table>`:'<div class="card empty">هنوز مدیری تعریف نشده است.</div>'}`}
+  <td><div class="row"><button class="btn se sm" data-reset="${u.id}">رمز تازه</button><button class="btn se sm" data-edit="${u.id}">ویرایش</button><button class="btn se sm" data-toggle="${u.id}">${u.active?'غیرفعال کن':'فعال کن'}</button></div></td></tr>`).join('')}</tbody></table>`:'<div class="card empty">هنوز مدیری تعریف نشده است.</div>'}
+ ${viewersHTML()}`}
 
-function credText(u,pw){return `سلام ${u.name} عزیز\nبوم «نقشهٔ هزار مشعل» شهرستان ${u.county} آمادهٔ تکمیل است.\nنشانی: ${siteUrl()}\nشمارهٔ همراه: ${u.phone}\nرمز موقت: ${pw}\nپس از ورود، رمز را عوض کنید.`}
+/* ---------- حساب‌های مدیرکل ---------- */
+function viewersHTML(){const vs=S.viewers;
+ return `<h2 style="margin-top:28px">حساب‌های مدیرکل (فقط دیدن)</h2>
+ <p class="hint" style="margin:0 0 10px">مدیرکل با شمارهٔ همراه وارد همین داشبورد می‌شود و وضعیت شهرستان‌ها و بوم کامل هر شهرستان را می‌بیند. بازخوردهای پیش‌نویس، رمزها و فهرست مدیران را نمی‌بیند و نمی‌تواند چیزی را تغییر دهد. اگر استان را خالی بگذارید، همهٔ شهرستان‌ها را می‌بیند.</p>
+ <div class="grid2">
+  <form class="card stack" id="vaddf"><h2>افزودن حساب مدیرکل</h2>
+   <div class="grid2" style="gap:10px"><div class="fld"><label for="v_name">نام</label><input id="v_name" placeholder="مثلاً حجت‌الاسلام …" required></div><div class="fld"><label for="v_phone">شمارهٔ همراه</label><input id="v_phone" class="ltr" inputmode="tel" placeholder="09xxxxxxxxx" required></div>
+   <div class="fld"><label for="v_title">سمت</label><input id="v_title" value="مدیرکل تبلیغات اسلامی استان"></div><div class="fld"><label for="v_prov">استان</label><input id="v_prov" value="خراسان رضوی"></div></div>
+   <div class="err" id="vadde"></div><div><button class="btn pr" type="submit">ساختن و دیدن رمز</button></div></form>
+  <div class="card stack">${vs.length?vs.map(v=>`<div class="ccard" style="display:grid"><div class="h"><div><b>${esc(v.name)}</b><span class="sub">${esc(v.title)}${v.province?' · '+esc(v.province):' · همهٔ استان‌ها'}</span><span class="sub">${FD(v.phone)} · آخرین ورود: ${when(v.lastLoginAt)}</span></div>${v.active?'<span class="pill g">فعال</span>':'<span class="pill">غیرفعال</span>'}</div><div class="row"><button class="btn se sm" data-vreset="${v.id}">رمز تازه</button><button class="btn se sm" data-vtoggle="${v.id}">${v.active?'غیرفعال کن':'فعال کن'}</button></div></div>`).join(''):'<div class="empty">هنوز حساب مدیرکلی ساخته نشده است.</div>'}</div>
+ </div>`}
+
+function credText(u,pw){if(u.kind==='viewer')return `سلام ${u.name} عزیز\nدسترسی شما به داشبورد «نقشهٔ هزار مشعل» آماده است. در این داشبورد وضعیت و بوم کامل ${u.province?'شهرستان‌های استان '+u.province:'همهٔ شهرستان‌ها'} را می‌بینید.\nنشانی: ${dashUrl()}\nنام کاربری (شمارهٔ همراه): ${u.phone}\nرمز موقت: ${pw}\nپس از ورود، رمز را عوض کنید.`;return `سلام ${u.name} عزیز\nبوم «نقشهٔ هزار مشعل» شهرستان ${u.county} آمادهٔ تکمیل است.\nنشانی: ${siteUrl()}\nشمارهٔ همراه: ${u.phone}\nرمز موقت: ${pw}\nپس از ورود، رمز را عوض کنید.`}
 function showCreds(items,errors){const one=items.length===1;errors=errors||[];
- modal(`<h3>${one?'رمز ساخته شد':FA(items.length)+' مدیر ساخته شد'}</h3><p class="hint" style="margin:0">این رمزها فقط همین یک بار نشان داده می‌شوند. ${one?'متن زیر را برای مدیر بفرستید.':'فایل رمزها را بردارید و برای هر مدیر بفرستید؛ بعد فایل را پاک کنید.'}</p>
+ modal(`<h3>${one?'رمز ساخته شد':FA(items.length)+' مدیر ساخته شد'}</h3><p class="hint" style="margin:0">این رمزها فقط همین یک بار نشان داده می‌شوند. ${one?(items[0].user.kind==='viewer'?'متن زیر را برای مدیرکل بفرستید.':'متن زیر را برای مدیر بفرستید.'):'فایل رمزها را بردارید و برای هر مدیر بفرستید؛ بعد فایل را پاک کنید.'}</p>
   ${one?`<div class="cred" id="credt">${esc(credText(items[0].user,items[0].password))}</div>`:`<div class="cred" style="max-height:260px;overflow:auto">${items.map(x=>`${esc(x.user.county)} · ${FD(x.user.phone)} · <b>${FD(x.password)}</b>`).join('\n')}</div>`}
   ${errors.length?`<div class="warn"><b>${FA(errors.length)} ردیف ساخته نشد:</b><br>${errors.map(x=>`ردیف ${FA(x.row)}: ${esc(x.error)}`).join('<br>')}</div>`:''}
   <div class="row">${one?'<button class="btn pr" data-copycred>کپی متن پیام</button>':'<button class="btn pr" data-dlcred>دانلود فایل رمزها</button>'}<button class="btn se" data-close>بستن</button></div>`);
@@ -290,13 +310,17 @@ async function openFb(id){S.fbSel=id;S.fbForm=null;S.tab='feedback';render();win
 async function refreshFb(){if(!S.fbSel)return;const id=S.fbSel;S.fbForm=null;try{const f=await api.form(id);if(S.fbSel!==id)return;S.fbForm=f;bindFb()}catch(e){}}
 function bindFb(){if(S.fbSel&&S.fbForm&&S.fbForm.user.id===S.fbSel){const u=S.users.find(x=>x.id===S.fbSel),el=$('#fbed');if(u&&el)el.innerHTML=fbEditorHTML(u,S.fbForm)}}
 
+function pwModal(first){const min=V()?'۸':'۱۰';modal(`<h3>${first?'رمز موقت را عوض کنید':V()?'تغییر رمز':'تغییر رمز حساب ستاد'}</h3>${first?'<p class="hint" style="margin:0">رمزی که برایتان فرستاده شد موقت است. یک رمز تازه بگذارید که فقط خودتان می‌دانید.</p>':''}<div class="fld"><label for="pw0">رمز فعلی</label><input type="password" id="pw0" class="ltr" autocomplete="current-password"></div><div class="fld"><label for="pw1">رمز تازه (دست‌کم ${min} نویسه)</label><input type="password" id="pw1" class="ltr" autocomplete="new-password"></div><div class="err" id="pwe"></div><div class="row"><button class="btn pr" data-pwsave>ذخیره</button><button class="btn se" data-close>${first?'بعداً':'انصراف'}</button></div>`)}
+
 /* ---------- رویدادها ---------- */
 document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;const p=e.target.selectionStart;render();const q=$('#q');q.focus();q.setSelectionRange(p,p)}});
 document.addEventListener('change',async e=>{const t=e.target;
  if(t.id==='flt'){S.filter=t.value;render()}if(t.id==='srt'){S.sort=t.value;render()}
  if(t.id==='csvf'&&t.files[0]){$('#csv').value=await t.files[0].text();$('#csvinfo').textContent=FA(parseCsv($('#csv').value).length)+' ردیف خوانده شد.'}
  if(t.id==='fbfile'&&t.files[0]){$('#fbtext').value=await t.files[0].text()}});
-document.addEventListener('submit',async e=>{if(e.target.id!=='addf')return;e.preventDefault();const b=e.target.querySelector('[type=submit]');b.disabled=true;$('#adde').textContent='';
+document.addEventListener('submit',async e=>{if(e.target.id==='vaddf'){e.preventDefault();const b=e.target.querySelector('[type=submit]');b.disabled=true;$('#vadde').textContent='';
+  try{const r=await api.createViewer({name:$('#v_name').value,phone:$('#v_phone').value,title:$('#v_title').value,province:$('#v_prov').value});await load();showCreds([r])}catch(err){$('#vadde').textContent=err.message}b.disabled=false;return}
+ if(e.target.id!=='addf')return;e.preventDefault();const b=e.target.querySelector('[type=submit]');b.disabled=true;$('#adde').textContent='';
  try{const r=await api.create({name:$('#a_name').value,phone:$('#a_phone').value,county:$('#a_county').value,province:$('#a_prov').value,title:$('#a_title').value});await load();showCreds([r])}catch(err){$('#adde').textContent=err.message}b.disabled=false});
 document.addEventListener('click',async e=>{
  if(!e.target.closest('.menu,[data-menu]'))$('.menu')?.remove();
@@ -306,8 +330,11 @@ document.addEventListener('click',async e=>{
  if(d.refresh!==undefined){await load();toast('به‌روز شد.');return}
  if(d.menu!==undefined){if($('.menu'))return $('.menu').remove();const m=document.createElement('div');m.className='menu';m.innerHTML='<button data-adminpw>تغییر رمز من</button><button data-logout>خروج</button>';$('.bar').appendChild(m);return}
  if(d.logout!==undefined){await api.logout().catch(()=>{});showLogin();return}
- if(d.adminpw!==undefined){modal(`<h3>تغییر رمز حساب ستاد</h3><div class="fld"><label>رمز فعلی</label><input type="password" id="pw0" class="ltr"></div><div class="fld"><label>رمز تازه (دست‌کم ۱۰ نویسه)</label><input type="password" id="pw1" class="ltr"></div><div class="err" id="pwe"></div><div class="row"><button class="btn pr" data-pwsave>ذخیره</button><button class="btn se" data-close>انصراف</button></div>`);return}
- if(d.pwsave!==undefined){try{await api.password($('#pw0').value,$('#pw1').value);closeLayer();toast('رمز تازه ذخیره شد.')}catch(err){$('#pwe').textContent=err.message}return}
+ if(d.adminpw!==undefined){pwModal(false);return}
+ if(d.pwsave!==undefined){if(t.disabled)return;t.disabled=true;try{await api.password($('#pw0').value,$('#pw1').value);closeLayer();if(S.me.user)S.me.user.mustChange=false;toast('رمز تازه ذخیره شد.')}catch(err){$('#pwe').textContent=err.message;t.disabled=false}return}
+ if(d.vreset){const v=S.viewers.find(x=>x.id===d.vreset);modal(`<h3>رمز تازه برای ${esc(v.name)}</h3><p style="margin:0">رمز فعلی از کار می‌افتد و از همهٔ دستگاه‌ها خارج می‌شود.</p><div class="row"><button class="btn pr" data-vresetok="${v.id}">ساختن رمز تازه</button><button class="btn se" data-close>انصراف</button></div>`);return}
+ if(d.vresetok){if(t.disabled)return;t.disabled=true;try{const r=await api.resetViewer(d.vresetok);showCreds([r])}catch(err){toast(err.message);t.disabled=false}return}
+ if(d.vtoggle){const v=S.viewers.find(x=>x.id===d.vtoggle);t.disabled=true;try{await api.patchViewer(v.id,{active:!v.active});await load();toast(v.active?'غیرفعال شد.':'فعال شد.')}catch(err){toast(err.message);t.disabled=false}return}
  if(d.fbopen){openFb(d.fbopen);return}
  if(d.fbsel){openFb(d.fbsel);return}
  if(d.reset){const u=S.users.find(x=>x.id===d.reset);modal(`<h3>رمز تازه برای ${esc(u.county)}</h3><p style="margin:0">رمز فعلی ${esc(u.name)} از کار می‌افتد و از همهٔ دستگاه‌ها خارج می‌شود.</p><div class="row"><button class="btn pr" data-resetok="${u.id}">ساختن رمز تازه</button><button class="btn se" data-close>انصراف</button></div>`);return}

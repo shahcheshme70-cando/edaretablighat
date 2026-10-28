@@ -99,6 +99,16 @@ sudo -u harfeno env $(grep -v '^#' .env | xargs) node server/cli.js create-admin
   sudo -u harfeno env $(grep -v '^#' .env | xargs) node server/cli.js add-director --phone 09150000000 --name "نام" --county "نیشابور"
   ```
 
+### ۹. حساب مدیرکل (فقط دیدن)
+
+از داشبورد ستاد، بخش «مدیران و رمزها» ← «حساب‌های مدیرکل»؛ یا از خط فرمان:
+
+```bash
+sudo -u harfeno env $(grep -v '^#' .env | xargs) node server/cli.js add-viewer --phone 09150000000 --name "نام" --province "خراسان رضوی"
+```
+
+مدیرکل روی همان `https://دامنه/admin/` با شمارهٔ همراه وارد می‌شود. اگر مسیر `/admin/` را در nginx به IP شبکهٔ اداره محدود کرده‌اید، یادتان باشد مدیرکل هم از همان شبکه وارد شود یا IP او را اضافه کنید.
+
 ابزار خط فرمان را می‌شود در حالی اجرا کرد که سرویس روشن است. سرور تغییر فایل را خودش می‌بیند.
 
 ---
@@ -163,4 +173,5 @@ cd /opt/harfeno && sudo git pull && npm test && sudo systemctl restart harfeno
 | ورود انجام می‌شود ولی دوباره صفحهٔ ورود می‌آید | پشت HTTP هستید و `COOKIE_SECURE=1` است؛ HTTPS را راه بیندازید یا موقتاً `0` کنید |
 | همه «تلاش‌ها زیاد بود» می‌گیرند | `TRUST_PROXY=1` تنظیم نشده و همه با IP خود nginx دیده می‌شوند |
 | رمز حساب ستاد فراموش شده | `node server/cli.js admin-password admin` |
+| رمز مدیرکل فراموش شده | از داشبورد «رمز تازه»، یا `node server/cli.js reset-viewer 0915...` |
 | `EACCES` روی پوشهٔ داده | مالک `DATA_DIR` باید کاربر سرویس باشد |

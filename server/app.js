@@ -109,6 +109,8 @@ function createApp(cfg, store) {
   }
   setInterval(sweepSessions, 3600000).unref();
 
+  const isViewer = u => !!u && u.role === 'admin' && u.access === 'view';
+  const viewerView = u => ({ id: u.id, kind: 'viewer', name: u.name || '', phone: u.username, title: u.title || '', province: u.province || '' });
   const directorView = u => ({ id: u.id, name: u.name || '', county: u.county || '', province: u.province || '', role: u.title || 'مدیر تبلیغات اسلامی شهرستان', phone: u.phone });
   const meFor = (db, u) => {
     const f = db.forms[u.id] || {}, fb = db.feedback[u.id] || {};
@@ -195,15 +197,21 @@ function createApp(cfg, store) {
     /* ===== ستاد ===== */
     if (p === '/api/admin/login' && method === 'POST') {
       const b = await readBody(req, 10 * 1024);
-      const username = String(b.username || '').trim().toLowerCase(), pw = A.toEn(b.password || '');
-      const keys = ['aip:' + clientIp(req), 'au:' + username];
+      const username = A.toEn(String(b.username || '')).trim().toLowerCase(), pw = A.toEn(b.password || '');
+      // حساب مدیرکل با شمارهٔ همراه وارد می‌شود؛ شماره به هر شکلی نوشته شود یکسان می‌شود
+      const asPhone = A.normPhone(username), login = A.validPhone(asPhone) ? asPhone : username;
+      const keys = ['aip:' + clientIp(req), 'au:' + login];
       if (keys.some(k => loginLimiter.blocked(k))) throw new HttpError(429, 'تلاش‌ها زیاد بود؛ چند دقیقهٔ دیگر دوباره امتحان کنید.');
-      const u = store.get().users.find(x => x.role === 'admin' && x.username === username);
+      const u = store.get().users.find(x => x.role === 'admin' && x.username === login);
       const okPw = A.verifyPassword(pw, u ? u.passHash : DUMMY_HASH);
-      if (!u || u.active === false || !okPw) { keys.forEach(k => loginLimiter.fail(k)); throw new HttpError(401, 'نام کاربری یا رمز درست نیست.'); }
+      if (!u || u.active === false || !okPw) {
+        keys.forEach(k => loginLimiter.fail(k));
+        if (u && okPw && u.active === false) throw new HttpError(403, 'این حساب غیرفعال است. با ستاد تماس بگیرید.');
+        throw new HttpError(401, 'نام کاربری یا رمز درست نیست.');
+      }
       keys.forEach(k => loginLimiter.reset(k));
       startSession(res, u, 'admin', req);
-      store.update(() => store.audit(u.username, 'admin-login', u.id));
+      store.update(d => { const x = d.users.find(y => y.id === u.id); if (x) x.lastLoginAt = new Date().toISOString(); store.audit(u.username, isViewer(u) ? 'viewer-login' : 'admin-login', u.id); });
       return send(res, 200, { ok: true });
     }
     if (p.startsWith('/api/admin/')) {
@@ -212,23 +220,32 @@ function createApp(cfg, store) {
       const db = store.get();
       const seg = p.slice('/api/admin/'.length).split('/');
 
+      const viewer = isViewer(s.user);
+      // مدیرکل فقط شهرستان‌های استان خودش را می‌بیند (اگر استانی برایش ثبت شده باشد)
+      const inScope = u => !viewer || !s.user.province || (u.province || '') === s.user.province;
+
       if (seg[0] === 'logout' && method === 'POST') { endSession(req, res, 'admin'); return send(res, 200, { ok: true }); }
-      if (seg[0] === 'me' && method === 'GET') return send(res, 200, { user: { username: s.user.username, name: s.user.name || s.user.username }, aiEnabled: !!cfg.ANTHROPIC_API_KEY, publicUrl: cfg.PUBLIC_URL });
+      if (seg[0] === 'me' && method === 'GET') return send(res, 200, { user: { username: s.user.username, name: s.user.name || s.user.username, title: s.user.title || '', province: s.user.province || '', mustChange: !!s.user.mustChange }, access: viewer ? 'view' : 'full', aiEnabled: !viewer && !!cfg.ANTHROPIC_API_KEY, publicUrl: cfg.PUBLIC_URL });
       if (seg[0] === 'password' && method === 'POST') {
         const b = await readBody(req, 10 * 1024);
+        const min = viewer ? 8 : 10;
         if (!A.verifyPassword(A.toEn(b.current || ''), s.user.passHash)) throw new HttpError(400, 'رمز فعلی درست نیست.');
-        if (A.toEn(b.next || '').length < 10) throw new HttpError(400, 'رمز تازهٔ حساب ستاد دست‌کم ۱۰ نویسه باشد.');
-        store.update(d => { const u = d.users.find(x => x.id === s.user.id); u.passHash = A.hashPassword(A.toEn(b.next)); killUserSessions(d, u.id, s.hash); store.audit(who, 'admin-password', u.id); });
+        if (A.toEn(b.next || '').length < min) throw new HttpError(400, `رمز تازه دست‌کم ${min === 8 ? '۸' : '۱۰'} نویسه باشد.`);
+        store.update(d => { const u = d.users.find(x => x.id === s.user.id); u.passHash = A.hashPassword(A.toEn(b.next)); u.mustChange = false; killUserSessions(d, u.id, s.hash); store.audit(who, 'admin-password', u.id); });
         return send(res, 200, { ok: true });
+      }
+      // حساب مدیرکل فقط دیدن: فهرست شهرستان‌ها و بوم هر شهرستان؛ هر کار دیگری روی سرور رد می‌شود
+      if (viewer && !(method === 'GET' && seg[0] === 'users' && (!seg[1] || (seg[1] && seg[2] === 'form' && !seg[3])))) {
+        throw new HttpError(403, 'دسترسی شما فقط برای دیدن است.');
       }
 
       if (seg[0] === 'users' && !seg[1] && method === 'GET') {
-        const rows = db.users.filter(u => u.role === 'director').map(u => {
+        const rows = db.users.filter(u => u.role === 'director' && inScope(u)).map(u => {
           const f = db.forms[u.id] || {}, fb = db.feedback[u.id] || {};
           return {
-            ...directorView(u), active: u.active !== false, createdAt: u.createdAt, lastLoginAt: u.lastLoginAt || null,
+            ...directorView(u), active: u.active !== false, createdAt: u.createdAt, lastLoginAt: viewer ? null : (u.lastLoginAt || null),
             updatedAt: f.updatedAt || null, submittedAt: f.submittedAt || null, editedAfterSubmit: f.editedAfterSubmit || null,
-            feedback: { draft: !!fb.draft, published: !!fb.published, publishedAt: fb.publishedAt || null, draftAt: fb.draftAt || null },
+            feedback: viewer ? { draft: false, published: !!fb.published, publishedAt: fb.publishedAt || null, draftAt: null } : { draft: !!fb.draft, published: !!fb.published, publishedAt: fb.publishedAt || null, draftAt: fb.draftAt || null },
             metrics: safeSummary(f.data)
           };
         });
@@ -247,7 +264,7 @@ function createApp(cfg, store) {
         return send(res, 200, { created, errors });
       }
       const uid = seg[1];
-      const target = uid && db.users.find(u => u.id === uid && u.role === 'director');
+      const target = uid && seg[0] === 'users' && db.users.find(u => u.id === uid && u.role === 'director' && inScope(u));
       if (seg[0] === 'users' && uid && !target) throw new HttpError(404, 'این مدیر پیدا نشد.');
 
       if (seg[0] === 'users' && target && !seg[2] && method === 'PATCH') {
@@ -279,7 +296,7 @@ function createApp(cfg, store) {
       }
       if (seg[0] === 'users' && target && seg[2] === 'form' && method === 'GET') {
         const out = meFor(db, target), fb = db.feedback[uid] || {};
-        out.feedbackDraft = fb.draft || null; out.feedbackDraftAt = fb.draftAt || null;
+        out.feedbackDraft = viewer ? null : (fb.draft || null); out.feedbackDraftAt = viewer ? null : (fb.draftAt || null);
         out.metrics = safeSummary(out.data);
         out.readonly = true;
         return send(res, 200, out);
@@ -309,6 +326,39 @@ function createApp(cfg, store) {
         store.update(d => { const x = d.feedback[uid] = d.feedback[uid] || {}; x.draft = fb; x.draftAt = new Date().toISOString(); x.source = 'ai'; store.audit(who, 'feedback-ai', uid); });
         return send(res, 200, { ok: true, draft: fb });
       }
+      /* حساب‌های مدیرکل (فقط دیدن) */
+      if (seg[0] === 'viewers') {
+        const vid = seg[1], vt = vid && db.users.find(u => u.id === vid && isViewer(u));
+        if (vid && !vt) throw new HttpError(404, 'این حساب پیدا نشد.');
+        if (!vid && method === 'GET') return send(res, 200, { viewers: db.users.filter(isViewer).map(u => ({ ...viewerView(u), active: u.active !== false, createdAt: u.createdAt || null, lastLoginAt: u.lastLoginAt || null })) });
+        if (!vid && method === 'POST') { const b = await readBody(req, 20 * 1024); return send(res, 200, createViewer(b, who)); }
+        if (vt && !seg[2] && method === 'PATCH') {
+          const b = await readBody(req, 20 * 1024);
+          let ph = null;
+          if (b.phone != null) {
+            ph = A.normPhone(b.phone);
+            if (!A.validPhone(ph)) throw new HttpError(400, 'شمارهٔ همراه معتبر نیست.');
+            if (db.users.some(x => x.id !== vid && x.role === 'admin' && x.username === ph)) throw new HttpError(409, 'این شماره برای حساب دیگری ثبت شده است.');
+          }
+          if (b.name != null && !String(b.name).trim()) throw new HttpError(400, 'نام را بنویسید.');
+          store.update(d => {
+            const u = d.users.find(x => x.id === vid);
+            if (b.name != null) u.name = String(b.name).trim().slice(0, 120);
+            if (b.title != null) u.title = String(b.title).trim().slice(0, 120);
+            if (b.province != null) u.province = String(b.province).trim().slice(0, 80);
+            if (ph && ph !== u.username) { u.username = ph; u.phone = ph; killUserSessions(d, vid); }
+            if (b.active != null) { u.active = !!b.active; if (!u.active) killUserSessions(d, vid); }
+            store.audit(who, 'viewer-edit', vid);
+          });
+          return send(res, 200, { ok: true });
+        }
+        if (vt && seg[2] === 'reset-password' && method === 'POST') {
+          const pw = A.generatePassword();
+          store.update(d => { const u = d.users.find(x => x.id === vid); u.passHash = A.hashPassword(pw); u.mustChange = true; killUserSessions(d, vid); store.audit(who, 'viewer-reset-password', vid); });
+          return send(res, 200, { password: pw, user: viewerView(vt) });
+        }
+        throw new HttpError(404, 'مسیر پیدا نشد.');
+      }
       if (seg[0] === 'export' && method === 'GET') {
         let ids = url.searchParams.get('ids'); ids = ids ? ids.split(',').filter(Boolean) : null;
         const only = url.searchParams.get('submitted') === '1';
@@ -333,6 +383,22 @@ function createApp(cfg, store) {
       throw new HttpError(404, 'مسیر پیدا نشد.');
     }
     throw new HttpError(404, 'مسیر پیدا نشد.');
+  }
+
+  function createViewer(b, who) {
+    const phone = A.normPhone(b.phone);
+    if (!A.validPhone(phone)) throw new HttpError(400, `شمارهٔ همراه «${b.phone || ''}» معتبر نیست.`);
+    const name = String(b.name || '').trim();
+    if (!name) throw new HttpError(400, 'نام را بنویسید.');
+    if (store.get().users.some(u => u.role === 'admin' && u.username === phone)) throw new HttpError(409, `شمارهٔ ${phone} قبلاً برای حسابی ثبت شده است.`);
+    const pw = A.generatePassword();
+    const u = {
+      id: A.newId('v'), role: 'admin', access: 'view', username: phone, phone, name: name.slice(0, 120),
+      title: String(b.title || 'مدیرکل تبلیغات اسلامی استان').trim().slice(0, 120), province: String(b.province == null ? 'خراسان رضوی' : b.province).trim().slice(0, 80),
+      passHash: A.hashPassword(pw), active: true, mustChange: true, createdAt: new Date().toISOString()
+    };
+    store.update(db => { db.users.push(u); store.audit(who, 'viewer-create', u.id); });
+    return { user: viewerView(u), password: pw };
   }
 
   function createDirector(b, who) {

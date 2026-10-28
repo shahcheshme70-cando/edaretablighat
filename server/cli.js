@@ -6,6 +6,8 @@
  *   node server/cli.js add-director --phone 0915... --name "نام" --county "شهرستان" [--province "استان"] [--title "سمت"]
  *   node server/cli.js import-directors <file.csv>      ستون‌ها: name,phone,county,province,title (سطر اول عنوان)
  *   node server/cli.js reset-director <phone>
+ *   node server/cli.js add-viewer --phone 0915... --name "نام" [--province "استان"] [--title "سمت"]   حساب مدیرکل (فقط دیدن)
+ *   node server/cli.js reset-viewer <phone>
  *   node server/cli.js list
  * رمزهای ساخته‌شده فقط یک بار چاپ می‌شوند.
  */
@@ -103,8 +105,25 @@ try {
       console.log(`✓ رمز تازهٔ ${phone}: ${pw}`);
       break;
     }
+    case 'add-viewer': {
+      const phone = A.normPhone(opt('phone')), name = String(opt('name') || '').trim();
+      if (!A.validPhone(phone)) die(`شمارهٔ «${opt('phone') || ''}» معتبر نیست`);
+      if (!name) die('نام لازم است (--name)');
+      if (store.get().users.some(u => u.role === 'admin' && u.username === phone)) die(`شمارهٔ ${phone} قبلاً برای حسابی ثبت شده`);
+      const pw = A.generatePassword();
+      store.update(db => db.users.push({ id: A.newId('v'), role: 'admin', access: 'view', username: phone, phone, name, title: opt('title') || 'مدیرکل تبلیغات اسلامی استان', province: opt('province') == null ? 'خراسان رضوی' : opt('province'), passHash: A.hashPassword(pw), active: true, mustChange: true, createdAt: new Date().toISOString() }));
+      console.log(`✓ حساب مدیرکل ساخته شد · نام کاربری: ${phone} · رمز: ${pw}\n  نشانی ورود: داشبورد (/admin/)`);
+      break;
+    }
+    case 'reset-viewer': {
+      const phone = A.normPhone(args[0]); const pw = A.generatePassword();
+      const ok = store.update(db => { const u = db.users.find(x => x.role === 'admin' && x.access === 'view' && x.username === phone); if (!u) return false; u.passHash = A.hashPassword(pw); u.mustChange = true; for (const [h, s] of Object.entries(db.sessions)) if (s.userId === u.id) delete db.sessions[h]; return true; });
+      if (!ok) die('حساب مدیرکلی با این شماره نیست.');
+      console.log(`✓ رمز تازهٔ ${phone}: ${pw}`);
+      break;
+    }
     case 'list': {
-      store.get().users.forEach(u => console.log(u.role === 'admin' ? `ستاد      ${u.username}` : `شهرستان  ${u.county.padEnd(14)} ${u.phone}  ${u.name}${u.active === false ? '  (غیرفعال)' : ''}`));
+      store.get().users.forEach(u => console.log(u.role === 'admin' ? (u.access === 'view' ? `مدیرکل    ${u.username}  ${u.name}${u.province ? ' · ' + u.province : ''}${u.active === false ? '  (غیرفعال)' : ''}` : `ستاد      ${u.username}`) : `شهرستان  ${u.county.padEnd(14)} ${u.phone}  ${u.name}${u.active === false ? '  (غیرفعال)' : ''}`));
       break;
     }
     default:

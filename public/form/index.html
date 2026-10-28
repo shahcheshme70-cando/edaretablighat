@@ -1034,7 +1034,7 @@ function fbHTML(){const fb=S.feedback;if(!fb)return `<div class="viewbar"><butto
 /* =====================================================================
    نمایش و ناوبری
    ===================================================================== */
-function shell(){if(READONLY)return `<header class="bar"><div class="bar-in">${LOGO}<span class="sp"></span><span class="pill" style="font-size:12.5px">نمای ستاد · فقط خواندنی</span></div></header><div id="main"></div>`;return `
+function shell(){if(READONLY)return `<header class="bar"><div class="bar-in">${LOGO}<span class="sp"></span><span class="pill" style="font-size:12.5px">فقط خواندنی</span></div></header><div id="main"></div>`;return `
  <header class="bar"><div class="bar-in">${LOGO}<span class="sp"></span><span class="save ok" id="save"><i></i><span>ذخیره شد</span></span>
   <button class="tb" data-view="bom" id="tbBom" aria-pressed="${S.view==='bom'}">${I.grid}<span class="lbl">بوم کامل</span></button>
   <button class="tb" data-view="fb" aria-pressed="${S.view==='fb'}">${I.msg}<span class="lbl">بازخورد</span>${S.feedback&&!S.data.meta.fbSeen?'<i style="width:8px;height:8px;border-radius:50%;background:var(--crimson)"></i>':''}</button>
