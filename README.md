@@ -48,7 +48,13 @@ npm start                      # http://127.0.0.1:8080  و  /admin/
 
 ## استقرار
 
-راهنمای قدم‌به‌قدم در [docs/DEPLOY.md](docs/DEPLOY.md) است: systemd و nginx یا Docker، پشتیبان‌گیری، به‌روزرسانی و امنیت.
+روی سرور اوبونتو یا دبیان، با یک دستور:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/shahcheshme70-cando/edaretablighat/main/deploy/install.sh | sudo bash -s -- <دامنه>
+```
+
+جزئیات، گزینه‌ها، Docker و پشتیبان‌گیری در [`docs/DEPLOY.md`](docs/DEPLOY.md) است.
 
 ## روال کار ستاد
 
