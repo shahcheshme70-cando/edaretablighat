@@ -108,3 +108,32 @@ test('غیرفعال کردن مدیرکل نشستش را می‌بندد و م
     assert.strictEqual((await v2.get('/api/admin/users/u_test/form')).status, 404);
   } finally { await s.close(); }
 });
+
+test('خروجی اکسل: سه جدول با دادهٔ درست، برای ستاد و مدیرکل', async () => {
+  const { s, admin, pw } = await setup();
+  try {
+    const c = await admin.get('/api/admin/sheet/counties');
+    assert.strictEqual(c.status, 200);
+    assert.match(c.headers.get('content-type'), /text\/csv/);
+    assert.strictEqual(require('../server/sheets').toCsv(['a'], []).charCodeAt(0), 0xFEFF);
+    const lines = c.text.trim().split('\r\n');
+    assert.strictEqual(lines.length, 2);
+    assert.ok(lines[1].includes('نیشابور') && lines[1].includes('09151112233'));
+    const f = await admin.get('/api/admin/sheet/forces');
+    assert.strictEqual(f.text.trim().split('\r\n').length, 7);
+    assert.ok(f.text.includes('پایگاه‌های بسیج'));
+    const p = await admin.get('/api/admin/sheet/plans');
+    assert.ok(p.text.includes('فعال‌سازی ظرفیت') && p.text.includes('طرح بسیج'));
+    assert.strictEqual((await admin.get('/api/admin/sheet/nope')).status, 404);
+    const v = client(s.base);
+    await v.post('/api/admin/login', { username: '09159998877', password: pw });
+    assert.strictEqual((await v.get('/api/admin/sheet/plans')).status, 200);
+  } finally { await s.close(); }
+});
+
+test('متنی که با = شروع شود در اکسل فرمول نمی‌شود', () => {
+  const { cell } = require('../server/sheets');
+  assert.strictEqual(cell('=HYPERLINK("x")'), '"\'=HYPERLINK(""x"")"');
+  assert.strictEqual(cell(-5), '-5');
+  assert.strictEqual(cell('سلام, دنیا'), '"سلام, دنیا"');
+});

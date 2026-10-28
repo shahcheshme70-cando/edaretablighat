@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const A = require('./auth');
 const AN = require('./analysis');
+const SH = require('./sheets');
 const M = require('../public/shared/metrics.js');
 
 // خلاصهٔ یک بوم؛ دادهٔ خراب یک مدیر نباید داشبورد همه را از کار بیندازد
@@ -235,7 +236,7 @@ function createApp(cfg, store) {
         return send(res, 200, { ok: true });
       }
       // حساب مدیرکل فقط دیدن: فهرست شهرستان‌ها و بوم هر شهرستان؛ هر کار دیگری روی سرور رد می‌شود
-      if (viewer && !(method === 'GET' && seg[0] === 'users' && (!seg[1] || (seg[1] && seg[2] === 'form' && !seg[3])))) {
+      if (viewer && !(method === 'GET' && ((seg[0] === 'users' && (!seg[1] || (seg[1] && seg[2] === 'form' && !seg[3]))) || (seg[0] === 'sheet' && seg[1] && !seg[2])))) {
         throw new HttpError(403, 'دسترسی شما فقط برای دیدن است.');
       }
 
@@ -358,6 +359,15 @@ function createApp(cfg, store) {
           return send(res, 200, { password: pw, user: viewerView(vt) });
         }
         throw new HttpError(404, 'مسیر پیدا نشد.');
+      }
+      /* خروجی اکسل: شهرستان‌ها، نیروها، طرح‌ها */
+      if (seg[0] === 'sheet' && seg[1] && !seg[2] && method === 'GET') {
+        const out = SH.sheet(seg[1], db, db.users.filter(u => u.role === 'director' && inScope(u)));
+        if (!out) throw new HttpError(404, 'این جدول پیدا نشد.');
+        store.update(() => store.audit(who, 'sheet', seg[1]));
+        const buf = Buffer.from(out.body, 'utf8');
+        res.writeHead(200, { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Length': buf.length, 'Cache-Control': 'no-store', 'Content-Disposition': `attachment; filename="${out.name}"` });
+        return res.end(buf);
       }
       if (seg[0] === 'export' && method === 'GET') {
         let ids = url.searchParams.get('ids'); ids = ids ? ids.split(',').filter(Boolean) : null;

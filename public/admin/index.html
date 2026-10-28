@@ -33,6 +33,7 @@ a{color:var(--green-600)}
 .bar{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
 .bar-in{max-width:1240px;margin:0 auto;padding:0 16px;height:58px;display:flex;align-items:center;gap:12px}
 .bar-in .ttl{font-weight:800;font-size:15px;white-space:nowrap}
+.xl{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;margin:14px 0 0;padding:14px 16px}.xl b{display:block}.xl .hint{display:block}
 .uname{max-width:40vw;min-width:0}.uname span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 @media(max-width:560px){.rtx{display:none}}
 @media(max-width:400px){.ttl{display:none}}
@@ -217,6 +218,7 @@ function countiesHTML(){const us=S.users.filter(u=>u.active);
   <div class="kpi a"><small>اثر طرح‌های تحول</small><b>${FA(dA)}</b><span>کنشگر تبیینی تازه؛ ${FA(inv)} نفر از دعوت</span><span>هدف دو ساله: ${FA(tgt)}</span></div>
   <div class="kpi"><small>هزینهٔ طرح‌ها</small><b style="font-size:20px">${money(cost)} <small style="display:inline;font-size:13px">تومان</small></b><span>بازخورد منتشرشده: ${FA(pub)}</span></div>
  </div>
+ <div class="card xl"><div><b>دادهٔ همهٔ بوم‌ها در اکسل</b><span class="hint">هر جدول یک فایل است که در اکسل باز می‌شود؛ عددها قابل جمع و مرتب‌کردن‌اند.</span></div><div class="row"><a class="btn se sm" href="api/admin/sheet/counties" download>شهرستان‌ها</a><a class="btn se sm" href="api/admin/sheet/forces" download>نیروها</a><a class="btn se sm" href="api/admin/sheet/plans" download>طرح‌ها</a></div></div>
  <div class="toolbar"><input type="search" id="q" placeholder="جست‌وجوی شهرستان، مدیر یا شماره" value="${esc(S.q)}">
   <select id="flt">${[['all','همه'],['none','شروع‌نشده'],['progress','در حال تکمیل'],['submitted','ارسال‌شده'],['nofb','ارسال‌شده، بی‌بازخورد']].map(([k,l])=>`<option value="${k}"${S.filter===k?' selected':''}>${l}</option>`).join('')}</select>
   <select id="srt">${[['updated','آخرین تغییر'],['progress','بیشترین پیشرفت'],['gap','بزرگ‌ترین شکاف'],['name','نام شهرستان']].map(([k,l])=>`<option value="${k}"${S.sort===k?' selected':''}>مرتب: ${l}</option>`).join('')}</select>
