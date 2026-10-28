@@ -43,7 +43,9 @@ function createApp(cfg, store) {
   const parseCookies = req => Object.fromEntries(String(req.headers.cookie || '').split(';').map(s => s.trim()).filter(Boolean).map(s => {
     const i = s.indexOf('='); let v = s.slice(i + 1); try { v = decodeURIComponent(v); } catch (e) { /* کوکی نامعتبر نادیده گرفته می‌شود */ } return [s.slice(0, i), v];
   }));
-  const cookie = (name, val, maxAge) => `${name}=${encodeURIComponent(val)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${cfg.COOKIE_SECURE ? '; Secure' : ''}`;
+  const BASE = cfg.BASE_PATH || '';
+  const at = loc => encodeURI(BASE + loc);
+  const cookie = (name, val, maxAge) => `${name}=${encodeURIComponent(val)}; Path=${encodeURI(BASE || '/')}; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${cfg.COOKIE_SECURE ? '; Secure' : ''}`;
 
   function readBody(req, limit) {
     return new Promise((resolve, reject) => {
@@ -456,9 +458,9 @@ function createApp(cfg, store) {
     if (sh) return serveFile(req, res, sh.length === 3 ? path.join(pub, 'shared', sh[1], sh[2]) : path.join(pub, 'shared', sh[1]));
     if (/(?:^|\/)(favicon\.svg|favicon\.ico|logo\.svg)$/.test(p)) return serveFile(req, res, path.join(pub, 'shared', p.endsWith('.ico') ? 'favicon.svg' : path.basename(p)));
     if (p === '/robots.txt') { res.writeHead(200, { 'Content-Type': 'text/plain' }); return res.end('User-agent: *\nDisallow: /\n'); }
-    if (p === '/admin') { res.writeHead(301, { Location: '/admin/' }); return res.end(); }
+    if (p === '/admin') { res.writeHead(301, { Location: at('/admin/') }); return res.end(); }
     if (p === '/admin/' || p === '/admin/index.html') return serveFile(req, res, path.join(pub, 'admin', 'index.html'));
-    if (p === '/admin/view/') { res.writeHead(301, { Location: '/admin/view' + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '') }); return res.end(); }
+    if (p === '/admin/view/') { res.writeHead(301, { Location: at('/admin/view') + (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '') }); return res.end(); }
     if (p === '/admin/view') return serveFile(req, res, path.join(pub, 'form', 'index.html'));
     if (p === '/' || p === '/index.html') return serveFile(req, res, path.join(pub, 'form', 'index.html'));
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end('پیدا نشد');
@@ -471,15 +473,21 @@ function createApp(cfg, store) {
     res.setHeader('Referrer-Policy', 'same-origin');
     res.setHeader('Content-Security-Policy', CSP);
     res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-    if (cfg.COOKIE_SECURE) res.setHeader('Strict-Transport-Security', 'max-age=31536000');
+    // زیر مسیرِ دامنهٔ مشترک، HSTS را برای کل دامنه تعیین نمی‌کنیم
+    if (cfg.COOKIE_SECURE && !BASE) res.setHeader('Strict-Transport-Security', 'max-age=31536000');
     let url;
     try { url = new URL(req.url, 'http://x'); } catch (e) { res.writeHead(400); return res.end(); }
     let p;
     try { p = decodeURIComponent(url.pathname).replace(/\/{2,}/g, '/'); } catch (e) { res.writeHead(400); return res.end(); }
     if (p.includes('..')) { res.writeHead(400); return res.end(); }
+    // پیشوند مسیر: هم وقتی پروکسی آن را نگه می‌دارد و هم وقتی برمی‌دارد کار می‌کند
+    if (BASE) {
+      if (p === BASE) { res.writeHead(301, { Location: at('/') + url.search }); return res.end(); }
+      if (p.startsWith(BASE + '/')) p = p.slice(BASE.length);
+    }
     const host = String(req.headers.host || '').toLowerCase().split(':')[0];
     // دو دامنهٔ جدا (اختیاری)
-    if (cfg.ADMIN_HOST && host === cfg.ADMIN_HOST && (p === '/' || p === '/index.html')) { res.writeHead(302, { Location: '/admin/' }); return res.end(); }
+    if (cfg.ADMIN_HOST && host === cfg.ADMIN_HOST && (p === '/' || p === '/index.html')) { res.writeHead(302, { Location: at('/admin/') }); return res.end(); }
     if (cfg.PUBLIC_HOST && host === cfg.PUBLIC_HOST && (p.startsWith('/admin') || p.startsWith('/api/admin'))) { res.writeHead(404); return res.end(); }
     // داشبورد زیر /admin/ است؛ درخواست‌های نسبی آن به /admin/api/... می‌رسد
     if (p.startsWith('/admin/api/')) p = p.slice('/admin'.length);

@@ -22,7 +22,28 @@ curl -fsSL https://raw.githubusercontent.com/shahcheshme70-cando/edaretablighat/
 
 برای **به‌روزرسانی**، همان دستور را دوباره بزنید. کد به‌روز می‌شود و `.env` و همهٔ داده‌ها می‌مانند.
 
-گزینه‌ها: `--port 8090`، `--no-ssl` (فقط برای آزمون روی HTTP)، `--no-proxy` (فقط اجرای برنامه، بدون دست زدن به nginx).
+### زیر یک مسیر از سایت موجود (مثلاً `harf-no.ir/mashal/`)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/shahcheshme70-cando/edaretablighat/main/deploy/install.sh | sudo bash -s -- harf-no.ir --path /mashal
+```
+
+در این حالت اسکریپت:
+- برنامه را روی یک پورت داخلی بالا می‌آورد و `BASE_PATH=/mashal` را در `.env` می‌گذارد؛
+- به تنظیمات سایت موجود دست نمی‌زند؛
+- بلوک `location` لازم را در `/etc/nginx/snippets/harfeno.conf` ذخیره و چاپ می‌کند.
+
+یک قدم دستی می‌ماند: داخل بلوک `server` همان دامنه این خط را بگذارید و nginx را reload کنید:
+
+```
+include snippets/harfeno.conf;
+```
+
+اگر دامنه را ابزار دیگری سرو می‌کند (مثلاً بارگذار یا Caddy)، مسیر `/mashal/` را با **همان مسیر کامل** به `http://127.0.0.1:PORT` پروکسی کنید. برنامه هر دو حالت را می‌پذیرد: هم وقتی پروکسی پیشوند را نگه دارد و هم وقتی آن را بردارد.
+
+مسیر لاتین (مثل `/mashal`) پیشنهاد می‌شود. مسیر فارسی هم کار می‌کند، ولی در پیامک و پیام‌رسان‌ها به شکل `%D9%85...` نمایش داده می‌شود.
+
+گزینه‌ها: `--port 8090`، `--no-ssl` (فقط برای آزمون روی HTTP)، `--no-proxy` (فقط اجرای برنامه، بدون دست زدن به nginx)، `--path /mashal`.
 
 اگر نصب دستی یا Docker را ترجیح می‌دهید، دو راه دیگر این‌هاست: **الف) systemd + nginx** یا **ب) Docker**.
 

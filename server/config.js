@@ -36,6 +36,8 @@ module.exports = {
   ADMIN_HOST: (process.env.ADMIN_HOST || '').toLowerCase(),
   // نشانی سایت مدیر شهرستان برای متن پیامک/پیام رمز
   PUBLIC_URL: process.env.PUBLIC_URL || '',
+  // اگر سامانه زیر یک مسیر از دامنهٔ دیگر بالا می‌آید (مثلاً harf-no.ir/mashal)؛ خالی یعنی ریشهٔ دامنه
+  BASE_PATH: (() => { let b = String(process.env.BASE_PATH || '').trim(); try { b = decodeURIComponent(b); } catch (e) { /* همان */ } b = b.replace(/\/+$/, ''); if (b && !b.startsWith('/')) b = '/' + b; return b === '/' ? '' : b; })(),
   DIRECTOR_SESSION_DAYS: int(process.env.DIRECTOR_SESSION_DAYS, 30),
   DIRECTOR_IDLE_DAYS: int(process.env.DIRECTOR_IDLE_DAYS, 7),
   ADMIN_SESSION_HOURS: int(process.env.ADMIN_SESSION_HOURS, 12),

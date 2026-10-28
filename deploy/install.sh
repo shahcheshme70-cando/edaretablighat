@@ -3,29 +3,35 @@
 #
 #   curl -fsSL https://raw.githubusercontent.com/shahcheshme70-cando/edaretablighat/main/deploy/install.sh | sudo bash -s -- mashal.example.ir
 #
+# Under a path of an existing site (e.g. https://harf-no.ir/mashal/):
+#   ... | sudo bash -s -- harf-no.ir --path /mashal
+#   The app runs on 127.0.0.1:PORT; the script prints the nginx "location" block to add to that site.
+#
 # Options (after the domain):
 #   --email you@example.com   email for the Let's Encrypt certificate (optional)
 #   --port 8080               internal port (default: first free port from 8080)
 #   --no-ssl                  do not request a certificate (HTTP only, for testing)
 #   --no-proxy                do not touch nginx; just run the app on 127.0.0.1:PORT
+#   --path /mashal            serve under this path of an existing domain (implies --no-proxy, prints the block to add)
 #
 # Safe to run again: it updates the code, keeps .env and all data, and restarts the service.
 set -euo pipefail
 
-REPO="https://github.com/shahcheshme70-cando/edaretablighat.git"
+REPO="${HARFENO_REPO:-https://github.com/shahcheshme70-cando/edaretablighat.git}"
 APP_DIR=/opt/harfeno
 DATA_DIR=/var/lib/harfeno
 SVC=harfeno
 USER_NAME=harfeno
 
 DOMAIN="${1:-}"; shift || true
-EMAIL=""; PORT=""; SSL=1; PROXY=1
+EMAIL=""; PORT=""; SSL=1; PROXY=1; BASE=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --email) EMAIL="${2:-}"; shift 2 ;;
     --port) PORT="${2:-}"; shift 2 ;;
     --no-ssl) SSL=0; shift ;;
     --no-proxy) PROXY=0; shift ;;
+    --path) BASE="${2:-}"; shift 2 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
@@ -37,6 +43,11 @@ die()  { printf '\033[1;31mXX  %s\033[0m\n' "$*"; exit 1; }
 [ "$(id -u)" -eq 0 ] || die "Run as root (sudo)."
 [ -n "$DOMAIN" ] || die "Usage: install.sh <domain> [--email ..] [--port ..] [--no-ssl] [--no-proxy]"
 echo "$DOMAIN" | grep -Eq '^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$' || die "Domain looks wrong: $DOMAIN"
+if [ -n "$BASE" ]; then
+  BASE="/${BASE#/}"; BASE="${BASE%/}"
+  [ "$BASE" = "/" ] && BASE=""
+  PROXY=0
+fi
 command -v apt-get >/dev/null || die "This script supports Ubuntu/Debian (apt). See docs/DEPLOY.md for other systems."
 command -v systemctl >/dev/null || die "systemd is required. Use Docker instead (see docs/DEPLOY.md)."
 
@@ -92,9 +103,10 @@ else
   sed -e "s|^PORT=.*|PORT=$PORT|" \
       -e "s|^DATA_DIR=.*|DATA_DIR=$DATA_DIR|" \
       -e "s|^COOKIE_SECURE=.*|COOKIE_SECURE=$SECURE|" \
-      -e "s|^TRUST_PROXY=.*|TRUST_PROXY=$PROXY|" \
-      -e "s|^PUBLIC_URL=.*|PUBLIC_URL=$SCHEME://$DOMAIN/|" \
+      -e "s|^TRUST_PROXY=.*|TRUST_PROXY=1|" \
+      -e "s|^PUBLIC_URL=.*|PUBLIC_URL=$SCHEME://$DOMAIN$BASE/|" \
       .env.example > .env
+  [ -n "$BASE" ] && printf '\n# served under a path of %s\nBASE_PATH=%s\n' "$DOMAIN" "$BASE" >> .env
 fi
 chown root:"$USER_NAME" .env; chmod 640 .env
 
@@ -163,6 +175,35 @@ NGINX
       URL="https://$DOMAIN/"
     fi
   fi
+fi
+
+if [ -n "$BASE" ]; then
+  URL="https://$DOMAIN$BASE/"; [ "$SSL" -eq 0 ] && URL="http://$DOMAIN$BASE/"
+  SNIP=/etc/nginx/snippets/harfeno.conf
+  BLOCK="# Naghshe Hezar Mashal under $BASE (written by deploy/install.sh)
+location = $BASE { return 301 $BASE/; }
+location $BASE/ {
+    proxy_pass http://127.0.0.1:$PORT;
+    proxy_http_version 1.1;
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
+    proxy_read_timeout 240s;
+    client_max_body_size 5m;
+}"
+  if [ -d /etc/nginx ]; then mkdir -p /etc/nginx/snippets; printf '%s\n' "$BLOCK" > "$SNIP"; fi
+  say "One manual step: route $DOMAIN$BASE/ to this app"
+  if [ -d /etc/nginx ]; then
+    echo "  Saved as $SNIP. Inside the 'server { ... }' block that serves $DOMAIN (port 443), add:"
+    echo "      include snippets/harfeno.conf;"
+    echo "  then: nginx -t && systemctl reload nginx"
+  else
+    echo "  Add this to the web server that serves $DOMAIN:"
+  fi
+  echo; printf '%s\n' "$BLOCK" | sed 's/^/      /'; echo
+  echo "  If $DOMAIN is served by another tool (Bargozar, Caddy, a panel), make $BASE/ a reverse proxy to http://127.0.0.1:$PORT"
+  echo "  keeping the full path. Check: curl -I https://$DOMAIN$BASE/   -> 200"
 fi
 
 # ---------- 6. staff account ----------
