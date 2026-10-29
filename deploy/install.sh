@@ -2,8 +2,12 @@
 # Naghshe Hezar Mashal - one-command installer (Ubuntu / Debian)
 #
 # Private repo: clone first with your GitHub login, then run the script from the clone:
-#   sudo git clone https://github.com/shahcheshme70-cando/edaretablighat.git /opt/harfeno
-#   sudo bash /opt/harfeno/deploy/install.sh harf-no.ir --path /mashal
+#   sudo git clone https://github.com/shahcheshme70-cando/edaretablighat.git /opt/hezarmashal
+#   sudo bash /opt/hezarmashal/deploy/install.sh harf-no.ir --path /mashal
+#
+# Everything this script creates is named after NAME (default: hezarmashal), so it never
+# touches other projects on the server: /opt/NAME, /var/lib/NAME, system user NAME,
+# service NAME.service, nginx files NAME.conf. Change it with --name.
 #
 # Public repo (one line):
 #   curl -fsSL https://raw.githubusercontent.com/shahcheshme70-cando/edaretablighat/main/deploy/install.sh | sudo bash -s -- mashal.example.ir
@@ -17,16 +21,15 @@
 #   --port 8080               internal port (default: first free port from 8080)
 #   --no-ssl                  do not request a certificate (HTTP only, for testing)
 #   --no-proxy                do not touch nginx; just run the app on 127.0.0.1:PORT
+#   --name hezarmashal        name for the folders, user, service and nginx files (default hezarmashal)
 #   --path /mashal            serve under this path of an existing domain (implies --no-proxy, prints the block to add)
 #
 # Safe to run again: it updates the code, keeps .env and all data, and restarts the service.
 set -euo pipefail
 
 REPO="${HARFENO_REPO:-https://github.com/shahcheshme70-cando/edaretablighat.git}"
-APP_DIR=/opt/harfeno
-DATA_DIR=/var/lib/harfeno
-SVC=harfeno
-USER_NAME=harfeno
+NAME=hezarmashal
+APP_DIR=""
 
 DOMAIN="${1:-}"; shift || true
 EMAIL=""; PORT=""; SSL=1; PROXY=1; BASE=""
@@ -37,6 +40,8 @@ while [ $# -gt 0 ]; do
     --no-ssl) SSL=0; shift ;;
     --no-proxy) PROXY=0; shift ;;
     --path) BASE="${2:-}"; shift 2 ;;
+    --name) NAME="${2:-}"; shift 2 ;;
+    --dir) APP_DIR="${2:-}"; shift 2 ;;
     *) echo "Unknown option: $1"; exit 1 ;;
   esac
 done
@@ -48,6 +53,14 @@ die()  { printf '\033[1;31mXX  %s\033[0m\n' "$*"; exit 1; }
 [ "$(id -u)" -eq 0 ] || die "Run as root (sudo)."
 [ -n "$DOMAIN" ] || die "Usage: install.sh <domain> [--email ..] [--port ..] [--no-ssl] [--no-proxy]"
 echo "$DOMAIN" | grep -Eq '^[A-Za-z0-9.-]+\.[A-Za-z]{2,}$' || die "Domain looks wrong: $DOMAIN"
+echo "$NAME" | grep -Eq '^[a-z][a-z0-9-]{1,30}$' || die "--name must be lowercase letters, digits or '-'"
+# اگر اسکریپت از داخل یک نسخهٔ گرفته‌شده اجرا شود، همان پوشه پوشهٔ برنامه است
+SELF="${BASH_SOURCE[0]:-}"
+if [ -z "$APP_DIR" ] && [ -n "$SELF" ] && [ -f "$(dirname "$SELF")/../server/index.js" ]; then APP_DIR="$(cd "$(dirname "$SELF")/.." && pwd)"; fi
+APP_DIR="${APP_DIR:-/opt/$NAME}"
+DATA_DIR="/var/lib/$NAME"
+SVC="$NAME"
+USER_NAME="$NAME"
 if [ -n "$BASE" ]; then
   BASE="/${BASE#/}"; BASE="${BASE%/}"
   [ "$BASE" = "/" ] && BASE=""
@@ -94,8 +107,8 @@ fi
 cd "$APP_DIR"
 
 say "Running tests"
-npm test >/tmp/harfeno-test.log 2>&1 || { tail -40 /tmp/harfeno-test.log; die "Tests failed; nothing was changed in the running service."; }
-grep -E '^# (pass|fail)' /tmp/harfeno-test.log || true
+npm test >"/tmp/$NAME-test.log" 2>&1 || { tail -40 "/tmp/$NAME-test.log"; die "Tests failed; nothing was changed in the running service."; }
+grep -E '^# (pass|fail)' "/tmp/$NAME-test.log" || true
 
 # ---------- 3. settings ----------
 if [ -f "$APP_DIR/.env" ]; then
@@ -118,7 +131,14 @@ chown root:"$USER_NAME" .env; chmod 640 .env
 
 # ---------- 4. service ----------
 say "Installing the service"
-sed -e "s|^ExecStart=.*|ExecStart=$NODE_BIN server/index.js|" deploy/harfeno.service > /etc/systemd/system/$SVC.service
+UNIT=/etc/systemd/system/$SVC.service
+if [ -f "$UNIT" ] && ! grep -q "Naghshe Hezar Mashal" "$UNIT"; then die "$UNIT already exists and belongs to another program. Rerun with --name <other-name>."; fi
+sed -e "s|^ExecStart=.*|ExecStart=$NODE_BIN server/index.js|" \
+    -e "s|^User=.*|User=$USER_NAME|" -e "s|^Group=.*|Group=$USER_NAME|" \
+    -e "s|^WorkingDirectory=.*|WorkingDirectory=$APP_DIR|" -e "s|^EnvironmentFile=.*|EnvironmentFile=$APP_DIR/.env|" \
+    -e "s|^ReadWritePaths=.*|ReadWritePaths=$DATA_DIR|" \
+    -e "s|^Description=.*|Description=Naghshe Hezar Mashal ($NAME)|" \
+    -e "s|^# /etc/systemd/system/.*|# $UNIT|" deploy/harfeno.service > "$UNIT"
 systemctl daemon-reload
 systemctl enable "$SVC" >/dev/null 2>&1
 systemctl restart "$SVC"
@@ -140,8 +160,9 @@ if [ "$PROXY" -eq 1 ]; then
 fi
 if [ "$PROXY" -eq 1 ]; then
   say "Configuring nginx for $DOMAIN"
-  CONF=/etc/nginx/sites-available/harfeno
-  [ -d /etc/nginx/sites-available ] || { mkdir -p /etc/nginx/conf.d; CONF=/etc/nginx/conf.d/harfeno.conf; }
+  CONF=/etc/nginx/sites-available/$NAME
+  [ -d /etc/nginx/sites-available ] || { mkdir -p /etc/nginx/conf.d; CONF=/etc/nginx/conf.d/$NAME.conf; }
+  if [ -f "$CONF" ] && ! grep -q "Naghshe Hezar Mashal" "$CONF"; then die "$CONF belongs to another site. Rerun with --name <other-name>."; fi
   if [ ! -f "$CONF" ] || ! grep -q "ssl_certificate" "$CONF"; then
     cat > "$CONF" <<NGINX
 # Naghshe Hezar Mashal (written by deploy/install.sh)
@@ -161,7 +182,7 @@ server {
 }
 NGINX
   fi
-  [ -d /etc/nginx/sites-enabled ] && ln -sf "$CONF" /etc/nginx/sites-enabled/harfeno
+  [ -d /etc/nginx/sites-enabled ] && ln -sf "$CONF" "/etc/nginx/sites-enabled/$NAME"
   nginx -t && systemctl reload nginx
   URL="http://$DOMAIN/"
   if [ "$SSL" -eq 1 ]; then
@@ -185,7 +206,7 @@ fi
 
 if [ -n "$BASE" ]; then
   URL="https://$DOMAIN$BASE/"; [ "$SSL" -eq 0 ] && URL="http://$DOMAIN$BASE/"
-  SNIP=/etc/nginx/snippets/harfeno.conf
+  SNIP=/etc/nginx/snippets/$NAME.conf
   BLOCK="# Naghshe Hezar Mashal under $BASE (written by deploy/install.sh)
 location = $BASE { return 301 $BASE/; }
 location $BASE/ {
@@ -202,7 +223,7 @@ location $BASE/ {
   say "One manual step: route $DOMAIN$BASE/ to this app"
   if [ -d /etc/nginx ]; then
     echo "  Saved as $SNIP. Inside the 'server { ... }' block that serves $DOMAIN (port 443), add:"
-    echo "      include snippets/harfeno.conf;"
+    echo "      include snippets/$NAME.conf;"
     echo "  then: nginx -t && systemctl reload nginx"
   else
     echo "  Add this to the web server that serves $DOMAIN:"
