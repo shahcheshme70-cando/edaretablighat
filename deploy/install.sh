@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # Naghshe Hezar Mashal - one-command installer (Ubuntu / Debian)
 #
+# Private repo: clone first with your GitHub login, then run the script from the clone:
+#   sudo git clone https://github.com/shahcheshme70-cando/edaretablighat.git /opt/harfeno
+#   sudo bash /opt/harfeno/deploy/install.sh harf-no.ir --path /mashal
+#
+# Public repo (one line):
 #   curl -fsSL https://raw.githubusercontent.com/shahcheshme70-cando/edaretablighat/main/deploy/install.sh | sudo bash -s -- mashal.example.ir
 #
 # Under a path of an existing site (e.g. https://harf-no.ir/mashal/):
@@ -80,7 +85,8 @@ id "$USER_NAME" >/dev/null 2>&1 || useradd --system --home "$APP_DIR" --shell /u
 mkdir -p "$DATA_DIR"
 chown "$USER_NAME:$USER_NAME" "$DATA_DIR"; chmod 700 "$DATA_DIR"
 if [ -d "$APP_DIR/.git" ]; then
-  git -C "$APP_DIR" pull --ff-only
+  # مخزن خصوصی: اگر گرفتن نسخهٔ تازه نشد (نیاز به رمز گیت‌هاب)، با همان کدی که هست ادامه می‌دهیم
+  git -C "$APP_DIR" pull --ff-only || warn "Could not update from GitHub (private repo needs a login/token). Continuing with the code already in $APP_DIR."
 else
   [ -e "$APP_DIR" ] && [ -n "$(ls -A "$APP_DIR" 2>/dev/null)" ] && die "$APP_DIR exists and is not a git checkout. Move it away first."
   git clone --depth 1 "$REPO" "$APP_DIR"
