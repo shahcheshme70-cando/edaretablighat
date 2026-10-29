@@ -10,7 +10,7 @@
 # service NAME.service, nginx files NAME.conf. Change it with --name.
 #
 # Public repo (one line):
-#   curl -fsSL https://raw.githubusercontent.com/shahcheshme70-cando/edaretablighat/main/deploy/install.sh | sudo bash -s -- mashal.example.ir
+#   curl -fsSL https://raw.githubusercontent.com/shahcheshme70-cando/edaretablighat/main/deploy/install.sh | sudo bash -s -- mashal.example.ir   (only if the repo is public)
 #
 # Under a path of an existing site (e.g. https://harf-no.ir/mashal/):
 #   ... | sudo bash -s -- harf-no.ir --path /mashal

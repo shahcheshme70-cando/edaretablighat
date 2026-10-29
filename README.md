@@ -48,10 +48,9 @@ npm start                      # http://127.0.0.1:8080  و  /admin/
 
 ## استقرار
 
-روی سرور اوبونتو یا دبیان، با یک دستور:
-
 ```bash
-curl -fsSL https://raw.githubusercontent.com/shahcheshme70-cando/edaretablighat/main/deploy/install.sh | sudo bash -s -- <دامنه>
+sudo git clone https://github.com/shahcheshme70-cando/edaretablighat.git /opt/hezarmashal
+sudo bash /opt/hezarmashal/deploy/install.sh harf-no.ir --path /mashal
 ```
 
 جزئیات، گزینه‌ها، Docker و پشتیبان‌گیری در [`docs/DEPLOY.md`](docs/DEPLOY.md) است.
