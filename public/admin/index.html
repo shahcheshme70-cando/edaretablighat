@@ -183,7 +183,7 @@ function showLogin(msg){closeLayer();$('#app').innerHTML=`<div class="auth"><for
  <div class="fld"><label for="p">رمز</label><input id="p" type="password" class="ltr" autocomplete="current-password"></div>
  <div class="err" id="le">${esc(msg||'')}</div><button class="btn pr" type="submit">ورود</button></form></div>`;
  $('#lf').onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector('[type=submit]');b.disabled=true;$('#le').textContent='';
-  try{await api.login($('#u').value.trim(),$('#p').value);await boot()}catch(err){$('#le').textContent=err.message;b.disabled=false}};
+  try{await api.login($('#u').value.trim(),$('#p').value);try{await api.me()}catch(e2){if(e2.code==='auth')throw new Error('رمز درست بود، ولی مرورگر ورود را نگه نداشت. سایت را با نشانی https باز کنید.');throw e2}await boot()}catch(err){$('#le').textContent=err.message;b.disabled=false}};
  setTimeout(()=>$('#u')&&$('#u').focus(),50)}
 
 async function boot(){try{S.me=await api.me()}catch(e){if(e.code==='auth')return showLogin();$('#app').innerHTML=`<div class="auth"><div class="card"><h2>به سرور وصل نشدیم</h2><p class="lead">${esc(e.message)}</p><button class="btn pr" onclick="location.reload()">دوباره تلاش کن</button></div></div>`;return}

@@ -1116,7 +1116,7 @@ async function req(url,opt={},ms=15000){const c=new AbortController(),t=setTimeo
 const JH={'Content-Type':'application/json'};
 const server={
  async me(){try{return await req('api/me')}catch(e){if(e.code==='auth')return null;throw e}},
- async login(ph,pw){await req('api/login',{method:'POST',headers:JH,body:JSON.stringify({phone:normPhone(ph),password:toEn(pw)})});return this.me()},
+ async login(ph,pw){await req('api/login',{method:'POST',headers:JH,body:JSON.stringify({phone:normPhone(ph),password:toEn(pw)})});const me=await this.me();if(!me)throw new Error('رمز درست بود، ولی مرورگر ورود را نگه نداشت. سایت را با نشانی https باز کنید.');return me},
  async save(d,rev,force){return req('api/form',{method:'PUT',headers:JH,body:JSON.stringify({data:d,rev,force:!!force})})},
  async submit(){return (await req('api/form/submit',{method:'POST'})).submittedAt},
  async password(a,b){await req('api/password',{method:'POST',headers:JH,body:JSON.stringify({current:toEn(a),next:toEn(b)})})},

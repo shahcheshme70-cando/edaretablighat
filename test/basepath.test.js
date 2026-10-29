@@ -37,3 +37,18 @@ for (const base of ['/mashal', '/مشعل']) {
     } finally { await s.close(); }
   });
 }
+
+test('پشت پروکسی: Origin دامنهٔ عمومی پذیرفته می‌شود و ورود روی http پیام روشن می‌دهد', async () => {
+  const s = await boot({ BASE_PATH: '/mashal', PUBLIC_URL: 'https://harf-no.ir/mashal/', TRUST_PROXY: true, COOKIE_SECURE: true });
+  try {
+    const c = client(s.base);
+    // پروکسی Host را 127.0.0.1 گذاشته، ولی مرورگر از harf-no.ir آمده
+    const ok = await c.post('/mashal/api/admin/login', { username: 'admin', password: 'admin-secret-1' }, { origin: 'https://harf-no.ir', 'x-forwarded-proto': 'https' });
+    assert.strictEqual(ok.status, 200);
+    const bad = await c.post('/mashal/api/admin/login', { username: 'admin', password: 'admin-secret-1' }, { origin: 'https://evil.example' });
+    assert.strictEqual(bad.status, 403);
+    const http = await c.post('/mashal/api/login', { phone: '09151112233', password: '12345678' }, { 'x-forwarded-proto': 'http' });
+    assert.strictEqual(http.status, 400);
+    assert.match(http.json.error, /https/);
+  } finally { await s.close(); }
+});

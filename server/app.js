@@ -44,6 +44,10 @@ function createApp(cfg, store) {
     const i = s.indexOf('='); let v = s.slice(i + 1); try { v = decodeURIComponent(v); } catch (e) { /* کوکی نامعتبر نادیده گرفته می‌شود */ } return [s.slice(0, i), v];
   }));
   const BASE = cfg.BASE_PATH || '';
+  const PUBLIC_URL_HOST = (() => { try { return cfg.PUBLIC_URL ? new URL(cfg.PUBLIC_URL).host.toLowerCase() : ''; } catch (e) { return ''; } })();
+  // کوکی Secure روی http ذخیره نمی‌شود و ورود «بی‌اثر» می‌ماند؛ این را صریح می‌گوییم
+  const insecureLogin = req => cfg.COOKIE_SECURE && cfg.TRUST_PROXY && String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim() === 'http';
+  const INSECURE_MSG = 'سایت را با نشانی https باز کنید؛ روی http ورود ذخیره نمی‌شود.';
   const at = loc => encodeURI(BASE + loc);
   const cookie = (name, val, maxAge) => `${name}=${encodeURIComponent(val)}; Path=${encodeURI(BASE || '/')}; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${cfg.COOKIE_SECURE ? '; Secure' : ''}`;
 
@@ -128,8 +132,9 @@ function createApp(cfg, store) {
       const origin = req.headers.origin;
       if (origin) {
         let ok = false;
-        try { const o = new URL(origin); ok = o.host === req.headers.host || [cfg.PUBLIC_HOST, cfg.ADMIN_HOST].includes(o.host.toLowerCase()); } catch (e) { ok = false; }
-        if (!ok) throw new HttpError(403, 'درخواست از مبدأ نامعتبر.');
+        // پشت پروکسی ممکن است Host برابر 127.0.0.1:PORT باشد؛ دامنهٔ نشانی عمومی و X-Forwarded-Host هم پذیرفته می‌شود
+        try { const o = new URL(origin), h = o.host.toLowerCase(); ok = h === String(req.headers.host || '').toLowerCase() || [cfg.PUBLIC_HOST, cfg.ADMIN_HOST, PUBLIC_URL_HOST, cfg.TRUST_PROXY ? String(req.headers['x-forwarded-host'] || '').split(',')[0].trim().toLowerCase() : ''].filter(Boolean).includes(h); } catch (e) { ok = false; }
+        if (!ok) { console.warn('[origin] rejected', origin, 'host=', req.headers.host, 'x-forwarded-host=', req.headers['x-forwarded-host'] || '-', '(set PUBLIC_URL or pass the Host header from the proxy)'); throw new HttpError(403, 'درخواست از مبدأ نامعتبر. اگر سامانه پشت پروکسی است، PUBLIC_URL در .env باید نشانی واقعی سایت باشد.'); }
       }
       const ct = String(req.headers['content-type'] || '');
       if (req.headers['content-length'] && +req.headers['content-length'] > 0 && !ct.includes('application/json')) throw new HttpError(415, 'نوع داده باید JSON باشد.');
@@ -155,6 +160,7 @@ function createApp(cfg, store) {
         throw new HttpError(401, 'شماره یا رمز درست نیست.');
       }
       keys.forEach(k => loginLimiter.reset(k));
+      if (insecureLogin(req)) throw new HttpError(400, INSECURE_MSG);
       startSession(res, u, 'director', req);
       store.update(db => store.audit(u.id, 'login', u.id));
       return send(res, 200, { ok: true });
@@ -213,6 +219,7 @@ function createApp(cfg, store) {
         throw new HttpError(401, 'نام کاربری یا رمز درست نیست.');
       }
       keys.forEach(k => loginLimiter.reset(k));
+      if (insecureLogin(req)) throw new HttpError(400, INSECURE_MSG);
       startSession(res, u, 'admin', req);
       store.update(d => { const x = d.users.find(y => y.id === u.id); if (x) x.lastLoginAt = new Date().toISOString(); store.audit(u.username, isViewer(u) ? 'viewer-login' : 'admin-login', u.id); });
       return send(res, 200, { ok: true });
