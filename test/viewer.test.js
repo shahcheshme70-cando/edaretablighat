@@ -137,3 +137,32 @@ test('متنی که با = شروع شود در اکسل فرمول نمی‌ش�
   assert.strictEqual(cell(-5), '-5');
   assert.strictEqual(cell('سلام, دنیا'), '"سلام, دنیا"');
 });
+
+test('چند استان: نام استان یکسان می‌شود، مدیرکل هر استان فقط استان خودش را می‌بیند، اکسل و بسته به تفکیک استان', async () => {
+  const s = await boot();
+  try {
+    const admin = client(s.base);
+    await admin.post('/api/admin/login', { username: 'admin', password: 'admin-secret-1' });
+    // دو شهرستان در استان‌های دیگر، با نوشتار ناهمسان
+    const a = await admin.post('/api/admin/users', { name: 'مدیر اصفهان', phone: '09130000001', county: 'کاشان', province: 'استان  اصفهان' });
+    const b = await admin.post('/api/admin/users', { name: 'مدیر خراسان', phone: '09150000009', county: 'سبزوار', province: 'خراسان‌رضوي' });
+    assert.strictEqual(a.json.user.province, 'اصفهان');
+    assert.strictEqual(b.json.user.province, 'خراسان رضوی');
+    const all = (await admin.get('/api/admin/users')).json.users;
+    assert.deepStrictEqual([...new Set(all.map(u => u.province))].sort(), ['اصفهان', 'خراسان رضوی']);
+    // مدیرکل اصفهان
+    const v = await admin.post('/api/admin/viewers', { name: 'مدیرکل اصفهان', phone: '09130000099', province: 'اصفهان' });
+    const vc = client(s.base);
+    await vc.post('/api/admin/login', { username: '09130000099', password: v.json.password });
+    const seen = (await vc.get('/api/admin/users')).json.users;
+    assert.deepStrictEqual(seen.map(u => u.county), ['کاشان']);
+    assert.strictEqual((await vc.get('/api/admin/users/u_test/form')).status, 404);
+    // اکسل و بستهٔ تحلیل به تفکیک استان
+    const sh = await admin.get('/api/admin/sheet/counties?province=' + encodeURIComponent('اصفهان'));
+    const lines = sh.text.trim().split('\r\n');
+    assert.strictEqual(lines.length, 2);
+    assert.ok(lines[1].includes('کاشان'));
+    const ex = await admin.get('/api/admin/export?province=' + encodeURIComponent('خراسان رضوی'));
+    assert.deepStrictEqual(ex.json.counties.map(c => c.county).sort(), ['سبزوار', 'نیشابور'].sort());
+  } finally { await s.close(); }
+});

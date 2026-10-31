@@ -32,7 +32,7 @@ function addDirector(o) {
   const pw = A.generatePassword();
   store.update(db => db.users.push({
     id: A.newId('u'), role: 'director', phone, name: String(o.name).trim(), county: String(o.county).trim(),
-    province: String(o.province || 'خراسان رضوی').trim(), title: String(o.title || 'مدیر تبلیغات اسلامی شهرستان').trim(),
+    province: A.normProvince(o.province) || 'خراسان رضوی', title: String(o.title || 'مدیر تبلیغات اسلامی شهرستان').trim(),
     passHash: A.hashPassword(pw), active: true, mustChange: true, createdAt: new Date().toISOString()
   }));
   return { phone, pw };
@@ -111,7 +111,7 @@ try {
       if (!name) die('نام لازم است (--name)');
       if (store.get().users.some(u => u.role === 'admin' && u.username === phone)) die(`شمارهٔ ${phone} قبلاً برای حسابی ثبت شده`);
       const pw = A.generatePassword();
-      store.update(db => db.users.push({ id: A.newId('v'), role: 'admin', access: 'view', username: phone, phone, name, title: opt('title') || 'مدیرکل تبلیغات اسلامی استان', province: opt('province') == null ? 'خراسان رضوی' : opt('province'), passHash: A.hashPassword(pw), active: true, mustChange: true, createdAt: new Date().toISOString() }));
+      store.update(db => db.users.push({ id: A.newId('v'), role: 'admin', access: 'view', username: phone, phone, name, title: opt('title') || 'مدیرکل تبلیغات اسلامی استان', province: opt('province') == null ? 'خراسان رضوی' : A.normProvince(opt('province')), passHash: A.hashPassword(pw), active: true, mustChange: true, createdAt: new Date().toISOString() }));
       console.log(`✓ حساب مدیرکل ساخته شد · نام کاربری: ${phone} · رمز: ${pw}\n  نشانی ورود: داشبورد (/admin/)`);
       break;
     }

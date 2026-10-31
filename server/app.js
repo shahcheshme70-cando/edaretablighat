@@ -232,7 +232,7 @@ function createApp(cfg, store) {
 
       const viewer = isViewer(s.user);
       // مدیرکل فقط شهرستان‌های استان خودش را می‌بیند (اگر استانی برایش ثبت شده باشد)
-      const inScope = u => !viewer || !s.user.province || (u.province || '') === s.user.province;
+      const inScope = u => !viewer || !s.user.province || A.normProvince(u.province) === A.normProvince(s.user.province);
 
       if (seg[0] === 'logout' && method === 'POST') { endSession(req, res, 'admin'); return send(res, 200, { ok: true }); }
       if (seg[0] === 'me' && method === 'GET') return send(res, 200, { user: { username: s.user.username, name: s.user.name || s.user.username, title: s.user.title || '', province: s.user.province || '', mustChange: !!s.user.mustChange }, access: viewer ? 'view' : 'full', aiEnabled: !viewer && !!cfg.ANTHROPIC_API_KEY, publicUrl: cfg.PUBLIC_URL });
@@ -291,7 +291,7 @@ function createApp(cfg, store) {
           const u = d.users.find(x => x.id === uid);
           if (b.name != null) u.name = String(b.name).trim().slice(0, 120);
           if (b.county != null) u.county = String(b.county).trim().slice(0, 80);
-          if (b.province != null) u.province = String(b.province).trim().slice(0, 80);
+          if (b.province != null) u.province = A.normProvince(b.province);
           if (b.title != null) u.title = String(b.title).trim().slice(0, 120);
           if (ph) u.phone = ph;
           if (b.active != null) { u.active = !!b.active; if (!u.active) killUserSessions(d, uid); }
@@ -355,7 +355,7 @@ function createApp(cfg, store) {
             const u = d.users.find(x => x.id === vid);
             if (b.name != null) u.name = String(b.name).trim().slice(0, 120);
             if (b.title != null) u.title = String(b.title).trim().slice(0, 120);
-            if (b.province != null) u.province = String(b.province).trim().slice(0, 80);
+            if (b.province != null) u.province = A.normProvince(b.province);
             if (ph && ph !== u.username) { u.username = ph; u.phone = ph; killUserSessions(d, vid); }
             if (b.active != null) { u.active = !!b.active; if (!u.active) killUserSessions(d, vid); }
             store.audit(who, 'viewer-edit', vid);
@@ -371,7 +371,8 @@ function createApp(cfg, store) {
       }
       /* خروجی اکسل: شهرستان‌ها، نیروها، طرح‌ها */
       if (seg[0] === 'sheet' && seg[1] && !seg[2] && method === 'GET') {
-        const out = SH.sheet(seg[1], db, db.users.filter(u => u.role === 'director' && inScope(u)));
+        const pv = A.normProvince(url.searchParams.get('province') || '');
+        const out = SH.sheet(seg[1], db, db.users.filter(u => u.role === 'director' && inScope(u) && (!pv || A.normProvince(u.province) === pv)));
         if (!out) throw new HttpError(404, 'این جدول پیدا نشد.');
         store.update(() => store.audit(who, 'sheet', seg[1]));
         const buf = Buffer.from(out.body, 'utf8');
@@ -381,6 +382,8 @@ function createApp(cfg, store) {
       if (seg[0] === 'export' && method === 'GET') {
         let ids = url.searchParams.get('ids'); ids = ids ? ids.split(',').filter(Boolean) : null;
         const only = url.searchParams.get('submitted') === '1';
+        const pv = A.normProvince(url.searchParams.get('province') || '');
+        if (pv) { const inP = new Set(db.users.filter(u => u.role === 'director' && A.normProvince(u.province) === pv).map(u => u.id)); ids = (ids || [...inP]).filter(id => inP.has(id)); }
         let bundle = AN.buildBundle(db, ids);
         if (only) bundle.counties = bundle.counties.filter(c => c.submittedAt);
         store.update(() => store.audit(who, 'export', String(bundle.counties.length)));
@@ -413,7 +416,7 @@ function createApp(cfg, store) {
     const pw = A.generatePassword();
     const u = {
       id: A.newId('v'), role: 'admin', access: 'view', username: phone, phone, name: name.slice(0, 120),
-      title: String(b.title || 'مدیرکل تبلیغات اسلامی استان').trim().slice(0, 120), province: String(b.province == null ? 'خراسان رضوی' : b.province).trim().slice(0, 80),
+      title: String(b.title || 'مدیرکل تبلیغات اسلامی استان').trim().slice(0, 120), province: A.normProvince(b.province == null ? 'خراسان رضوی' : b.province),
       passHash: A.hashPassword(pw), active: true, mustChange: true, createdAt: new Date().toISOString()
     };
     store.update(db => { db.users.push(u); store.audit(who, 'viewer-create', u.id); });
@@ -430,7 +433,7 @@ function createApp(cfg, store) {
     const pw = A.generatePassword();
     const u = {
       id: A.newId('u'), role: 'director', phone, name: name.slice(0, 120), county: county.slice(0, 80),
-      province: String(b.province || 'خراسان رضوی').trim().slice(0, 80), title: String(b.title || 'مدیر تبلیغات اسلامی شهرستان').trim().slice(0, 120),
+      province: A.normProvince(b.province) || 'خراسان رضوی', title: String(b.title || 'مدیر تبلیغات اسلامی شهرستان').trim().slice(0, 120),
       passHash: A.hashPassword(pw), active: true, mustChange: true, createdAt: new Date().toISOString()
     };
     store.update(db => { db.users.push(u); store.audit(who, 'user-create', u.id); });

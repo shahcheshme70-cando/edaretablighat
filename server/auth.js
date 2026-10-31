@@ -58,5 +58,7 @@ function normPhone(v) {
   return s;
 }
 const validPhone = s => /^09\d{9}$/.test(s);
+// نام استان یکسان: «ي/ك» عربی، نیم‌فاصله و فاصله‌های اضافه یکی می‌شوند تا «خراسان‌رضوی» و «خراسان رضوی» دو استان نشوند
+const normProvince = v => String(v == null ? '' : v).replace(/ي/g, 'ی').replace(/ك/g, 'ک').replace(/[\u200c\u200f\u200e]/g, ' ').replace(/^استان\s+/, '').replace(/\s+/g, ' ').trim().slice(0, 80);
 
-module.exports = { hashPassword, verifyPassword, generatePassword, newToken, tokenHash, newId, RateLimiter, normPhone, validPhone, toEn };
+module.exports = { hashPassword, verifyPassword, generatePassword, newToken, tokenHash, newId, RateLimiter, normPhone, validPhone, normProvince, toEn };

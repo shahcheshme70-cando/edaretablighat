@@ -33,6 +33,8 @@ a{color:var(--green-600)}
 .bar{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
 .bar-in{max-width:1240px;margin:0 auto;padding:0 16px;height:58px;display:flex;align-items:center;gap:12px}
 .bar-in .ttl{font-weight:800;font-size:15px;white-space:nowrap}
+.provbar{display:flex;align-items:center;gap:10px;margin:0 0 14px;flex-wrap:wrap}.provbar label{font-weight:700}.provbar select{width:auto;min-width:220px;max-width:100%}
+table.pv tr[data-provpick]{cursor:pointer}table.pv tr[data-provpick]:hover td{background:var(--sunken,#f4f5f8)}
 .xl{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;margin:14px 0 0;padding:14px 16px}.xl b{display:block}.xl .hint{display:block}
 .uname{max-width:40vw;min-width:0}.uname span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 @media(max-width:560px){.rtx{display:none}}
@@ -167,13 +169,23 @@ const api={
 };
 
 /* ---------- وضعیت ---------- */
-const S={me:null,users:[],viewers:[],tab:'counties',q:'',filter:'all',sort:'updated',fbSel:null,fbForm:null,loading:false};
+const S={me:null,users:[],viewers:[],prov:'',tab:'counties',q:'',filter:'all',sort:'updated',fbSel:null,fbForm:null,loading:false};
 function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(el._t);el._t=setTimeout(()=>el.hidden=true,3200)}
 function closeLayer(){$('#layer').innerHTML='';document.body.style.overflow=''}
 function modal(html){$('#layer').innerHTML=`<div class="scrim" data-close></div><div class="modal-wrap"><div class="modal">${html}</div></div>`;document.body.style.overflow='hidden'}
 const statusOf=u=>!u.active?['غیرفعال','']:u.submittedAt?(u.editedAfterSubmit?['ارسال‌شده، ویرایش بعد از ارسال','a']:['ارسال‌شده','g']):u.updatedAt?['در حال تکمیل','p']:['شروع‌نشده','c'];
 const siteUrl=()=>(S.me&&S.me.publicUrl)||location.origin+'/';
 const dashUrl=()=>new URL('./',location.href).href;
+/* استان‌ها: فهرست رسمی برای پیشنهاد در فرم‌ها؛ نام دیگری هم پذیرفته می‌شود */
+const PROVINCES=['آذربایجان شرقی','آذربایجان غربی','اردبیل','اصفهان','البرز','ایلام','بوشهر','تهران','چهارمحال و بختیاری','خراسان جنوبی','خراسان رضوی','خراسان شمالی','خوزستان','زنجان','سمنان','سیستان و بلوچستان','فارس','قزوین','قم','کردستان','کرمان','کرمانشاه','کهگیلویه و بویراحمد','گلستان','گیلان','لرستان','مازندران','مرکزی','هرمزگان','همدان','یزد'];
+const normProv=v=>String(v??'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200c\u200f\u200e]/g,' ').replace(/^استان\s+/,'').replace(/\s+/g,' ').trim();
+const provsOf=list=>[...new Set(list.map(u=>normProv(u.province)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fa'));
+const multiProv=()=>provsOf(S.users).length>1;
+const inProv=u=>!S.prov||normProv(u.province)===S.prov;
+const provQ=()=>S.prov?'?province='+encodeURIComponent(S.prov):'';
+const provList='<datalist id="provs">'+PROVINCES.map(p=>`<option value="${p}">`).join('')+'</datalist>';
+function provBar(){const ps=provsOf(S.users);if(ps.length<2)return '';return `<div class="provbar"><label for="prov">استان</label><select id="prov"><option value="">همهٔ استان‌ها (${FA(ps.length)})</option>${ps.map(p=>`<option value="${esc(p)}"${S.prov===p?' selected':''}>${esc(p)} · ${FA(S.users.filter(u=>normProv(u.province)===p).length)} شهرستان</option>`).join('')}</select></div>`}
+
 /* حساب مدیرکل: فقط دیدن */
 const V=()=>!!(S.me&&S.me.access==='view');
 
@@ -194,10 +206,10 @@ function shell(){$('#app').innerHTML=`<header class="bar"><div class="bar-in">${
  ${V()?'':`<nav class="tabs" role="tablist">${[['counties','شهرستان‌ها'],['users','مدیران و رمزها'],['feedback','تحلیل و بازخورد']].map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${S.tab===k}">${l}</button>`).join('')}</nav>`}
  <main class="wrap" id="main"></main>`}
 function render(){if(V())S.tab='counties';$$('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===S.tab));const m=$('#main');if(!m)return;
- m.innerHTML=S.tab==='counties'?countiesHTML():S.tab==='users'?usersHTML():feedbackHTML();if(S.tab==='feedback')bindFb()}
+ if(S.prov&&!provsOf(S.users).includes(S.prov))S.prov='';m.innerHTML=provBar()+(S.tab==='counties'?countiesHTML():S.tab==='users'?usersHTML():feedbackHTML());if(S.tab==='feedback')bindFb()}
 
 /* ---------- شهرستان‌ها ---------- */
-function countiesHTML(){const us=S.users.filter(u=>u.active);
+function countiesHTML(){const us=S.users.filter(u=>u.active&&inProv(u)),showP=!S.prov&&multiProv();
  if(!S.users.length)return V()?`<h1>شهرستان‌ها</h1><div class="card empty">هنوز شهرستانی تعریف نشده است. پس از آنکه ستاد مدیران شهرستان‌ها را تعریف کند، بوم‌هایشان این‌جا دیده می‌شود.</div>`:`<h1>شهرستان‌ها</h1><div class="card empty">هنوز هیچ مدیری تعریف نشده است. از بخش «مدیران و رمزها» مدیران شهرستان‌ها را اضافه کنید.<div style="margin-top:12px"><button class="btn pr" data-tab="users">افزودن مدیران</button></div></div>`;
  const sum=k=>us.reduce((a,u)=>a+(u.metrics.gap[k]||0),0),tot=k=>us.reduce((a,u)=>a+(u.metrics.totals[k]||0),0);
  const started=us.filter(u=>u.updatedAt).length,sub=us.filter(u=>u.submittedAt).length,pub=us.filter(u=>u.feedback.published).length;
@@ -208,7 +220,7 @@ function countiesHTML(){const us=S.users.filter(u=>u.active);
  const planCell=u=>{const ps=u.metrics.plans;if(!ps.length||!ps[0].type)return '<span class="sub">طرحی نیست</span>';return ps.map(p=>`<div>${esc(p.type)}${p.verdict?` <span class="pill ${p.verdict==='تحول'?'g':'c'}">${p.verdict}</span>`:''}<span class="sub">${esc(p.force)}${p.dA?` · +${FA(p.dA)} کنشگر`:''}</span></div>`).join('')};
  const share=u=>{const g=u.metrics.gap;return g.needA?`${FA(g.aT)} <span class="sub">از ${FA(g.needA)} (${FA(g.aT/g.needA*100,1)}٪)</span>`:'—'};
  const act=u=>`<div class="row"><a class="btn se sm" href="view?u=${encodeURIComponent(u.id)}" target="_blank" rel="noopener">${V()?'دیدن بوم':'بوم'}</a>${V()?'':`<button class="btn se sm" data-fbopen="${u.id}">بازخورد</button>`}</div>`;
- return `<h1>شهرستان‌ها${V()&&S.me.user.province?` · استان ${esc(S.me.user.province)}`:''}</h1><p class="lead">وضعیت پر شدن بوم‌ها و شکاف کنشگر و مخاطب در شهرستان‌ها. عددها مستقیم از بوم‌های مدیران حساب می‌شود.${V()?' با دکمهٔ «دیدن بوم» بوم کامل هر شهرستان و بازخورد منتشرشدهٔ ستاد را می‌بینید. این حساب فقط برای دیدن است و چیزی را تغییر نمی‌دهد.':''}</p>
+ return `<h1>شهرستان‌ها${V()&&S.me.user.province?` · استان ${esc(S.me.user.province)}`:S.prov?` · استان ${esc(S.prov)}`:''}</h1><p class="lead">وضعیت پر شدن بوم‌ها و شکاف کنشگر و مخاطب در شهرستان‌ها. عددها مستقیم از بوم‌های مدیران حساب می‌شود.${V()?' با دکمهٔ «دیدن بوم» بوم کامل هر شهرستان و بازخورد منتشرشدهٔ ستاد را می‌بینید. این حساب فقط برای دیدن است و چیزی را تغییر نمی‌دهد.':''}</p>
  <div class="kpis">
   <div class="kpi"><small>مدیران فعال</small><b>${FA(us.length)}</b><span>${FA(started)} شروع کرده · ${FA(sub)} ارسال کرده</span></div>
   <div class="kpi g"><small>کنشگر تبیینی امروز</small><b>${FA(aT)}</b><span>از ${FA(needA)} لازم (${needA?FA(aT/needA*100,1):'۰'}٪)</span></div>
@@ -218,35 +230,40 @@ function countiesHTML(){const us=S.users.filter(u=>u.active);
   <div class="kpi a"><small>اثر طرح‌های تحول</small><b>${FA(dA)}</b><span>کنشگر تبیینی تازه؛ ${FA(inv)} نفر از دعوت</span><span>هدف دو ساله: ${FA(tgt)}</span></div>
   <div class="kpi"><small>هزینهٔ طرح‌ها</small><b style="font-size:20px">${money(cost)} <small style="display:inline;font-size:13px">تومان</small></b><span>بازخورد منتشرشده: ${FA(pub)}</span></div>
  </div>
- <div class="card xl"><div><b>دادهٔ همهٔ بوم‌ها در اکسل</b><span class="hint">هر جدول یک فایل است که در اکسل باز می‌شود؛ عددها قابل جمع و مرتب‌کردن‌اند.</span></div><div class="row"><a class="btn se sm" href="api/admin/sheet/counties" download>شهرستان‌ها</a><a class="btn se sm" href="api/admin/sheet/forces" download>نیروها</a><a class="btn se sm" href="api/admin/sheet/plans" download>طرح‌ها</a></div></div>
+ ${!S.prov&&multiProv()?provSummary():''}
+ <div class="card xl"><div><b>${S.prov?'دادهٔ بوم‌های استان '+esc(S.prov)+' در اکسل':'دادهٔ همهٔ بوم‌ها در اکسل'}</b><span class="hint">هر جدول یک فایل است که در اکسل باز می‌شود؛ عددها قابل جمع و مرتب‌کردن‌اند.</span></div><div class="row"><a class="btn se sm" href="api/admin/sheet/counties${provQ()}" download>شهرستان‌ها</a><a class="btn se sm" href="api/admin/sheet/forces${provQ()}" download>نیروها</a><a class="btn se sm" href="api/admin/sheet/plans${provQ()}" download>طرح‌ها</a></div></div>
  <div class="toolbar"><input type="search" id="q" placeholder="جست‌وجوی شهرستان، مدیر یا شماره" value="${esc(S.q)}">
   <select id="flt">${[['all','همه'],['none','شروع‌نشده'],['progress','در حال تکمیل'],['submitted','ارسال‌شده'],['nofb','ارسال‌شده، بی‌بازخورد']].map(([k,l])=>`<option value="${k}"${S.filter===k?' selected':''}>${l}</option>`).join('')}</select>
   <select id="srt">${[['updated','آخرین تغییر'],['progress','بیشترین پیشرفت'],['gap','بزرگ‌ترین شکاف'],['name','نام شهرستان']].map(([k,l])=>`<option value="${k}"${S.sort===k?' selected':''}>مرتب: ${l}</option>`).join('')}</select>
   <span class="hint">${FA(rows.length)} شهرستان</span></div>
  ${rows.length?`<table class="t resp"><thead><tr><th>شهرستان</th><th>وضعیت</th><th>پیشرفت</th><th>کنشگر تبیینی</th><th>منتظر دعوت</th><th>طرح‌ها</th><th>سهم از هدف دوساله</th><th>آخرین تغییر</th><th></th></tr></thead><tbody>
- ${rows.map(u=>{const [st,c]=statusOf(u),m=u.metrics,tg=m.plans.reduce((a,p)=>a+(p.ofTgtA||0),0);return `<tr><td><b>${esc(u.county)}</b><span class="sub">${esc(u.name)}</span></td><td><span class="pill ${c}">${st}</span>${u.feedback.published?'<span class="sub">بازخورد منتشر شد</span>':u.feedback.draft?'<span class="sub">پیش‌نویس بازخورد</span>':''}</td>
+ ${rows.map(u=>{const [st,c]=statusOf(u),m=u.metrics,tg=m.plans.reduce((a,p)=>a+(p.ofTgtA||0),0);return `<tr><td><b>${esc(u.county)}</b><span class="sub">${showP?esc(normProv(u.province))+' · ':''}${esc(u.name)}</span></td><td><span class="pill ${c}">${st}</span>${u.feedback.published?'<span class="sub">بازخورد منتشر شد</span>':u.feedback.draft?'<span class="sub">پیش‌نویس بازخورد</span>':''}</td>
   <td><div class="prog"><i style="width:${m.progress}%"></i></div><span class="sub">${FA(m.progress)}٪</span></td><td class="n">${share(u)}</td><td class="n">${FA(m.gap.aI)}</td><td>${planCell(u)}</td><td class="n">${tg?FA(tg,1)+'٪':'—'}</td><td class="n">${when(u.updatedAt)}</td><td>${act(u)}</td></tr>`}).join('')}</tbody></table>
- <div class="cards">${rows.map(u=>{const [st,c]=statusOf(u),m=u.metrics;return `<div class="ccard"><div class="h"><div><b>${esc(u.county)}</b><span class="sub">${esc(u.name)} · ${when(u.updatedAt)}</span></div><span class="pill ${c}">${st}</span></div>
+ <div class="cards">${rows.map(u=>{const [st,c]=statusOf(u),m=u.metrics;return `<div class="ccard"><div class="h"><div><b>${esc(u.county)}</b><span class="sub">${showP?esc(normProv(u.province))+' · ':''}${esc(u.name)} · ${when(u.updatedAt)}</span></div><span class="pill ${c}">${st}</span></div>
   <div class="prog"><i style="width:${m.progress}%"></i></div>
   <div class="m"><div><b>${FA(m.gap.aT)}</b>کنشگر تبیینی</div><div><b>${FA(m.gap.aI)}</b>منتظر دعوت</div><div><b>${FA(m.plansCount&&m.plans[0].type?m.plansCount:0)}</b>طرح</div></div>${act(u)}</div>`}).join('')}</div>`
  :'<div class="card empty">موردی با این جست‌وجو نیست.</div>'}`}
 
+/* خلاصهٔ هر استان؛ با زدن هر ردیف، همان استان انتخاب می‌شود */
+function provSummary(){const ps=provsOf(S.users);const row=p=>{const us=S.users.filter(u=>u.active&&normProv(u.province)===p),g=k=>us.reduce((a,u)=>a+(u.metrics.gap[k]||0),0),aT=g('aT'),need=g('needA'),dA=us.reduce((a,u)=>a+(u.metrics.totals.dA||0),0);return {p,n:us.length,st:us.filter(u=>u.updatedAt).length,sub:us.filter(u=>u.submittedAt).length,aT,need,dA}};const rs=ps.map(row);
+ return `<div class="card" style="margin-top:14px"><h2 style="margin:0 0 10px">استان‌ها</h2><div style="overflow-x:auto"><table class="t pv"><thead><tr><th>استان</th><th>شهرستان</th><th>شروع کرده</th><th>ارسال کرده</th><th>کنشگر تبیینی</th><th>کنشگر تازه از طرح‌ها</th></tr></thead><tbody>${rs.map(r=>`<tr data-provpick="${esc(r.p)}" tabindex="0" role="button"><td><b>${esc(r.p)}</b></td><td class="n">${FA(r.n)}</td><td class="n">${FA(r.st)}</td><td class="n">${FA(r.sub)}</td><td class="n">${FA(r.aT)} <span class="sub">${r.need?FA(r.aT/r.need*100,1)+'٪ از لازم':''}</span></td><td class="n">${FA(r.dA)}</td></tr>`).join('')}</tbody></table></div></div>`}
+
 /* ---------- مدیران ---------- */
-function usersHTML(){const list=[...S.users].sort((a,b)=>a.county.localeCompare(b.county,'fa'));
- return `<h1>مدیران و رمزها</h1><p class="lead">برای هر شهرستان یک مدیر با شمارهٔ همراه تعریف کنید. رمز موقت ۸ رقمی ساخته و فقط یک بار نشان داده می‌شود؛ مدیر در اولین ورود تشویق می‌شود آن را عوض کند.</p>
+function usersHTML(){const list=S.users.filter(inProv).sort((a,b)=>normProv(a.province).localeCompare(normProv(b.province),'fa')||a.county.localeCompare(b.county,'fa'));const defProv=S.prov||S._lastProv||'خراسان رضوی';
+ return `<h1>مدیران و رمزها</h1><p class="lead">برای هر شهرستان یک مدیر با شمارهٔ همراه تعریف کنید. رمز موقت ۸ رقمی ساخته و فقط یک بار نشان داده می‌شود؛ مدیر در اولین ورود تشویق می‌شود آن را عوض کند. برای افزودن شهرستان‌های <b>استان‌های دیگر</b>، کافی است استان را در فرم یا در ستون «استان» فایل بنویسید؛ استان تازه خودش به فهرست استان‌ها اضافه می‌شود.</p>${provList}
  <div class="grid2">
   <form class="card stack" id="addf"><h2>افزودن یک مدیر</h2>
    <div class="grid2" style="gap:10px"><div class="fld"><label for="a_name">نام و نام خانوادگی</label><input id="a_name" required></div><div class="fld"><label for="a_phone">شمارهٔ همراه</label><input id="a_phone" class="ltr" inputmode="tel" placeholder="09xxxxxxxxx" required></div>
-   <div class="fld"><label for="a_county">شهرستان</label><input id="a_county" required></div><div class="fld"><label for="a_prov">استان</label><input id="a_prov" value="خراسان رضوی"></div></div>
+   <div class="fld"><label for="a_county">شهرستان</label><input id="a_county" required></div><div class="fld"><label for="a_prov">استان</label><input id="a_prov" list="provs" value="${esc(defProv)}" autocomplete="off"></div></div>
    <div class="fld"><label for="a_title">سمت</label><input id="a_title" value="مدیر تبلیغات اسلامی شهرستان"></div>
    <div class="err" id="adde"></div><div><button class="btn pr" type="submit">ساختن و دیدن رمز</button></div></form>
   <div class="card stack"><h2>افزودن گروهی با فایل CSV یا اکسل</h2>
-   <p class="hint" style="margin:0">در اکسل ستون‌های <b>نام، موبایل، شهرستان، استان، سمت</b> را بسازید و با «ذخیره به‌صورت CSV» ذخیره کنید؛ یا ردیف‌ها را از اکسل کپی و این‌جا جای‌گذاری کنید. ستون‌های استان و سمت اختیاری است.</p>
+   <p class="hint" style="margin:0">در اکسل ستون‌های <b>نام، موبایل، شهرستان، استان، سمت</b> را بسازید و با «ذخیره به‌صورت CSV» ذخیره کنید؛ یا ردیف‌ها را از اکسل کپی و این‌جا جای‌گذاری کنید. ستون‌های استان و سمت اختیاری است؛ ردیف بی‌استان «${esc(defProv)}» ثبت می‌شود.</p>
    <textarea id="csv" rows="5" placeholder="نام,موبایل,شهرستان&#10;علی رضایی,09151234567,نیشابور"></textarea>
    <div class="row"><label class="btn se sm" style="cursor:pointer">انتخاب فایل<input type="file" id="csvf" accept=".csv,.txt,text/csv" hidden></label><button class="btn dk sm" data-import>ساختن همهٔ مدیران</button><span class="hint" id="csvinfo"></span></div></div>
  </div>
- <h2 style="margin-top:22px">فهرست مدیران (${FA(list.length)})</h2>
- ${list.length?`<div class="cards">${list.map(u=>`<div class="ccard"><div class="h"><div><b>${esc(u.county)}</b><span class="sub">${esc(u.name)} · ${FD(u.phone)}</span><span class="sub">آخرین ورود: ${when(u.lastLoginAt)}</span></div>${u.active?'<span class="pill g">فعال</span>':'<span class="pill">غیرفعال</span>'}</div><div class="row"><button class="btn se sm" data-reset="${u.id}">رمز تازه</button><button class="btn se sm" data-edit="${u.id}">ویرایش</button><button class="btn se sm" data-toggle="${u.id}">${u.active?'غیرفعال کن':'فعال کن'}</button></div></div>`).join('')}</div><table class="t resp"><thead><tr><th>شهرستان</th><th>مدیر</th><th>شمارهٔ همراه</th><th>آخرین ورود</th><th>وضعیت</th><th></th></tr></thead><tbody>${list.map(u=>`<tr><td><b>${esc(u.county)}</b><span class="sub">${esc(u.province)}</span></td><td>${esc(u.name)}<span class="sub">${esc(u.role)}</span></td><td class="n">${FD(u.phone)}</td><td class="n">${when(u.lastLoginAt)}</td><td>${u.active?'<span class="pill g">فعال</span>':'<span class="pill">غیرفعال</span>'}</td>
+ <h2 style="margin-top:22px">فهرست مدیران${S.prov?' استان '+esc(S.prov):''} (${FA(list.length)})</h2>
+ ${list.length?`<div class="cards">${list.map(u=>`<div class="ccard"><div class="h"><div><b>${esc(u.county)}</b><span class="sub">${esc(normProv(u.province))} · ${esc(u.name)} · ${FD(u.phone)}</span><span class="sub">آخرین ورود: ${when(u.lastLoginAt)}</span></div>${u.active?'<span class="pill g">فعال</span>':'<span class="pill">غیرفعال</span>'}</div><div class="row"><button class="btn se sm" data-reset="${u.id}">رمز تازه</button><button class="btn se sm" data-edit="${u.id}">ویرایش</button><button class="btn se sm" data-toggle="${u.id}">${u.active?'غیرفعال کن':'فعال کن'}</button></div></div>`).join('')}</div><table class="t resp"><thead><tr><th>شهرستان</th><th>مدیر</th><th>شمارهٔ همراه</th><th>آخرین ورود</th><th>وضعیت</th><th></th></tr></thead><tbody>${list.map(u=>`<tr><td><b>${esc(u.county)}</b><span class="sub">${esc(u.province)}</span></td><td>${esc(u.name)}<span class="sub">${esc(u.role)}</span></td><td class="n">${FD(u.phone)}</td><td class="n">${when(u.lastLoginAt)}</td><td>${u.active?'<span class="pill g">فعال</span>':'<span class="pill">غیرفعال</span>'}</td>
   <td><div class="row"><button class="btn se sm" data-reset="${u.id}">رمز تازه</button><button class="btn se sm" data-edit="${u.id}">ویرایش</button><button class="btn se sm" data-toggle="${u.id}">${u.active?'غیرفعال کن':'فعال کن'}</button></div></td></tr>`).join('')}</tbody></table>`:'<div class="card empty">هنوز مدیری تعریف نشده است.</div>'}
  ${viewersHTML()}`}
 
@@ -257,7 +274,7 @@ function viewersHTML(){const vs=S.viewers;
  <div class="grid2">
   <form class="card stack" id="vaddf"><h2>افزودن حساب مدیرکل</h2>
    <div class="grid2" style="gap:10px"><div class="fld"><label for="v_name">نام</label><input id="v_name" placeholder="مثلاً حجت‌الاسلام …" required></div><div class="fld"><label for="v_phone">شمارهٔ همراه</label><input id="v_phone" class="ltr" inputmode="tel" placeholder="09xxxxxxxxx" required></div>
-   <div class="fld"><label for="v_title">سمت</label><input id="v_title" value="مدیرکل تبلیغات اسلامی استان"></div><div class="fld"><label for="v_prov">استان</label><input id="v_prov" value="خراسان رضوی"></div></div>
+   <div class="fld"><label for="v_title">سمت</label><input id="v_title" value="مدیرکل تبلیغات اسلامی استان"></div><div class="fld"><label for="v_prov">استان</label><input id="v_prov" list="provs" value="${esc(S.prov||'خراسان رضوی')}" autocomplete="off"></div></div>
    <div class="err" id="vadde"></div><div><button class="btn pr" type="submit">ساختن و دیدن رمز</button></div></form>
   <div class="card stack">${vs.length?vs.map(v=>`<div class="ccard" style="display:grid"><div class="h"><div><b>${esc(v.name)}</b><span class="sub">${esc(v.title)}${v.province?' · '+esc(v.province):' · همهٔ استان‌ها'}</span><span class="sub">${FD(v.phone)} · آخرین ورود: ${when(v.lastLoginAt)}</span></div>${v.active?'<span class="pill g">فعال</span>':'<span class="pill">غیرفعال</span>'}</div><div class="row"><button class="btn se sm" data-vreset="${v.id}">رمز تازه</button><button class="btn se sm" data-vtoggle="${v.id}">${v.active?'غیرفعال کن':'فعال کن'}</button></div></div>`).join(''):'<div class="empty">هنوز حساب مدیرکلی ساخته نشده است.</div>'}</div>
  </div>`}
@@ -280,12 +297,12 @@ function parseCsv(txt){const rows=[];let row=[],cur='',q=false;txt=String(txt||'
  return (hasHead?r.slice(1):r).map(x=>Object.fromEntries(order.map((k,j)=>{const i=hasHead?idx[k]:j;return [k,i>=0?(x[i]||'').trim():'']}))).filter(o=>o.phone||o.name)}
 
 /* ---------- تحلیل و بازخورد ---------- */
-function feedbackHTML(){const us=S.users.filter(u=>u.active).sort((a,b)=>a.county.localeCompare(b.county,'fa'));const sub=us.filter(u=>u.submittedAt).length;
+function feedbackHTML(){const us=S.users.filter(u=>u.active&&inProv(u)).sort((a,b)=>a.county.localeCompare(b.county,'fa'));const sub=us.filter(u=>u.submittedAt).length;
  const drafts=us.filter(u=>u.feedback.draft&&(!u.feedback.published||(u.feedback.draftAt&&u.feedback.publishedAt&&u.feedback.draftAt>u.feedback.publishedAt))).length;
  return `<h1>تحلیل و بازخورد</h1><p class="lead">بوم‌ها را برای تحلیل به Claude بدهید، خروجی را این‌جا بارگذاری کنید، بازبینی کنید و برای هر مدیر منتشر کنید. مدیر بازخورد را در بخش «بازخورد» سایت خودش می‌بیند.</p>
  <div class="grid2">
   <div class="card stack"><h2>۱. بستهٔ تحلیل را بردارید</h2><p class="hint" style="margin:0">بسته شامل دستورالعمل تحلیل، عددهای محاسبه‌شده و دادهٔ کامل هر بوم است.</p>
-   <div class="row"><a class="btn pr" href="api/admin/export?submitted=1" download>بوم‌های ارسال‌شده (${FA(sub)})</a><a class="btn se" href="api/admin/export" download>همهٔ بوم‌ها (${FA(us.length)})</a></div>
+   <div class="row"><a class="btn pr" href="api/admin/export?submitted=1${S.prov?'&province='+encodeURIComponent(S.prov):''}" download>بوم‌های ارسال‌شده (${FA(sub)})</a><a class="btn se" href="api/admin/export${provQ()}" download>همهٔ بوم‌ها (${FA(us.length)})</a></div>
    <div class="note">فایل را در یک گفت‌وگوی تازه با Claude بارگذاری کنید و بنویسید:<div class="cred" style="margin-top:6px;background:#fff" id="prompt">طبق دستورالعمل داخل این فایل، بوم هر شهرستان را تحلیل کن و فقط آرایهٔ JSON خروجی را بده.</div><button class="link" data-copyprompt style="margin-top:6px">کپی این جمله</button></div>
    ${S.me.aiEnabled?'<div class="note">تحلیل خودکار روی سرور فعال است: در بخش ۳ برای هر شهرستان دکمهٔ «پیش‌نویس با Claude» را بزنید.</div>':''}</div>
   <div class="card stack"><h2>۲. خروجی Claude را وارد کنید</h2><p class="hint" style="margin:0">پاسخ Claude را همان‌طور که هست جای‌گذاری کنید یا فایلش را انتخاب کنید. بازخوردها به‌صورت <b>پیش‌نویس</b> ذخیره می‌شوند و تا انتشار شما، مدیران آن‌ها را نمی‌بینند.</p>
@@ -317,16 +334,18 @@ function pwModal(first){const min=V()?'۸':'۱۰';modal(`<h3>${first?'رمز م�
 /* ---------- رویدادها ---------- */
 document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;const p=e.target.selectionStart;render();const q=$('#q');q.focus();q.setSelectionRange(p,p)}});
 document.addEventListener('change',async e=>{const t=e.target;
+ if(t.id==='prov'){S.prov=t.value;S.fbSel=null;S.fbForm=null;render();return}
  if(t.id==='flt'){S.filter=t.value;render()}if(t.id==='srt'){S.sort=t.value;render()}
  if(t.id==='csvf'&&t.files[0]){$('#csv').value=await t.files[0].text();$('#csvinfo').textContent=FA(parseCsv($('#csv').value).length)+' ردیف خوانده شد.'}
  if(t.id==='fbfile'&&t.files[0]){$('#fbtext').value=await t.files[0].text()}});
 document.addEventListener('submit',async e=>{if(e.target.id==='vaddf'){e.preventDefault();const b=e.target.querySelector('[type=submit]');b.disabled=true;$('#vadde').textContent='';
   try{const r=await api.createViewer({name:$('#v_name').value,phone:$('#v_phone').value,title:$('#v_title').value,province:$('#v_prov').value});await load();showCreds([r])}catch(err){$('#vadde').textContent=err.message}b.disabled=false;return}
  if(e.target.id!=='addf')return;e.preventDefault();const b=e.target.querySelector('[type=submit]');b.disabled=true;$('#adde').textContent='';
- try{const r=await api.create({name:$('#a_name').value,phone:$('#a_phone').value,county:$('#a_county').value,province:$('#a_prov').value,title:$('#a_title').value});await load();showCreds([r])}catch(err){$('#adde').textContent=err.message}b.disabled=false});
+ try{const r=await api.create({name:$('#a_name').value,phone:$('#a_phone').value,county:$('#a_county').value,province:$('#a_prov').value,title:$('#a_title').value});S._lastProv=normProv($('#a_prov').value);await load();showCreds([r])}catch(err){$('#adde').textContent=err.message}b.disabled=false});
 document.addEventListener('click',async e=>{
  if(!e.target.closest('.menu,[data-menu]'))$('.menu')?.remove();
  if(e.target.matches('[data-close]')){closeLayer();return}
+ const pp=e.target.closest('[data-provpick]');if(pp){S.prov=pp.dataset.provpick;render();window.scrollTo(0,0);return}
  const t=e.target.closest('button,a');if(!t)return;const d=t.dataset;
  if(d.tab){S.tab=d.tab;render();window.scrollTo(0,0);return}
  if(d.refresh!==undefined){await load();toast('به‌روز شد.');return}
@@ -342,7 +361,7 @@ document.addEventListener('click',async e=>{
  if(d.reset){const u=S.users.find(x=>x.id===d.reset);modal(`<h3>رمز تازه برای ${esc(u.county)}</h3><p style="margin:0">رمز فعلی ${esc(u.name)} از کار می‌افتد و از همهٔ دستگاه‌ها خارج می‌شود.</p><div class="row"><button class="btn pr" data-resetok="${u.id}">ساختن رمز تازه</button><button class="btn se" data-close>انصراف</button></div>`);return}
  if(d.resetok){if(t.disabled)return;t.disabled=true;try{const r=await api.reset(d.resetok);showCreds([r])}catch(err){toast(err.message);t.disabled=false}return}
  if(d.toggle){const u=S.users.find(x=>x.id===d.toggle);try{await api.patch(u.id,{active:!u.active});await load();toast(u.active?'غیرفعال شد.':'فعال شد.')}catch(err){toast(err.message)}return}
- if(d.edit){const u=S.users.find(x=>x.id===d.edit);modal(`<h3>ویرایش مدیر</h3><div class="fld"><label>نام</label><input id="e_name" value="${esc(u.name)}"></div><div class="fld"><label>شمارهٔ همراه</label><input id="e_phone" class="ltr" value="${esc(u.phone)}"></div><div class="fld"><label>شهرستان</label><input id="e_county" value="${esc(u.county)}"></div><div class="fld"><label>استان</label><input id="e_prov" value="${esc(u.province)}"></div><div class="fld"><label>سمت</label><input id="e_title" value="${esc(u.role)}"></div><div class="err" id="ee"></div><div class="row"><button class="btn pr" data-editok="${u.id}">ذخیره</button><button class="btn se" data-close>انصراف</button></div>`);return}
+ if(d.edit){const u=S.users.find(x=>x.id===d.edit);modal(`<h3>ویرایش مدیر</h3><div class="fld"><label>نام</label><input id="e_name" value="${esc(u.name)}"></div><div class="fld"><label>شمارهٔ همراه</label><input id="e_phone" class="ltr" value="${esc(u.phone)}"></div><div class="fld"><label>شهرستان</label><input id="e_county" value="${esc(u.county)}"></div><div class="fld"><label>استان</label><input id="e_prov" list="provs" autocomplete="off" value="${esc(u.province)}"></div><div class="fld"><label>سمت</label><input id="e_title" value="${esc(u.role)}"></div><div class="err" id="ee"></div><div class="row"><button class="btn pr" data-editok="${u.id}">ذخیره</button><button class="btn se" data-close>انصراف</button></div>`);return}
  if(d.editok){try{await api.patch(d.editok,{name:$('#e_name').value,phone:$('#e_phone').value,county:$('#e_county').value,province:$('#e_prov').value,title:$('#e_title').value});closeLayer();await load();toast('ذخیره شد.')}catch(err){$('#ee').textContent=err.message}return}
  if(d.import!==undefined){const rows=parseCsv($('#csv').value);if(!rows.length)return toast('ردیفی برای ساختن نیست.');t.disabled=true;
   try{const r=await api.importUsers(rows);await load();if(r.created.length){showCreds(r.created,r.errors);$('#csv').value=''}else if(r.errors.length){modal(`<h3>هیچ مدیری ساخته نشد</h3><div class="cred">${esc(r.errors.map(x=>`ردیف ${FA(x.row)}: ${x.error}`).join('\n'))}</div><button class="btn se" data-close>بستن</button>`)}}catch(err){toast(err.message)}t.disabled=false;return}
@@ -358,7 +377,7 @@ document.addEventListener('click',async e=>{
   modal(`<h3>انتشار ${FA(ids.length)} بازخورد</h3><p style="margin:0">همهٔ پیش‌نویس‌های تازه برای مدیرانشان منتشر می‌شود. مطمئن هستید همه را بازبینی کرده‌اید؟</p><div class="row"><button class="btn pr" data-pubok>انتشار همه</button><button class="btn se" data-close>انصراف</button></div>`);S._pub=ids;return}
  if(d.pubok!==undefined){t.disabled=true;let n=0;for(const id of S._pub){try{await api.publish(id);n++}catch(err){}}closeLayer();await load();refreshFb();toast(FA(n)+' بازخورد منتشر شد.');return}
 });
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLayer();$('.menu')?.remove()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLayer();$('.menu')?.remove()}if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.provpick){S.prov=e.target.dataset.provpick;render()}});
 boot();
 </script>
 </body>
