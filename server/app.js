@@ -40,9 +40,15 @@ function createApp(cfg, store) {
     }
     return req.socket.remoteAddress || '';
   };
-  const parseCookies = req => Object.fromEntries(String(req.headers.cookie || '').split(';').map(s => s.trim()).filter(Boolean).map(s => {
-    const i = s.indexOf('='); let v = s.slice(i + 1); try { v = decodeURIComponent(v); } catch (e) { /* کوکی نامعتبر نادیده گرفته می‌شود */ } return [s.slice(0, i), v];
-  }));
+  // اگر دو کوکی هم‌نام باشد (مثلاً یکی مانده از مسیر دیگر)، مرورگر خاص‌ترین مسیر را اول می‌فرستد؛ همان اولی نگه داشته می‌شود
+  const parseCookies = req => {
+    const out = {};
+    String(req.headers.cookie || '').split(';').map(s => s.trim()).filter(Boolean).forEach(s => {
+      const i = s.indexOf('='); if (i < 1) return; const k = s.slice(0, i); if (k in out) return;
+      let v = s.slice(i + 1); try { v = decodeURIComponent(v); } catch (e) { /* کوکی نامعتبر نادیده گرفته می‌شود */ } out[k] = v;
+    });
+    return out;
+  };
   const BASE = cfg.BASE_PATH || '';
   const PUBLIC_URL_HOST = (() => { try { return cfg.PUBLIC_URL ? new URL(cfg.PUBLIC_URL).host.toLowerCase() : ''; } catch (e) { return ''; } })();
   // کوکی Secure روی http ذخیره نمی‌شود و ورود «بی‌اثر» می‌ماند؛ این را صریح می‌گوییم
@@ -351,11 +357,12 @@ function createApp(cfg, store) {
             if (db.users.some(x => x.id !== vid && x.role === 'admin' && x.username === ph)) throw new HttpError(409, 'این شماره برای حساب دیگری ثبت شده است.');
           }
           if (b.name != null && !String(b.name).trim()) throw new HttpError(400, 'نام را بنویسید.');
+          const vprov = b.province != null ? viewerProvince(b.province) : null;
           store.update(d => {
             const u = d.users.find(x => x.id === vid);
             if (b.name != null) u.name = String(b.name).trim().slice(0, 120);
             if (b.title != null) u.title = String(b.title).trim().slice(0, 120);
-            if (b.province != null) u.province = A.normProvince(b.province);
+            if (b.province != null) u.province = vprov;
             if (ph && ph !== u.username) { u.username = ph; u.phone = ph; killUserSessions(d, vid); }
             if (b.active != null) { u.active = !!b.active; if (!u.active) killUserSessions(d, vid); }
             store.audit(who, 'viewer-edit', vid);
@@ -380,14 +387,17 @@ function createApp(cfg, store) {
         return res.end(buf);
       }
       if (seg[0] === 'export' && method === 'GET') {
-        let ids = url.searchParams.get('ids'); ids = ids ? ids.split(',').filter(Boolean) : null;
-        const only = url.searchParams.get('submitted') === '1';
-        const pv = A.normProvince(url.searchParams.get('province') || '');
-        if (pv) { const inP = new Set(db.users.filter(u => u.role === 'director' && A.normProvince(u.province) === pv).map(u => u.id)); ids = (ids || [...inP]).filter(id => inP.has(id)); }
-        let bundle = AN.buildBundle(db, ids);
-        if (only) bundle.counties = bundle.counties.filter(c => c.submittedAt);
+        // همهٔ فیلترها پیش از ساختن بسته اعمال می‌شود تا شمار شهرستان‌ها در دستورالعمل درست باشد
+        const q = url.searchParams, want = q.get('ids') ? new Set(q.get('ids').split(',').filter(Boolean)) : null;
+        const only = q.get('submitted') === '1', pv = A.normProvince(q.get('province') || '');
+        let list = AN.orderedDirectors(db).filter(u => (!want || want.has(u.id)) && (!pv || A.normProvince(u.province) === pv) && (!only || (db.forms[u.id] || {}).submittedAt));
+        const size = Math.max(1, Math.min(200, parseInt(q.get('size'), 10) || 0)), part = parseInt(q.get('part'), 10) || 0;
+        const parts = q.get('size') ? Math.max(1, Math.ceil(list.length / size)) : 1;
+        if (q.get('size') && part >= 1) list = list.slice((part - 1) * size, part * size);
+        const label = [pv, only ? 'ارسال‌شده' : '', q.get('size') && part >= 1 ? `بستهٔ ${part} از ${parts}` : ''].filter(Boolean).join(' · ');
+        const bundle = AN.buildBundle(db, list.map(u => u.id), label);
         store.update(() => store.audit(who, 'export', String(bundle.counties.length)));
-        const name = 'harfeno-analysis-' + new Date().toISOString().slice(0, 10) + '.json';
+        const name = 'harfeno-analysis-' + new Date().toISOString().slice(0, 10) + (q.get('size') && part >= 1 ? `-part${part}of${parts}` : '') + '.json';
         return send(res, 200, bundle, { 'Content-Disposition': `attachment; filename="${name}"` });
       }
       if (seg[0] === 'feedback' && seg[1] === 'import' && method === 'POST') {
@@ -407,6 +417,14 @@ function createApp(cfg, store) {
     throw new HttpError(404, 'مسیر پیدا نشد.');
   }
 
+  // استان مدیرکل: خالی‌ماندن تصادفی نباید دسترسی کشوری بدهد؛ «همهٔ استان‌ها» باید صریح انتخاب شود
+  function viewerProvince(v) {
+    const p = A.normProvince(v);
+    if (p === 'همهٔ استان‌ها' || p === 'همه استان‌ها' || p === 'همه استان ها' || p === '*') return '';
+    if (!p) throw new HttpError(400, 'استان را بنویسید، یا برای دسترسی به همهٔ استان‌ها «همهٔ استان‌ها» را انتخاب کنید.');
+    return p;
+  }
+
   function createViewer(b, who) {
     const phone = A.normPhone(b.phone);
     if (!A.validPhone(phone)) throw new HttpError(400, `شمارهٔ همراه «${b.phone || ''}» معتبر نیست.`);
@@ -416,7 +434,7 @@ function createApp(cfg, store) {
     const pw = A.generatePassword();
     const u = {
       id: A.newId('v'), role: 'admin', access: 'view', username: phone, phone, name: name.slice(0, 120),
-      title: String(b.title || 'مدیرکل تبلیغات اسلامی استان').trim().slice(0, 120), province: A.normProvince(b.province == null ? 'خراسان رضوی' : b.province),
+      title: String(b.title || 'مدیرکل تبلیغات اسلامی استان').trim().slice(0, 120), province: viewerProvince(b.province == null ? 'خراسان رضوی' : b.province),
       passHash: A.hashPassword(pw), active: true, mustChange: true, createdAt: new Date().toISOString()
     };
     store.update(db => { db.users.push(u); store.audit(who, 'viewer-create', u.id); });

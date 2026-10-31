@@ -166,3 +166,24 @@ test('چند استان: نام استان یکسان می‌شود، مدیرک
     assert.deepStrictEqual(ex.json.counties.map(c => c.county).sort(), ['سبزوار', 'نیشابور'].sort());
   } finally { await s.close(); }
 });
+
+test('بستهٔ تحلیل در بسته‌های چندتایی، با شمار درست در دستورالعمل', async () => {
+  const s = await boot();
+  try {
+    const admin = client(s.base);
+    await admin.post('/api/admin/login', { username: 'admin', password: 'admin-secret-1' });
+    for (let i = 0; i < 4; i++) await admin.post('/api/admin/users', { name: 'م' + i, phone: '0915000010' + i, county: 'ش' + i });
+    const all = await admin.get('/api/admin/export');
+    assert.strictEqual(all.json.countiesCount, 5);
+    const p1 = await admin.get('/api/admin/export?size=2&part=1'), p3 = await admin.get('/api/admin/export?size=2&part=3');
+    assert.strictEqual(p1.json.counties.length, 2);
+    assert.strictEqual(p3.json.counties.length, 1);
+    assert.match(p3.json.label, /بستهٔ 3 از 3/);
+    assert.match(p3.json.instructions, /دقیقاً 1 شیء/);
+    assert.match(p3.headers.get('content-disposition'), /part3of3/);
+    const ids = new Set([...p1.json.counties, ...(await admin.get('/api/admin/export?size=2&part=2')).json.counties, ...p3.json.counties].map(c => c.userId));
+    assert.strictEqual(ids.size, 5);
+    // فقط ارسال‌شده‌ها: هنوز هیچ‌کدام
+    assert.strictEqual((await admin.get('/api/admin/export?submitted=1')).json.countiesCount, 0);
+  } finally { await s.close(); }
+});

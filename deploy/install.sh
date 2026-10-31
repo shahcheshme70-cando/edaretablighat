@@ -64,10 +64,32 @@ USER_NAME="$NAME"
 if [ -n "$BASE" ]; then
   BASE="/${BASE#/}"; BASE="${BASE%/}"
   [ "$BASE" = "/" ] && BASE=""
+  printf '%s' "$BASE" | grep -Eq '^(/[^/[:space:];{}|&$`'"'"'"\\#?]+)+$' || die "--path may contain only letters, digits, '-', '_', '.' and '/'"
   PROXY=0
 fi
+case "$APP_DIR" in /home/*|/root/*) die "Clone the repo under /opt (the service cannot read /home or /root). Example: /opt/$NAME";; esac
 command -v apt-get >/dev/null || die "This script supports Ubuntu/Debian (apt). See docs/DEPLOY.md for other systems."
 command -v systemctl >/dev/null || die "systemd is required. Use Docker instead (see docs/DEPLOY.md)."
+
+# ---------- 0. safety: never take over another program ----------
+MARK="Naghshe Hezar Mashal"
+if systemctl cat "$SVC.service" >/dev/null 2>&1 && ! systemctl cat "$SVC.service" 2>/dev/null | grep -q "$MARK"; then
+  die "A service named '$SVC' already exists on this server and is not ours. Rerun with --name <other-name>."
+fi
+if id "$USER_NAME" >/dev/null 2>&1; then
+  UHOME="$(getent passwd "$USER_NAME" | cut -d: -f6)"
+  [ "$UHOME" = "$APP_DIR" ] || [ -f "$DATA_DIR/db.json" ] || die "System user '$USER_NAME' already exists for something else. Rerun with --name <other-name>."
+fi
+if [ -d "$DATA_DIR" ] && [ -n "$(ls -A "$DATA_DIR" 2>/dev/null)" ] && [ ! -f "$DATA_DIR/db.json" ]; then
+  die "$DATA_DIR already holds other files. Rerun with --name <other-name>."
+fi
+
+# if another nginx site already serves this domain, do not add a second one next to it (checked before changing anything)
+if [ "$PROXY" -eq 1 ] && [ -d /etc/nginx ]; then
+  DRE="$(printf '%s' "$DOMAIN" | sed 's/\./\\./g')"
+  OTHER="$(grep -rlsE "server_name[^;]*[[:space:]]$DRE([[:space:];]|\$)" /etc/nginx/sites-enabled /etc/nginx/conf.d 2>/dev/null | while read -r f; do grep -q "$MARK" "$f" || echo "$f"; done | head -1 || true)"
+  [ -z "$OTHER" ] || die "$DOMAIN is already served by $OTHER. To add this system under a path of that site, rerun with: --path /mashal"
+fi
 
 port_busy() { (ss -ltnH 2>/dev/null || netstat -ltn 2>/dev/null) | awk '{print $4}' | grep -Eq "[:.]$1\$"; }
 
@@ -111,9 +133,19 @@ npm test >"/tmp/$NAME-test.log" 2>&1 || { tail -40 "/tmp/$NAME-test.log"; die "T
 grep -E '^# (pass|fail)' "/tmp/$NAME-test.log" || true
 
 # ---------- 3. settings ----------
+set_env() { # update or add a key in .env
+  if grep -qE "^$1=" .env; then sed -i "s|^$1=.*|$1=$2|" .env; else printf '%s=%s\n' "$1" "$2" >> .env; fi
+}
 if [ -f "$APP_DIR/.env" ]; then
-  say "Keeping existing .env"
+  say "Keeping existing .env (updating the address settings)"
   PORT="$(grep -E '^PORT=' .env | cut -d= -f2 || true)"; PORT="${PORT:-8080}"
+  SECURE="$(grep -E '^COOKIE_SECURE=' .env | cut -d= -f2 || true)"
+  SCHEME=https
+  if [ "$SSL" -eq 0 ] || [ "$SECURE" = "0" ]; then SCHEME=http; fi
+  OLD_URL="$(grep -E '^PUBLIC_URL=' .env | cut -d= -f2- || true)"
+  set_env PUBLIC_URL "$SCHEME://$DOMAIN$BASE/"
+  if [ -n "$BASE" ]; then set_env BASE_PATH "$BASE"; else sed -i '/^BASE_PATH=/d' .env; fi
+  if [ "$OLD_URL" != "$SCHEME://$DOMAIN$BASE/" ]; then warn "Address changed: $OLD_URL -> $SCHEME://$DOMAIN$BASE/"; fi
 else
   if [ -z "$PORT" ]; then PORT=8080; while port_busy "$PORT"; do PORT=$((PORT+1)); done; fi
   SECURE=1; [ "$SSL" -eq 0 ] && SECURE=0
@@ -132,7 +164,7 @@ chown root:"$USER_NAME" .env; chmod 640 .env
 # ---------- 4. service ----------
 say "Installing the service"
 UNIT=/etc/systemd/system/$SVC.service
-if [ -f "$UNIT" ] && ! grep -q "Naghshe Hezar Mashal" "$UNIT"; then die "$UNIT already exists and belongs to another program. Rerun with --name <other-name>."; fi
+if [ -f "$UNIT" ] && ! grep -q "$MARK" "$UNIT"; then die "$UNIT already exists and belongs to another program. Rerun with --name <other-name>."; fi
 sed -e "s|^ExecStart=.*|ExecStart=$NODE_BIN server/index.js|" \
     -e "s|^User=.*|User=$USER_NAME|" -e "s|^Group=.*|Group=$USER_NAME|" \
     -e "s|^WorkingDirectory=.*|WorkingDirectory=$APP_DIR|" -e "s|^EnvironmentFile=.*|EnvironmentFile=$APP_DIR/.env|" \
@@ -162,7 +194,7 @@ if [ "$PROXY" -eq 1 ]; then
   say "Configuring nginx for $DOMAIN"
   CONF=/etc/nginx/sites-available/$NAME
   [ -d /etc/nginx/sites-available ] || { mkdir -p /etc/nginx/conf.d; CONF=/etc/nginx/conf.d/$NAME.conf; }
-  if [ -f "$CONF" ] && ! grep -q "Naghshe Hezar Mashal" "$CONF"; then die "$CONF belongs to another site. Rerun with --name <other-name>."; fi
+  if [ -f "$CONF" ] && ! grep -q "$MARK" "$CONF"; then die "$CONF belongs to another site. Rerun with --name <other-name>."; fi
   if [ ! -f "$CONF" ] || ! grep -q "ssl_certificate" "$CONF"; then
     cat > "$CONF" <<NGINX
 # Naghshe Hezar Mashal (written by deploy/install.sh)
@@ -182,8 +214,17 @@ server {
 }
 NGINX
   fi
-  [ -d /etc/nginx/sites-enabled ] && ln -sf "$CONF" "/etc/nginx/sites-enabled/$NAME"
-  nginx -t && systemctl reload nginx
+  LINK=""
+  if [ -d /etc/nginx/sites-enabled ]; then
+    LINK="/etc/nginx/sites-enabled/$NAME"
+    if [ -e "$LINK" ] && [ "$(readlink -f "$LINK")" != "$(readlink -f "$CONF")" ]; then die "$LINK belongs to another site. Rerun with --name <other-name>."; fi
+    ln -sf "$CONF" "$LINK"
+  fi
+  if ! nginx -t; then
+    [ -n "$LINK" ] && rm -f "$LINK"
+    die "nginx rejected the configuration; the new site was disabled again so other sites keep working."
+  fi
+  systemctl reload nginx
   URL="http://$DOMAIN/"
   if [ "$SSL" -eq 1 ]; then
     if ! grep -q "ssl_certificate" "$CONF"; then
@@ -219,7 +260,11 @@ location $BASE/ {
     proxy_read_timeout 240s;
     client_max_body_size 5m;
 }"
-  if [ -d /etc/nginx ]; then mkdir -p /etc/nginx/snippets; printf '%s\n' "$BLOCK" > "$SNIP"; fi
+  if [ -d /etc/nginx ]; then
+    mkdir -p /etc/nginx/snippets
+    if [ -f "$SNIP" ] && ! grep -q "$MARK" "$SNIP"; then die "$SNIP belongs to something else. Rerun with --name <other-name>."; fi
+    printf '%s\n' "$BLOCK" > "$SNIP"
+  fi
   say "One manual step: route $DOMAIN$BASE/ to this app"
   if [ -d /etc/nginx ]; then
     echo "  Saved as $SNIP. Inside the 'server { ... }' block that serves $DOMAIN (port 443), add:"
@@ -235,7 +280,8 @@ fi
 
 # ---------- 6. staff account ----------
 ADMIN_OUT=""
-if ! runuser -u "$USER_NAME" -- "$NODE_BIN" server/cli.js list 2>/dev/null | grep -q '^ستاد'; then
+ACCOUNTS="$(runuser -u "$USER_NAME" -- "$NODE_BIN" server/cli.js list 2>/dev/null || true)"
+if ! printf '%s\n' "$ACCOUNTS" | grep -q '^ستاد'; then
   say "Creating the staff (ستاد) account"
   ADMIN_OUT="$(runuser -u "$USER_NAME" -- "$NODE_BIN" server/cli.js create-admin admin --name "ستاد")"
 fi

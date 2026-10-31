@@ -183,7 +183,7 @@ const provsOf=list=>[...new Set(list.map(u=>normProv(u.province)).filter(Boolean
 const multiProv=()=>provsOf(S.users).length>1;
 const inProv=u=>!S.prov||normProv(u.province)===S.prov;
 const provQ=()=>S.prov?'?province='+encodeURIComponent(S.prov):'';
-const provList='<datalist id="provs">'+PROVINCES.map(p=>`<option value="${p}">`).join('')+'</datalist>';
+const provList='<datalist id="provs">'+PROVINCES.map(p=>`<option value="${p}">`).join('')+'</datalist><datalist id="vprovs"><option value="همهٔ استان‌ها">'+PROVINCES.map(p=>`<option value="${p}">`).join('')+'</datalist>';
 function provBar(){const ps=provsOf(S.users);if(ps.length<2)return '';return `<div class="provbar"><label for="prov">استان</label><select id="prov"><option value="">همهٔ استان‌ها (${FA(ps.length)})</option>${ps.map(p=>`<option value="${esc(p)}"${S.prov===p?' selected':''}>${esc(p)} · ${FA(S.users.filter(u=>normProv(u.province)===p).length)} شهرستان</option>`).join('')}</select></div>`}
 
 /* حساب مدیرکل: فقط دیدن */
@@ -270,11 +270,11 @@ function usersHTML(){const list=S.users.filter(inProv).sort((a,b)=>normProv(a.pr
 /* ---------- حساب‌های مدیرکل ---------- */
 function viewersHTML(){const vs=S.viewers;
  return `<h2 style="margin-top:28px">حساب‌های مدیرکل (فقط دیدن)</h2>
- <p class="hint" style="margin:0 0 10px">مدیرکل با شمارهٔ همراه وارد همین داشبورد می‌شود و وضعیت شهرستان‌ها و بوم کامل هر شهرستان را می‌بیند. بازخوردهای پیش‌نویس، رمزها و فهرست مدیران را نمی‌بیند و نمی‌تواند چیزی را تغییر دهد. اگر استان را خالی بگذارید، همهٔ شهرستان‌ها را می‌بیند.</p>
+ <p class="hint" style="margin:0 0 10px">مدیرکل با شمارهٔ همراه وارد همین داشبورد می‌شود و وضعیت شهرستان‌ها و بوم کامل هر شهرستان را می‌بیند. نام و شمارهٔ مدیران شهرستان‌ها را می‌بیند، ولی رمزها و بازخوردهای پیش‌نویس را نمی‌بیند و نمی‌تواند چیزی را تغییر دهد. مدیرکل هر استان فقط شهرستان‌های همان استان را می‌بیند؛ برای دسترسی به همهٔ استان‌ها «همهٔ استان‌ها» را بنویسید.</p>
  <div class="grid2">
   <form class="card stack" id="vaddf"><h2>افزودن حساب مدیرکل</h2>
    <div class="grid2" style="gap:10px"><div class="fld"><label for="v_name">نام</label><input id="v_name" placeholder="مثلاً حجت‌الاسلام …" required></div><div class="fld"><label for="v_phone">شمارهٔ همراه</label><input id="v_phone" class="ltr" inputmode="tel" placeholder="09xxxxxxxxx" required></div>
-   <div class="fld"><label for="v_title">سمت</label><input id="v_title" value="مدیرکل تبلیغات اسلامی استان"></div><div class="fld"><label for="v_prov">استان</label><input id="v_prov" list="provs" value="${esc(S.prov||'خراسان رضوی')}" autocomplete="off"></div></div>
+   <div class="fld"><label for="v_title">سمت</label><input id="v_title" value="مدیرکل تبلیغات اسلامی استان"></div><div class="fld"><label for="v_prov">استان</label><input id="v_prov" list="vprovs" value="${esc(S.prov||'خراسان رضوی')}" autocomplete="off" required></div></div>
    <div class="err" id="vadde"></div><div><button class="btn pr" type="submit">ساختن و دیدن رمز</button></div></form>
   <div class="card stack">${vs.length?vs.map(v=>`<div class="ccard" style="display:grid"><div class="h"><div><b>${esc(v.name)}</b><span class="sub">${esc(v.title)}${v.province?' · '+esc(v.province):' · همهٔ استان‌ها'}</span><span class="sub">${FD(v.phone)} · آخرین ورود: ${when(v.lastLoginAt)}</span></div>${v.active?'<span class="pill g">فعال</span>':'<span class="pill">غیرفعال</span>'}</div><div class="row"><button class="btn se sm" data-vreset="${v.id}">رمز تازه</button><button class="btn se sm" data-vtoggle="${v.id}">${v.active?'غیرفعال کن':'فعال کن'}</button></div></div>`).join(''):'<div class="empty">هنوز حساب مدیرکلی ساخته نشده است.</div>'}</div>
  </div>`}
@@ -297,15 +297,19 @@ function parseCsv(txt){const rows=[];let row=[],cur='',q=false;txt=String(txt||'
  return (hasHead?r.slice(1):r).map(x=>Object.fromEntries(order.map((k,j)=>{const i=hasHead?idx[k]:j;return [k,i>=0?(x[i]||'').trim():'']}))).filter(o=>o.phone||o.name)}
 
 /* ---------- تحلیل و بازخورد ---------- */
+const BATCH=10;
+const newDraft=u=>u.feedback.draft&&(!u.feedback.published||(u.feedback.draftAt&&u.feedback.publishedAt&&u.feedback.draftAt>u.feedback.publishedAt));
+const expUrl=(onlySub,part)=>{const q=[];if(onlySub)q.push('submitted=1');if(S.prov)q.push('province='+encodeURIComponent(S.prov));if(part)q.push('size='+BATCH,'part='+part);return 'api/admin/export'+(q.length?'?'+q.join('&'):'')};
 function feedbackHTML(){const us=S.users.filter(u=>u.active&&inProv(u)).sort((a,b)=>a.county.localeCompare(b.county,'fa'));const sub=us.filter(u=>u.submittedAt).length;
- const drafts=us.filter(u=>u.feedback.draft&&(!u.feedback.published||(u.feedback.draftAt&&u.feedback.publishedAt&&u.feedback.draftAt>u.feedback.publishedAt))).length;
- return `<h1>تحلیل و بازخورد</h1><p class="lead">بوم‌ها را برای تحلیل به Claude بدهید، خروجی را این‌جا بارگذاری کنید، بازبینی کنید و برای هر مدیر منتشر کنید. مدیر بازخورد را در بخش «بازخورد» سایت خودش می‌بیند.</p>
+ const drafts=us.filter(newDraft).length;
+ return `<h1>تحلیل و بازخورد</h1><p class="lead">بوم‌ها را برای تحلیل به یک هوش مصنوعی بدهید، هر کدام که در دسترس است: Claude یا Gemini یا ChatGPT. بعد پاسخ را این‌جا بارگذاری کنید، بازبینی کنید و برای هر مدیر منتشر کنید. مدیر بازخورد را در بخش «بازخورد» سایت خودش می‌بیند.${S.prov?` <b>فقط استان ${esc(S.prov)}.</b>`:''}</p>
  <div class="grid2">
-  <div class="card stack"><h2>۱. بستهٔ تحلیل را بردارید</h2><p class="hint" style="margin:0">بسته شامل دستورالعمل تحلیل، عددهای محاسبه‌شده و دادهٔ کامل هر بوم است.</p>
-   <div class="row"><a class="btn pr" href="api/admin/export?submitted=1${S.prov?'&province='+encodeURIComponent(S.prov):''}" download>بوم‌های ارسال‌شده (${FA(sub)})</a><a class="btn se" href="api/admin/export${provQ()}" download>همهٔ بوم‌ها (${FA(us.length)})</a></div>
-   <div class="note">فایل را در یک گفت‌وگوی تازه با Claude بارگذاری کنید و بنویسید:<div class="cred" style="margin-top:6px;background:#fff" id="prompt">طبق دستورالعمل داخل این فایل، بوم هر شهرستان را تحلیل کن و فقط آرایهٔ JSON خروجی را بده.</div><button class="link" data-copyprompt style="margin-top:6px">کپی این جمله</button></div>
+  <div class="card stack"><h2>۱. بستهٔ تحلیل را بردارید</h2><p class="hint" style="margin:0">بسته یک فایل است که دستورالعمل تحلیل، عددهای محاسبه‌شده و دادهٔ کامل هر بوم را دارد. هوش مصنوعی همه‌چیز را از خود فایل می‌خواند.</p>
+   <div class="row"><a class="btn pr" href="${expUrl(true)}" download>بوم‌های ارسال‌شده (${FA(sub)})</a><a class="btn se" href="${expUrl(false)}" download>همهٔ بوم‌ها (${FA(us.length)})</a></div>
+   ${sub>BATCH?`<div class="note"><b>پیشنهاد: بسته‌های ${FA(BATCH)}تایی.</b> با ${FA(sub)} شهرستان در یک فایل، هوش مصنوعی ممکن است پاسخ را نیمه‌کاره بگذارد. هر بسته را در یک گفت‌وگوی جدا بدهید و همهٔ پاسخ‌ها را با هم یا جدا جدا در بخش ۲ بگذارید.<div class="row" style="margin-top:8px">${Array.from({length:Math.ceil(sub/BATCH)},(_,i)=>`<a class="btn se sm" href="${expUrl(true,i+1)}" download>بستهٔ ${FA(i+1)}</a>`).join('')}</div></div>`:''}
+   <div class="note">فایل را در یک گفت‌وگوی تازه با هوش مصنوعی بارگذاری کنید و بنویسید:<div class="cred" style="margin-top:6px;background:#fff" id="prompt">طبق دستورالعمل داخل این فایل (بخش instructions)، بوم هر شهرستان را تحلیل کن و فقط آرایهٔ JSON خروجی را بده.</div><button class="link" data-copyprompt style="margin-top:6px">کپی این جمله</button><div class="hint" style="margin-top:6px">با Claude و Gemini و ChatGPT کار می‌کند. اگر پاسخ وسط کار قطع شد، بنویسید «ادامه بده» و همهٔ تکه‌ها را با هم جای‌گذاری کنید.</div></div>
    ${S.me.aiEnabled?'<div class="note">تحلیل خودکار روی سرور فعال است: در بخش ۳ برای هر شهرستان دکمهٔ «پیش‌نویس با Claude» را بزنید.</div>':''}</div>
-  <div class="card stack"><h2>۲. خروجی Claude را وارد کنید</h2><p class="hint" style="margin:0">پاسخ Claude را همان‌طور که هست جای‌گذاری کنید یا فایلش را انتخاب کنید. بازخوردها به‌صورت <b>پیش‌نویس</b> ذخیره می‌شوند و تا انتشار شما، مدیران آن‌ها را نمی‌بینند.</p>
+  <div class="card stack"><h2>۲. پاسخ هوش مصنوعی را وارد کنید</h2><p class="hint" style="margin:0">پاسخ را همان‌طور که هست جای‌گذاری کنید یا فایلش را انتخاب کنید؛ پاسخ چند بسته را هم می‌شود یک‌جا گذاشت. متن اضافه دور JSON اشکالی ندارد. بازخوردها به‌صورت <b>پیش‌نویس</b> ذخیره می‌شوند و تا انتشار شما، مدیران آن‌ها را نمی‌بینند.</p>
    <textarea id="fbtext" rows="6" class="mono" placeholder='[{"userId":"...","scores":{"b1":7,"b2":6,"b3":8},"summary":"...","strengths":[],"gaps":[],"suggestions":[]}]'></textarea>
    <div class="row"><label class="btn se sm" style="cursor:pointer">انتخاب فایل<input type="file" id="fbfile" accept=".json,.txt" hidden></label><button class="btn dk sm" data-fbimport>واردکردن</button></div><div id="fbres"></div></div>
  </div>
@@ -345,7 +349,7 @@ document.addEventListener('submit',async e=>{if(e.target.id==='vaddf'){e.prevent
 document.addEventListener('click',async e=>{
  if(!e.target.closest('.menu,[data-menu]'))$('.menu')?.remove();
  if(e.target.matches('[data-close]')){closeLayer();return}
- const pp=e.target.closest('[data-provpick]');if(pp){S.prov=pp.dataset.provpick;render();window.scrollTo(0,0);return}
+ const pp=e.target.closest('[data-provpick]');if(pp){S.prov=pp.dataset.provpick;S.fbSel=null;S.fbForm=null;render();window.scrollTo(0,0);return}
  const t=e.target.closest('button,a');if(!t)return;const d=t.dataset;
  if(d.tab){S.tab=d.tab;render();window.scrollTo(0,0);return}
  if(d.refresh!==undefined){await load();toast('به‌روز شد.');return}
@@ -368,16 +372,17 @@ document.addEventListener('click',async e=>{
  if(d.copycred!==undefined){try{await navigator.clipboard.writeText($('#credt').innerText);toast('کپی شد.')}catch(err){toast('کپی نشد؛ متن را انتخاب و کپی کنید.')}return}
  if(d.dlcred!==undefined){const csv='﻿شهرستان,نام,شمارهٔ همراه,رمز موقت,متن پیام\n'+S._creds.map(x=>[x.user.county,x.user.name,x.user.phone,x.password,credText(x.user,x.password).replace(/\n/g,' | ')].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='harfeno-passwords.csv';a.click();return}
  if(d.copyprompt!==undefined){try{await navigator.clipboard.writeText($('#prompt').innerText);toast('کپی شد.')}catch(err){toast('کپی نشد.')}return}
- if(d.fbimport!==undefined){const txt=$('#fbtext').value.trim();if(!txt)return toast('اول خروجی Claude را جای‌گذاری کنید.');t.disabled=true;
-  try{const r=await api.importFb(txt);await load();refreshFb();$('#fbres').innerHTML=`<div class="note">${FA(r.matched.length)} بازخورد به‌صورت پیش‌نویس ذخیره شد${r.matched.length?': '+r.matched.map(x=>esc(x.county)).join('، '):''}.</div>${r.unmatched.length?`<div class="warn">${FA(r.unmatched.length)} مورد با هیچ مدیری جور نشد: ${r.unmatched.map(x=>esc(x.county||('ردیف '+FA(x.idx+1)))).join('، ')}</div>`:''}`}catch(err){$('#fbres').innerHTML=`<div class="warn">${esc(err.message)}</div>`}t.disabled=false;return}
+ if(d.fbimport!==undefined){const txt=$('#fbtext').value.trim();if(!txt)return toast('اول پاسخ هوش مصنوعی را جای‌گذاری کنید.');t.disabled=true;
+  try{const r=await api.importFb(txt);await load();refreshFb();const left=S.users.filter(u=>u.active&&inProv(u)&&u.submittedAt&&!u.feedback.draft&&!u.feedback.published);
+  $('#fbres').innerHTML=`<div class="note">${FA(r.matched.length)} بازخورد به‌صورت پیش‌نویس ذخیره شد${r.matched.length?': '+r.matched.map(x=>esc(x.county)).join('، '):''}. پیش از انتشار، هر کدام را در بخش ۳ بازبینی کنید.</div>${r.unmatched.length?`<div class="warn">${FA(r.unmatched.length)} مورد با هیچ مدیری جور نشد: ${r.unmatched.map(x=>esc(x.county||('ردیف '+FA(x.idx+1)))+(x.reason?' ('+esc(x.reason)+')':'')).join('، ')}</div>`:''}${left.length?`<div class="hint">هنوز بی‌بازخورد (ارسال‌شده): ${left.map(u=>esc(u.county)).join('، ')}</div>`:''}`}catch(err){$('#fbres').innerHTML=`<div class="warn">${esc(err.message)}</div>`}t.disabled=false;return}
  if(d.fbsave||d.fbpub){const id=d.fbsave||d.fbpub;t.disabled=true;try{await api.saveFb(id,readFb());if(d.fbpub){await api.publish(id);toast('بازخورد برای مدیر منتشر شد.')}else toast('پیش‌نویس ذخیره شد.');await load();S.fbForm=null;openFb(id)}catch(err){toast(err.message)}t.disabled=false;return}
  if(d.fbunpub){try{await api.unpublish(d.fbunpub);await load();S.fbForm=null;openFb(d.fbunpub);toast('از انتشار برداشته شد.')}catch(err){toast(err.message)}return}
  if(d.ai){t.disabled=true;t.textContent='در حال تحلیل… (تا چند دقیقه)';try{await api.analyze(d.ai);await load();S.fbForm=null;openFb(d.ai);toast('پیش‌نویس Claude آماده شد؛ بازبینی و منتشر کنید.')}catch(err){toast(err.message);t.disabled=false;t.textContent='پیش‌نویس با Claude'}return}
- if(d.pubpending!==undefined){const ids=S.users.filter(u=>u.active&&u.feedback.draft&&(!u.feedback.published||(u.feedback.draftAt>u.feedback.publishedAt))).map(u=>u.id);
+ if(d.pubpending!==undefined){const ids=S.users.filter(u=>u.active&&inProv(u)&&newDraft(u)).map(u=>u.id);
   modal(`<h3>انتشار ${FA(ids.length)} بازخورد</h3><p style="margin:0">همهٔ پیش‌نویس‌های تازه برای مدیرانشان منتشر می‌شود. مطمئن هستید همه را بازبینی کرده‌اید؟</p><div class="row"><button class="btn pr" data-pubok>انتشار همه</button><button class="btn se" data-close>انصراف</button></div>`);S._pub=ids;return}
  if(d.pubok!==undefined){t.disabled=true;let n=0;for(const id of S._pub){try{await api.publish(id);n++}catch(err){}}closeLayer();await load();refreshFb();toast(FA(n)+' بازخورد منتشر شد.');return}
 });
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLayer();$('.menu')?.remove()}if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.provpick){S.prov=e.target.dataset.provpick;render()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLayer();$('.menu')?.remove()}if(e.key==='Enter'&&e.target.dataset&&e.target.dataset.provpick){S.prov=e.target.dataset.provpick;S.fbSel=null;S.fbForm=null;render()}});
 boot();
 </script>
 </body>

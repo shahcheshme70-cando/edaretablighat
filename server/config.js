@@ -16,7 +16,8 @@ function loadEnv(file) {
     }
   } catch (e) { /* فایل .env اختیاری است */ }
 }
-loadEnv(path.join(__dirname, '..', '.env'));
+// آزمون‌ها نباید تنظیمات سرور واقعی (.env) را بخوانند
+if (!process.env.HARFENO_NO_DOTENV) loadEnv(path.join(__dirname, '..', '.env'));
 
 const bool = (v, d) => v === undefined || v === '' ? d : /^(1|true|yes|on)$/i.test(v);
 const int = (v, d) => { const n = parseInt(v, 10); return Number.isFinite(n) ? n : d; };

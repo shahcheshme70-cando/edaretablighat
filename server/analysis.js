@@ -1,7 +1,7 @@
 'use strict';
 /*
- * بستهٔ تحلیل برای Claude و دریافت بازخورد
- * مسیر عادی: ستاد بسته را دانلود می‌کند، به Claude می‌دهد، خروجی JSON را در داشبورد بارگذاری می‌کند،
+ * بستهٔ تحلیل برای هوش مصنوعی (Claude، Gemini، ChatGPT و …) و دریافت بازخورد
+ * مسیر عادی: ستاد بسته را دانلود می‌کند، به هر هوش مصنوعی می‌دهد، خروجی JSON را در داشبورد بارگذاری می‌کند،
  * بازخوردها را بازبینی و برای هر مدیر منتشر می‌کند.
  * مسیر اختیاری: اگر ANTHROPIC_API_KEY تنظیم شده باشد، سرور خودش از Claude بازخورد پیش‌نویس می‌گیرد.
  */
@@ -29,7 +29,7 @@ const INSTRUCTIONS = `شما «دستیار حرف نو» هستید. این ب�
 - ستایش کلی و نصیحت کلی ننویسید. هر بند یک نکتهٔ مشخص باشد.
 - امتیازها از ۰ تا ۱۰: b1 آرایش موجود، b2 طرح تحول، b3 برنامهٔ اجرایی.
 
-خروجی: فقط یک آرایهٔ JSON معتبر، بدون هیچ متن دیگری، با یک شیء برای هر شهرستان:
+خروجی: فقط یک آرایهٔ JSON معتبر، بدون هیچ متن دیگری، با یک شیء برای هر شهرستان. نام کلیدها را دقیقاً همین‌طور به انگلیسی بنویسید و ترجمه نکنید؛ userId را عیناً از بسته کپی کنید. امتیازها عدد باشند.
 [
   {
     "userId": "همان userId بسته",
@@ -58,25 +58,37 @@ function countyEntry(user, form) {
   };
 }
 
-function buildBundle(db, ids) {
-  const users = db.users.filter(u => u.role === 'director' && (!ids || ids.includes(u.id)));
+const PROMPT = 'طبق دستورالعمل داخل این فایل (بخش instructions)، بوم هر شهرستان را تحلیل کن و فقط آرایهٔ JSON خروجی را بده.';
+
+// مدیران فعال به ترتیب استان و شهرستان (همان ترتیبی که بسته‌ها و داشبورد به کار می‌برند)
+const orderedDirectors = db => db.users.filter(u => u.role === 'director' && u.active !== false)
+  .sort((a, b) => String(a.province || '').localeCompare(String(b.province || ''), 'fa') || String(a.county || '').localeCompare(String(b.county || ''), 'fa'));
+
+function buildBundle(db, ids, label) {
+  const want = ids ? new Set(ids) : null;
+  const users = orderedDirectors(db).filter(u => !want || want.has(u.id));
+  const n = users.length;
   return {
     kind: 'harfeno-analysis-bundle',
-    version: 1,
+    version: 2,
     generatedAt: new Date().toISOString(),
-    instructions: INSTRUCTIONS,
+    label: label || '',
+    prompt: PROMPT,
+    countiesCount: n,
+    instructions: INSTRUCTIONS + `\n\nاین بسته ${n} شهرستان دارد؛ خروجی باید دقیقاً ${n} شیء داشته باشد، یکی برای هر شهرستان، به همان ترتیب. اگر پاسخ برای همه جا نمی‌شود، همهٔ شیءها را کوتاه‌تر بنویسید؛ هیچ شهرستانی را جا نیندازید.`,
     counties: users.map(u => countyEntry(u, db.forms[u.id]))
   };
 }
 
 const str = (v, max) => String(v == null ? '' : v).trim().slice(0, max);
 const list = (v, n, max) => (Array.isArray(v) ? v : String(v || '').split(/\n+/)).map(x => str(x, max)).filter(Boolean).slice(0, n);
-const score = v => { if (v == null || String(v).trim() === '') return null; const x = Number(M.toEn(v).replace('٫', '.')); return Number.isFinite(x) ? Math.max(0, Math.min(10, Math.round(x * 10) / 10)) : null; };
+// «۷»، «7.5»، «۷٫۵»، «7/10» و «۷ از ۱۰» همه پذیرفته می‌شوند
+const score = v => { if (v == null || String(v).trim() === '') return null; const m = M.toEn(v).replace(/[٫,]/g, '.').match(/-?\d+(\.\d+)?/); const x = m ? Number(m[0]) : NaN; return Number.isFinite(x) ? Math.max(0, Math.min(10, Math.round(x * 10) / 10)) : null; };
 
 /* پاک‌سازی یک بازخورد ورودی (از فایل، از Claude یا از ویرایشگر داشبورد) */
 function cleanFeedback(f) {
   f = f || {};
-  const s = f.scores || {};
+  const s = f.scores && typeof f.scores === 'object' ? f.scores : { b1: f.b1, b2: f.b2, b3: f.b3 };
   return {
     scores: { b1: score(s.b1), b2: score(s.b2), b3: score(s.b3) },
     summary: str(f.summary, 3000),
@@ -87,20 +99,42 @@ function cleanFeedback(f) {
   };
 }
 
-/* متن JSON از خروجی Claude بیرون کشیده می‌شود، حتی اگر داخل ``` یا با متن اضافه باشد */
+/* JSON از خروجی هوش مصنوعی بیرون کشیده می‌شود: داخل ``` یا با متن اضافه، چند بلوک پشت سر هم
+   (مثلاً خروجی چند بسته که با هم جای‌گذاری شده) و ویرگول اضافهٔ آخر فهرست هم پذیرفته می‌شود */
+function parseLoose(t) {
+  try { return JSON.parse(t); } catch (e) { /* ادامه */ }
+  try { return JSON.parse(t.replace(/,\s*([\]}])/g, '$1')); } catch (e) { return undefined; }
+}
+// همهٔ آرایه‌ها/شیءهای سطح بالا با شمردن کروشه‌ها (رشته‌ها نادیده گرفته می‌شوند)
+function topLevelChunks(t) {
+  const out = []; let depth = 0, start = -1, inStr = false, esc = false;
+  for (let i = 0; i < t.length; i++) {
+    const c = t[i];
+    if (inStr) { if (esc) esc = false; else if (c === '\\') esc = true; else if (c === '"') inStr = false; continue; }
+    if (c === '"') { if (depth > 0) inStr = true; continue; }
+    if (c === '[' || c === '{') { if (depth === 0) start = i; depth++; }
+    else if ((c === ']' || c === '}') && depth > 0) { depth--; if (depth === 0 && start >= 0) { out.push(t.slice(start, i + 1)); start = -1; } }
+  }
+  return out;
+}
 function extractJson(text) {
   if (typeof text !== 'string') return text;
-  const t = text.trim();
-  try { return JSON.parse(t); } catch (e) { /* ادامه */ }
-  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fence) { try { return JSON.parse(fence[1]); } catch (e) { /* ادامه */ } }
-  const a = t.indexOf('['), b = t.lastIndexOf(']');
-  if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch (e) { /* ادامه */ } }
-  const c = t.indexOf('{'), d = t.lastIndexOf('}');
-  if (c >= 0 && d > c) { try { return JSON.parse(t.slice(c, d + 1)); } catch (e) { /* ادامه */ } }
-  throw new Error('متن واردشده JSON معتبر نیست.');
+  const t = text.replace(/^﻿/, '').replace(/[​‎‏]/g, '').trim();
+  const whole = parseLoose(t);
+  if (whole !== undefined) return whole;
+  const blocks = [...t.matchAll(/```(?:json|JSON)?\s*([\s\S]*?)```/g)].map(m => m[1].trim());
+  const chunks = blocks.length ? blocks : topLevelChunks(t);
+  const items = [];
+  chunks.forEach(c => {
+    const v = parseLoose(c);
+    if (Array.isArray(v)) items.push(...v);
+    else if (v && typeof v === 'object') items.push(...(Array.isArray(v.items) ? v.items : [v]));
+  });
+  if (items.length) return items;
+  throw new Error('در متن واردشده JSON معتبری پیدا نشد. پاسخ هوش مصنوعی را کامل و بدون تغییر جای‌گذاری کنید.');
 }
 
+const normName = v => String(v == null ? '' : v).replace(/ي/g, 'ی').replace(/ك/g, 'ک').replace(/[\u200c\s]+/g, '').replace(/^استان/, '');
 /* تطبیق بازخوردهای واردشده با کاربران: با userId، یا شمارهٔ همراه، یا نام شهرستان */
 function matchItems(db, items) {
   const directors = db.users.filter(u => u.role === 'director');
@@ -110,11 +144,16 @@ function matchItems(db, items) {
     let u = directors.find(x => x.id === it.userId);
     if (!u && it.phone) u = directors.find(x => x.phone === String(M.toEn(it.phone)).replace(/\D/g, ''));
     if (!u && it.county) {
-      const c = directors.filter(x => (x.county || '').trim() === String(it.county).trim());
+      let c = directors.filter(x => normName(x.county) === normName(it.county));
+      if (c.length > 1 && it.province) c = c.filter(x => normName(x.province) === normName(it.province));
       if (c.length === 1) u = c[0];
+      else if (c.length > 1) { out.unmatched.push({ idx, county: it.county, reason: 'چند شهرستان با این نام هست؛ userId لازم است' }); return; }
     }
-    if (u) out.matched.push({ userId: u.id, county: u.county, feedback: cleanFeedback(it) });
-    else out.unmatched.push({ idx, county: it.county || '', reason: 'مدیری با این شناسه یا شهرستان پیدا نشد' });
+    if (u) {
+      const prev = out.matched.findIndex(m => m.userId === u.id);
+      if (prev >= 0) out.matched.splice(prev, 1);
+      out.matched.push({ userId: u.id, county: u.county, feedback: cleanFeedback(it) });
+    } else out.unmatched.push({ idx, county: it.county || '', reason: 'مدیری با این شناسه یا شهرستان پیدا نشد' });
   });
   return out;
 }
@@ -148,4 +187,4 @@ async function analyzeWithClaude(cfg, entry) {
   return cleanFeedback(parsed);
 }
 
-module.exports = { INSTRUCTIONS, buildBundle, countyEntry, cleanFeedback, extractJson, matchItems, analyzeWithClaude };
+module.exports = { INSTRUCTIONS, orderedDirectors, buildBundle, countyEntry, cleanFeedback, extractJson, matchItems, analyzeWithClaude };

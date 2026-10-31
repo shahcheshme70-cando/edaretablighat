@@ -9,7 +9,7 @@ const M = typeof module === 'object' && module.exports ? require('../public/shar
 
 const SUP = { content: 'محتوا و بسته‌های آموزشی', training: 'دوره‌های توانمندسازی', money: 'اعتبار مالی', share: 'انتقال تجربه‌های موفق', letters: 'مکاتبه و هماهنگی با نهادها', other: 'سایر' };
 const round = (x, d = 0) => { const n = Number(x) || 0, p = Math.pow(10, d); return Math.round(n * p) / p; };
-const str = v => (v == null ? '' : String(v)).replace(/\r?\n+/g, ' / ').trim();
+const str = v => (v == null ? '' : String(v)).replace(/[\r\n]+/g, ' / ').trim();
 const date = t => {
   if (!t) return '';
   try { return new Intl.DateTimeFormat('fa-IR-u-ca-persian-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Tehran' }).format(new Date(t)).replace(',', ''); } catch (e) { return String(t); }
@@ -19,7 +19,7 @@ const cell = v => {
   if (typeof v === 'number') return Number.isFinite(v) ? String(v) : '';
   let s = str(v);
   if (/^[=+\-@\t]/.test(s) && !/^-?\d+(\.\d+)?$/.test(s)) s = "'" + s;
-  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 };
 const toCsv = (head, rows) => '﻿' + [head, ...rows].map(r => r.map(cell).join(',')).join('\r\n') + '\r\n';
 const status = (u, f) => u.active === false ? 'غیرفعال' : f.submittedAt ? (f.editedAfterSubmit ? 'ارسال‌شده، ویرایش بعد از ارسال' : 'ارسال‌شده') : f.updatedAt ? 'در حال تکمیل' : 'شروع‌نشده';
@@ -75,7 +75,7 @@ const TABLES = { counties: ['shahrestanha', counties], forces: ['niroha', forces
 
 /* users: مدیران شهرستان که بیننده اجازهٔ دیدنشان را دارد */
 function sheet(kind, db, users) {
-  const t = TABLES[kind]; if (!t) return null;
+  const t = Object.prototype.hasOwnProperty.call(TABLES, kind) ? TABLES[kind] : null; if (!t) return null;
   const list = [...users].sort((a, b) => String(a.county || '').localeCompare(String(b.county || ''), 'fa'));
   return { name: `harfeno-${t[0]}-${new Date().toISOString().slice(0, 10)}.csv`, body: t[1](db, list) };
 }

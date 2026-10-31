@@ -1,4 +1,6 @@
 'use strict';
+// پیش از بارگذاری تنظیمات: .env سرور در آزمون‌ها خوانده نشود
+process.env.HARFENO_NO_DOTENV = '1';
 /* ابزار آزمون: سرور واقعی روی پورت تصادفی با پوشهٔ دادهٔ موقت */
 const fs = require('fs');
 const os = require('os');
